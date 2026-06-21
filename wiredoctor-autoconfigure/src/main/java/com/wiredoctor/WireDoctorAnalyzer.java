@@ -52,6 +52,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 
                 slowSteps.add(stepInfo);
             }
+        } else {
+            System.err.println("[WireDoctor] WARNING: ApplicationStartup is not BufferingApplicationStartup! It is: " + applicationStartup.getClass().getName());
         }
         report.put("startupSlowestSteps", slowSteps);
 
