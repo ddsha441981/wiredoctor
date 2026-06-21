@@ -2,6 +2,7 @@ package com.wiredoctor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.nio.file.Files;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -109,18 +110,26 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         dependencyInfo.put("cycles", cycles);
         dependencyInfo.put("orphanBeansCount", orphanBeans.size());
         dependencyInfo.put("orphanBeans", orphanBeans); // Heuristic only
+        dependencyInfo.put("graph", graph); // Export raw graph for visualizer
         report.put("dependencies", dependencyInfo);
 
         // Write to JSON
         try {
             ObjectMapper mapper = new ObjectMapper();
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            
+            String jsonString = mapper.writeValueAsString(report);
+            
             File reportFile = new File("wiredoctor-report.json");
-            mapper.writeValue(reportFile, report);
+            Files.writeString(reportFile.toPath(), jsonString);
             
             System.out.println("[WireDoctor] Saved detailed report to: " + reportFile.getAbsolutePath());
+            
+            // Generate HTML Visualizer
+            WireDoctorHtmlReporter.generateHtmlReport(jsonString);
+            
         } catch (Exception e) {
-            System.err.println("[WireDoctor] Failed to write JSON report: " + e.getMessage());
+            System.err.println("[WireDoctor] Failed to write reports: " + e.getMessage());
         }
 
         // Console Summary
