@@ -12,3 +12,18 @@ WireDoctor is a runtime diagnostic tool for Spring Boot dependency injection and
 
 ## How to use
 Just add it to your Spring Boot project dependencies. WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`), and prints a clean diagnostic summary to standard output.
+
+## Epistemic Honesty & Known Limitations
+Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over false certainty:
+
+1. **AOT / GraalVM Native Image Support:**
+   Currently, WireDoctor is designed for **traditional JVM mode only**. Spring Boot 3+ AOT processing fundamentally changes bean instantiation (bypassing much of the runtime reflection and `ApplicationStartup` intercepts). Running this under Native Image is untested and will likely yield incomplete data.
+
+2. **Orphan Bean Heuristic (Weak Signal):**
+   The tool reports "Orphan Beans" (beans with 0 incoming dependencies). This is a **heuristic, not a guarantee** that the bean is unused. Beans accessed dynamically via `ApplicationContext.getBean()`, event listeners, or scheduled tasks will appear as "orphaned" in the static DI graph.
+
+3. **Structural Cycles vs. Crashing Cycles:**
+   If Spring encounters an *unresolvable* cycle (e.g., constructor-to-constructor), the app crashes (`BeanCurrentlyInCreationException`) before WireDoctor can report it. WireDoctor detects *resolved* cycles (via setter injection or proxies) that succeed silently. These are reported as structural design smells, not fatal errors.
+
+4. **Tested Bean Scopes:**
+   The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
