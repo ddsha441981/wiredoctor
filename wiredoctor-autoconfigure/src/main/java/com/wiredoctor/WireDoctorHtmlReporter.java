@@ -125,7 +125,7 @@ public class WireDoctorHtmlReporter {
 
             <script>
                 // DATA_INJECTION_POINT
-                const reportData = %s;
+                const reportData = /* DATA_INJECTION_POINT */;
 
                 // 1. Populate Sidebar Stats
                 document.getElementById('stat-beans').textContent = reportData.dependencies.totalBeans;
@@ -220,7 +220,7 @@ public class WireDoctorHtmlReporter {
             </script>
         </body>
         </html>
-        """.formatted(jsonReport);
+        """.replace("/* DATA_INJECTION_POINT */", jsonReport);
 
         try {
             File htmlFile = new File("wiredoctor-report.html");
