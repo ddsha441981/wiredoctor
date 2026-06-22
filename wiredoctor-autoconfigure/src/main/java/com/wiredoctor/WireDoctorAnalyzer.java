@@ -15,14 +15,16 @@ import org.springframework.core.metrics.ApplicationStartup;
 import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyEvent> {
+    private static final Logger log = LoggerFactory.getLogger(WireDoctorAnalyzer.class);
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
-        System.out.println("\n==================================================");
-        System.out.println(" WIREDOCTOR ANALYSIS STARTING");
-        System.out.println("==================================================");
+        log.info(WireDoctorMessages.BANNER_TOP);
+        log.info(WireDoctorMessages.BANNER_TEXT);
+        log.info(WireDoctorMessages.BANNER_BOTTOM);
 
         ConfigurableApplicationContext context = event.getApplicationContext();
         ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
@@ -54,7 +56,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 slowSteps.add(stepInfo);
             }
         } else {
-            System.err.println("[WireDoctor] WARNING: ApplicationStartup is not BufferingApplicationStartup! It is: " + applicationStartup.getClass().getName());
+            log.warn(WireDoctorMessages.STARTUP_NOT_BUFFERING_WARNING, applicationStartup.getClass().getName());
         }
         report.put("startupSlowestSteps", slowSteps);
 
@@ -110,6 +112,24 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     } catch (Exception e) {
                         include = false;
                     }
+                } else {
+                    // Option A: Skip Spring internal packages by default
+                    try {
+                        Class<?> beanType = beanFactory.getType(beanName);
+                        if (beanType != null && beanType.getPackage() != null) {
+                            String pkgName = beanType.getPackage().getName();
+                            include = !pkgName.startsWith("org.springframework")
+                                   && !pkgName.startsWith("org.apache")
+                                   && !pkgName.startsWith("com.sun")
+                                   && !pkgName.startsWith("java.")
+                                   && !pkgName.startsWith("javax.")
+                                   && !pkgName.startsWith("jakarta.");
+                        } else {
+                            include = true;
+                        }
+                    } catch (Exception e) {
+                        include = true;
+                    }
                 }
                 
                 if (include) {
@@ -145,31 +165,31 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             File reportFile = new File("wiredoctor-report.json");
             Files.writeString(reportFile.toPath(), jsonString);
             
-            System.out.println("[WireDoctor] Saved detailed report to: " + reportFile.getAbsolutePath());
+            log.info(WireDoctorMessages.SAVED_JSON_REPORT, reportFile.getAbsolutePath());
             
             // Generate HTML Visualizer
             WireDoctorHtmlReporter.generateHtmlReport(jsonString);
             
         } catch (Exception e) {
-            System.err.println("[WireDoctor] Failed to write reports: " + e.getMessage());
+            log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
         }
 
         // Console Summary
-        System.out.println("[WireDoctor] Slowest Startup Steps:");
+        log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
         slowSteps.stream().limit(5).forEach(step -> {
-            System.out.println("  - " + step.get("name") + " (" + step.get("durationMs") + "ms)");
+            log.info(WireDoctorMessages.SLOWEST_STEP_ITEM, step.get("name"), step.get("durationMs"));
         });
         
-        System.out.println("\n[WireDoctor] Bean Dependency Cycles: " + cycles.size());
+        log.info(WireDoctorMessages.CYCLES_HEADER, cycles.size());
         for (List<String> cycle : cycles) {
-            System.out.println("  - Cycle detected: " + String.join(" -> ", cycle) + " -> " + cycle.get(0));
-            System.out.println("    (Note: Spring resolved this via proxy/setter, but structurally it is a cycle)");
+            log.info(WireDoctorMessages.CYCLE_ITEM, String.join(" -> ", cycle), cycle.get(0));
+            log.info(WireDoctorMessages.CYCLE_NOTE);
         }
         
-        System.out.println("\n[WireDoctor] Proxy Overhead:");
-        System.out.println("  - CGLIB Proxies: " + cglibProxies.size());
-        System.out.println("  - JDK Proxies: " + jdkProxies.size());
+        log.info(WireDoctorMessages.PROXY_HEADER);
+        log.info(WireDoctorMessages.PROXY_CGLIB_ITEM, cglibProxies.size());
+        log.info(WireDoctorMessages.PROXY_JDK_ITEM, jdkProxies.size());
         
-        System.out.println("==================================================\n");
+        log.info(WireDoctorMessages.BANNER_END);
     }
 }

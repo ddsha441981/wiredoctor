@@ -2,8 +2,11 @@ package com.wiredoctor;
 
 import java.io.File;
 import java.nio.file.Files;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 public class WireDoctorHtmlReporter {
+    private static final Logger log = LoggerFactory.getLogger(WireDoctorHtmlReporter.class);
+
     public static void generateHtmlReport(String jsonReport) {
         String html = """
         <!DOCTYPE html>
@@ -226,9 +229,9 @@ public class WireDoctorHtmlReporter {
         try {
             File htmlFile = new File("wiredoctor-report.html");
             Files.writeString(htmlFile.toPath(), html);
-            System.out.println("[WireDoctor] Saved interactive HTML visualizer to: " + htmlFile.getAbsolutePath());
+            log.info(WireDoctorMessages.SAVED_HTML_REPORT, htmlFile.getAbsolutePath());
         } catch (Exception e) {
-            System.err.println("[WireDoctor] Failed to write HTML report: " + e.getMessage());
+            log.error(WireDoctorMessages.FAILED_WRITE_HTML, e.getMessage());
         }
     }
 }
