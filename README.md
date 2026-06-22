@@ -32,10 +32,12 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 implementation 'com.wiredoctor:wiredoctor-autoconfigure:1.0.0-SNAPSHOT'
 ```
 
-WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to standard output.
+WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
 
 ### ⚙️ Configuration (Optional)
-To prevent internal Spring Framework beans from cluttering your "Orphan Beans" report, configure the scan packages in your `application.properties`:
+By default, WireDoctor automatically filters out internal infrastructure packages (like `org.springframework`, `java.`, `org.apache`, etc.) from the "Orphan Beans" list to reduce noise. 
+
+If you want to explicitly define which packages should be analyzed for orphans, you can configure `wiredoctor.scan-packages` in your `application.properties`:
 ```properties
 wiredoctor.scan-packages=com.yourcompany.app
 ```
