@@ -89,10 +89,32 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         for (String[] deps : graph.values()) {
             allDependencies.addAll(Arrays.asList(deps));
         }
+        
+        String scanPackages = context.getEnvironment().getProperty("wiredoctor.scan-packages");
         List<String> orphanBeans = new ArrayList<>();
+        
         for (String beanName : beanNames) {
             if (!allDependencies.contains(beanName)) {
-                orphanBeans.add(beanName);
+                boolean include = true;
+                if (scanPackages != null && !scanPackages.isEmpty()) {
+                    try {
+                        Class<?> beanType = beanFactory.getType(beanName);
+                        if (beanType != null && beanType.getPackage() != null) {
+                            String pkgName = beanType.getPackage().getName();
+                            include = Arrays.stream(scanPackages.split(","))
+                                    .map(String::trim)
+                                    .anyMatch(pkgName::startsWith);
+                        } else {
+                            include = false;
+                        }
+                    } catch (Exception e) {
+                        include = false;
+                    }
+                }
+                
+                if (include) {
+                    orphanBeans.add(beanName);
+                }
             }
         }
 

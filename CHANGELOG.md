@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-06-22
+## [0.1.0] - 2026-04-07
 
 ### Added
 - **Interactive HTML Visualizer (`WireDoctorHtmlReporter`)**: Generates a self-contained, zero-dependency `wiredoctor-report.html` file using Java 17 Text Blocks and Vis.js. Provides a Dark-Mode Glassmorphism dashboard with an interactive, physics-based network graph of the application's beans.
@@ -21,5 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Adversarial Test Suite:** Added a `wiredoctor-test` module to actively test edge conditions (e.g., deliberate cycles, synthetic slow startup, and async proxies) ensuring high epistemic honesty and heuristic reliability.
 
 ### Changed
-- **Robust Startup Capture**: Migrated startup listener registration from `SpringApplicationRunListener` to `ApplicationContextInitializer`. This forces `BufferingApplicationStartup` injection exactly at the context refresh phase, preventing interference and resets by framework components like Spring Boot DevTools.
-- **Real-World Validation**: Successfully validated against `spring-petclinic` (mapping 400+ beans and rendering the exact proxy counts) and integrated cleanly into independent enterprise projects without conflict.
+- **Robust Startup Capture**: Removed `ApplicationContextInitializer` and completely refactored the startup interception to use `ApplicationListener<ApplicationStartingEvent>`. This guarantees the `BufferingApplicationStartup` is injected safely across all Spring Boot versions (2.x, 3.x, and 4.x) without "Double Registration" bugs or dropped startup steps.
+- **Real-World Validation**: Successfully validated against `spring-petclinic` and `start.spring.io` (Spring Initializr running Boot 4.0.x), mapping 400+ beans and rendering exact proxy and startup timings without conflict.
+
+### Fixed
+- **Double Registration Bug**: Fixed an issue where `WireDoctorContextInitializer` would overwrite the `BufferingApplicationStartup` instance created by `WireDoctorRunListener`, causing early startup step data to be permanently lost.
+- **Orphan Bean Noise**: Added `wiredoctor.scan-packages` property filter to skip Spring infrastructure beans (like `errorController`, etc.) from the "Orphan Beans" list, making the output actionable.
+- **Epistemic Honesty for Cycle Detection**: Documented the "Early-Reference Cycle Blindspot" acknowledging that cycles resolved silently by Spring's 3-level cache (when `allow-circular-references=true`) may bypass `getDependenciesForBean()` and remain unreported.

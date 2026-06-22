@@ -25,4 +25,9 @@ public class WireDoctorRunListener implements SpringApplicationRunListener {
         BufferingApplicationStartup startup = new BufferingApplicationStartup(10000);
         this.application.setApplicationStartup(startup);
     }
+
+    // For Spring Boot 3.0+ and 4.0 compatibility
+    public void starting(ConfigurableBootstrapContext bootstrapContext, Class<?> mainApplicationClass) {
+        starting(bootstrapContext);
+    }
 }

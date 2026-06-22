@@ -1,2 +1,2 @@
 org.springframework.boot.SpringApplicationRunListener=com.wiredoctor.WireDoctorRunListener
-org.springframework.context.ApplicationContextInitializer=com.wiredoctor.WireDoctorContextInitializer
+org.springframework.context.ApplicationListener=com.wiredoctor.WireDoctorStartupListener
