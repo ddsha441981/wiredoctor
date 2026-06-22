@@ -22,7 +22,8 @@ public class WireDoctorHtmlReporter {
                     --accent: #3b82f6;
                     --danger: #ef4444;
                     --warning: #f59e0b;
-                    --proxy: #8b5cf6;
+                    --proxy: #e76c87;
+                    --orphan: #f97316;
                     --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                 }
                 body {
@@ -61,7 +62,7 @@ public class WireDoctorHtmlReporter {
                 .stat-box .label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
                 .stat-box .value { font-size: 24px; font-weight: 700; margin-top: 6px; }
                 .stat-box.danger .value { color: var(--danger); }
-                .stat-box.warning .value { color: var(--warning); }
+                .stat-box.proxy-stat .value { color: var(--proxy); }
                 
                 .step-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;}
                 .step-item { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--accent); transition: background 0.2s ease;}
@@ -96,7 +97,7 @@ public class WireDoctorHtmlReporter {
                             <div class="label">Cycles Detected</div>
                             <div class="value" id="stat-cycles">-</div>
                         </div>
-                        <div class="stat-box warning">
+                        <div class="stat-box proxy-stat">
                             <div class="label">Proxy Overhead</div>
                             <div class="value" id="stat-proxies">-</div>
                         </div>
@@ -106,10 +107,10 @@ public class WireDoctorHtmlReporter {
                 <div>
                     <h2>Graph Legend</h2>
                     <div class="legend" style="margin-top: 16px;">
-                        <div class="legend-item"><div class="legend-color" style="background: #3b82f6;"></div> Normal Singleton Bean</div>
-                        <div class="legend-item"><div class="legend-color" style="background: #ef4444; box-shadow: 0 0 10px #ef4444;"></div> Circular Dependency</div>
-                        <div class="legend-item"><div class="legend-color" style="background: #8b5cf6;"></div> Proxied Bean (AOP/Tx/Async)</div>
-                        <div class="legend-item"><div class="legend-color" style="background: #475569;"></div> Orphan Bean (Heuristic)</div>
+                        <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div> Safe (Normal Bean)</div>
+                        <div class="legend-item"><div class="legend-color" style="background: #ef4444; box-shadow: 0 0 10px #ef4444;"></div> Dangerous (Circular Dependency)</div>
+                        <div class="legend-item"><div class="legend-color" style="background: #e76c87;"></div> Proxy (AOP/Tx/Async)</div>
+                        <div class="legend-item"><div class="legend-color" style="background: #f97316;"></div> Orphan (Heuristic)</div>
                     </div>
                 </div>
 
@@ -170,19 +171,19 @@ public class WireDoctorHtmlReporter {
                 }
 
                 nodeSet.forEach(bean => {
-                    let color = '#3b82f6'; // normal
+                    let color = '#10b981'; // safe green
                     let shadow = false;
                     let size = 15;
 
                     if (cycleBeans.has(bean)) {
-                        color = '#ef4444';
+                        color = '#ef4444'; // dangerous red
                         shadow = { color: '#ef4444', size: 15 };
                         size = 25;
                     } else if (proxyBeans.has(bean)) {
-                        color = '#8b5cf6';
+                        color = '#e76c87'; // proxy pink
                         size = 20;
                     } else if (orphanBeans.has(bean)) {
-                        color = '#475569';
+                        color = '#f97316'; // orphan orange
                         size = 10;
                     }
 
@@ -190,7 +191,7 @@ public class WireDoctorHtmlReporter {
                         id: bean,
                         label: bean.length > 25 ? bean.substring(0, 22) + '...' : bean,
                         title: '<b>' + bean + '</b><br>' + (proxyBeans.has(bean) ? 'Status: Proxied<br>' : '') + (cycleBeans.has(bean) ? 'Status: In Circular Dependency<br>' : ''),
-                        color: { background: color, border: 'rgba(0,0,0,0.3)', highlight: { background: '#60a5fa', border: '#fff'} },
+                        color: { background: color, border: 'rgba(0,0,0,0.3)', highlight: { background: '#34d399', border: '#fff'} },
                         shadow: shadow,
                         size: size,
                         shape: 'dot',
