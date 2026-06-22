@@ -46,6 +46,13 @@ wiredoctor.scan-packages=com.yourcompany.app
 wiredoctor.scan-packages=com.yourcompany.app,io.yourteam.service
 ```
 
+### 🛑 Production Safety (Disabling WireDoctor)
+WireDoctor is enabled by default. If you accidentally leave the dependency in your production build, you can completely disable the analyzer to prevent it from running, writing reports, or exposing bean structures by setting:
+```properties
+# application-prod.properties
+wiredoctor.enabled=false
+```
+
 ---
 
 ## 🔬 Epistemic Honesty & Known Limitations
