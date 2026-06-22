@@ -39,7 +39,11 @@ By default, WireDoctor automatically filters out internal infrastructure package
 
 If you want to explicitly define which packages should be analyzed for orphans, you can configure `wiredoctor.scan-packages` in your `application.properties`:
 ```properties
+# Single package
 wiredoctor.scan-packages=com.yourcompany.app
+
+# Multiple packages (comma-separated)
+wiredoctor.scan-packages=com.yourcompany.app,io.yourteam.service
 ```
 
 ---
