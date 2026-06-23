@@ -10,6 +10,11 @@
     </parent>
     <artifactId>wiredoctor-test</artifactId>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <central.publish.skip>true</central.publish.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
