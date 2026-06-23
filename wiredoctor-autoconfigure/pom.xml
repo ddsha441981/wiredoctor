@@ -9,6 +9,8 @@
         <version>0.1.0</version>
     </parent>
     <artifactId>wiredoctor-autoconfigure</artifactId>
+    <name>WireDoctor AutoConfiguration</name>
+    <description>Enterprise-grade Spring Boot diagnostic suite for cyclic dependencies, slow beans, and context analysis.</description>
 
     <dependencies>
         <dependency>

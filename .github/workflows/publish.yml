@@ -19,7 +19,9 @@ jobs:
           server-password: OSSRH_PASSWORD
 
       - name: Import GPG Key
-        run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+        run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
       - name: Publish to Maven Central
         run: |
