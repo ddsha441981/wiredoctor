@@ -21,9 +21,9 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 **Maven:**
 ```xml
 <dependency>
-    <groupId>com.wiredoctor</groupId>
+    <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 

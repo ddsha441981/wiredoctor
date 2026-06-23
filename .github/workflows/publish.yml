@@ -1,0 +1,31 @@
+name: Publish
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_PASSWORD
+
+      - name: Import GPG Key
+        run: echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
+
+      - name: Publish to Maven Central
+        run: |
+          mvn -B clean deploy \
+            -pl wiredoctor-autoconfigure \
+            -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
