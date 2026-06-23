@@ -43,7 +43,6 @@
     </developers>
     <modules>
         <module>wiredoctor-autoconfigure</module>
-        <module>wiredoctor-test</module>
     </modules>
 
     <properties>
@@ -72,6 +71,15 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>wiredoctor-test</module>
+            </modules>
+        </profile>
         <profile>
             <id>release</id>
             <build>
