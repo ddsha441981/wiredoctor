@@ -25,7 +25,7 @@ jobs:
 
       - name: Publish to Maven Central
         run: |
-          mvn -B clean deploy \
+          mvn -B clean deploy -P release \
             -pl wiredoctor-autoconfigure \
             -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
         env:
