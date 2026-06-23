@@ -29,7 +29,7 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 
 **Gradle:**
 ```groovy
-implementation 'com.wiredoctor:wiredoctor-autoconfigure:1.0.0-SNAPSHOT'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.1.0'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
@@ -80,10 +80,22 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
 
 ---
+## 🔮 Roadmap (v0.2.0 & Beyond)
+
+We are actively researching advanced diagnostic capabilities for the next major release:
+
+1. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector):**
+   *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. This will likely involve a lightweight, non-invasive access-tracking proxy mechanism.*
+2. 🧠 **Memory Footprint Estimation:**
+   *Moving beyond measuring instantiation **time** to measuring object **space**. Exploring per-bean heap consumption metrics (potentially requiring Java Agent instrumentation for deep size-of calculations).*
+3. 🛠️ **Smart Resolution Insights:**
+   *Providing actionable, AI-driven suggestions when structural issues are found (e.g., suggesting exactly which dependency to mark as `@Lazy` to safely break a cycle without side effects).*
+
+---
 
 ## 👤 Author
 
-**Deendayal Kumawat** (Solo Developer)
+**Deendayal Kumawat** 
 
 * 📧 **Email:** [deendayal_kumawat@hotmail.com](mailto:deendayal_kumawat@hotmail.com)
 * 💼 **LinkedIn:** [deendayal-kumawat](https://www.linkedin.com/in/deendayal-kumawat/)
