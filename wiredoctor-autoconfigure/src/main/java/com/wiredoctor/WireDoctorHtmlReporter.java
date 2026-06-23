@@ -1,13 +1,34 @@
+/*
+ * Copyright (c) 2026 Deendayal Kumawat
+ *
+ * SPDX-License-Identifier: MIT OR Apache-2.0
+ */
 package com.wiredoctor;
 
 import java.io.File;
 import java.nio.file.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+/**
+ * Utility responsible for generating the self-contained, interactive HTML diagnostic report.
+ * <p>
+ * Injects serialized JSON context data into a predefined HTML template utilizing
+ * Vis.js for physics-based network graph rendering. The output is a zero-dependency 
+ * file designed for immediate developer consumption.
+ *
+ * @author Deendayal Kumawat
+ * @since 0.1.0
+ */
 public class WireDoctorHtmlReporter {
     private static final Logger log = LoggerFactory.getLogger(WireDoctorHtmlReporter.class);
 
-    public static void generateHtmlReport(String jsonReport) {
+    /**
+     * Generates and writes the HTML report to the specified output directory.
+     *
+     * @param jsonReport the serialized JSON representation of the diagnostic data
+     * @param outputDir  the target directory where the {@code wiredoctor-report.html} file will be written
+     */
+    public static void generateHtmlReport(String jsonReport, File outputDir) {
         String html = """
         <!DOCTYPE html>
         <html lang="en">
@@ -100,9 +121,17 @@ public class WireDoctorHtmlReporter {
                             <div class="label">Cycles Detected</div>
                             <div class="value" id="stat-cycles">-</div>
                         </div>
-                        <div class="stat-box proxy-stat">
+                        <div class="stat-box">
                             <div class="label">Proxy Overhead</div>
-                            <div class="value" id="stat-proxies">-</div>
+                            <div class="value proxy-stat" id="stat-proxy">-</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="label">User Beans</div>
+                            <div class="value" id="stat-user-beans">-</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="label">Framework Beans</div>
+                            <div class="value" id="stat-fw-beans">-</div>
                         </div>
                     </div>
                 </div>
@@ -118,8 +147,13 @@ public class WireDoctorHtmlReporter {
                 </div>
 
                 <div style="flex-grow: 1; overflow-y: auto;">
-                    <h2>Slowest Startup Steps (Top 10)</h2>
+                    <h2>Slowest Startup Steps</h2>
                     <ul class="step-list" id="slow-steps" style="margin-top: 16px;">
+                        <!-- Injected by JS -->
+                    </ul>
+                    
+                    <h2 style="margin-top: 24px;">Slow Bean Instantiation</h2>
+                    <ul class="step-list" id="slow-beans" style="margin-top: 16px;">
                         <!-- Injected by JS -->
                     </ul>
                 </div>
@@ -128,18 +162,18 @@ public class WireDoctorHtmlReporter {
             <div id="graph-container"></div>
 
             <script>
-                // DATA_INJECTION_POINT
                 const reportData = /* DATA_INJECTION_POINT */;
 
-                // 1. Populate Sidebar Stats
                 document.getElementById('stat-beans').textContent = reportData.dependencies.totalBeans;
                 document.getElementById('stat-edges').textContent = reportData.dependencies.totalEdges;
                 document.getElementById('stat-cycles').textContent = reportData.dependencies.cyclesCount;
                 
                 const totalProxies = reportData.proxies.cglibCount + reportData.proxies.jdkCount;
-                document.getElementById('stat-proxies').textContent = totalProxies;
+                document.getElementById('stat-proxy').textContent = totalProxies;
 
-                // 2. Populate Slowest Steps
+                document.getElementById('stat-user-beans').textContent = reportData.beanCategories?.userDefined ?? '-';
+                document.getElementById('stat-fw-beans').textContent = reportData.beanCategories?.frameworkOwned ?? '-';
+
                 const stepsList = document.getElementById('slow-steps');
                 if (reportData.startupSlowestSteps && reportData.startupSlowestSteps.length > 0) {
                     reportData.startupSlowestSteps.slice(0, 10).forEach(step => {
@@ -152,7 +186,19 @@ public class WireDoctorHtmlReporter {
                     stepsList.innerHTML = '<li class="step-item" style="border-left-color: #64748b; background: rgba(100,116,139,0.1);"><span class="step-name" style="color:#94a3b8">No startup timing data collected.</span></li>';
                 }
 
-                // 3. Prepare Graph Data
+                const slowBeansList = document.getElementById('slow-beans');
+                if (reportData.slowBeans && reportData.slowBeans.length > 0) {
+                    reportData.slowBeans.slice(0, 10).forEach(b => {
+                        const li = document.createElement('li');
+                        li.className = 'step-item';
+                        li.style.borderLeftColor = '#f59e0b';
+                        li.innerHTML = `<span class="step-name">${b.beanName}</span><span class="step-time" style="color:#f59e0b">${b.durationMs}ms</span>`;
+                        slowBeansList.appendChild(li);
+                    });
+                } else {
+                    slowBeansList.innerHTML = '<li class="step-item" style="border-left-color:#64748b"><span class="step-name" style="color:#94a3b8">None above threshold</span></li>';
+                }
+
                 const nodes = [];
                 const edges = [];
                 
@@ -174,19 +220,19 @@ public class WireDoctorHtmlReporter {
                 }
 
                 nodeSet.forEach(bean => {
-                    let color = '#10b981'; // safe green
+                    let color = '#10b981';
                     let shadow = false;
                     let size = 15;
 
                     if (cycleBeans.has(bean)) {
-                        color = '#ef4444'; // dangerous red
+                        color = '#ef4444';
                         shadow = { color: '#ef4444', size: 15 };
                         size = 25;
                     } else if (proxyBeans.has(bean)) {
-                        color = '#e76c87'; // proxy pink
+                        color = '#e76c87';
                         size = 20;
                     } else if (orphanBeans.has(bean)) {
-                        color = '#f97316'; // orphan orange
+                        color = '#f97316';
                         size = 10;
                     }
 
@@ -202,7 +248,6 @@ public class WireDoctorHtmlReporter {
                     });
                 });
 
-                // Highlight Cycle Edges
                 edges.forEach(edge => {
                     if (cycleBeans.has(edge.from) && cycleBeans.has(edge.to)) {
                         edge.color = { color: '#ef4444', highlight: '#f87171' };
@@ -227,7 +272,7 @@ public class WireDoctorHtmlReporter {
         """.replace("/* DATA_INJECTION_POINT */", jsonReport);
 
         try {
-            File htmlFile = new File("wiredoctor-report.html");
+            File htmlFile = new File(outputDir, "wiredoctor-report.html");
             Files.writeString(htmlFile.toPath(), html);
             log.info(WireDoctorMessages.SAVED_HTML_REPORT, htmlFile.getAbsolutePath());
         } catch (Exception e) {

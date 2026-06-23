@@ -5,9 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.0] - 2026-04-07
+## [0.1.0] - 2026-06-23
 
 ### Added
+- **Bean Category Summary**: Added detailed categorization of beans (User-defined vs Framework, Application vs Infrastructure) to reports and console logs.
+- **Slow Bean Profiling**: Tracks and highlights beans taking longer than a configurable threshold to instantiate (default 100ms).
+- **Configurable Output Path**: Added `wiredoctor.output-path` property to customize where HTML and JSON reports are saved.
+- **Configurable Threshold**: Added `wiredoctor.slow-bean-threshold-ms` to adjust the slow bean detection threshold.
+- **Maven Central Readiness**: Added SPDX `MIT OR Apache-2.0` license headers to all Java files and `licenses`/`developers` metadata to root `pom.xml`.
+- **Professional JavaDocs**: Added comprehensive, Spring-style class and method level JavaDocs.
 - **Interactive HTML Visualizer (`WireDoctorHtmlReporter`)**: Generates a self-contained, zero-dependency `wiredoctor-report.html` file using Java 17 Text Blocks and Vis.js. Provides a Dark-Mode Glassmorphism dashboard with an interactive, physics-based network graph of the application's beans.
 - **Node Color-Coding**: Visualizer intuitively color-codes beans (Green for Safe, Red for Danger/Cycles, Pink for Proxies, Orange for Orphans).
 - **Core Analyzer:** Introduced `wiredoctor-autoconfigure` module to act as a zero-friction Spring Boot starter.
@@ -27,4 +33,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Double Registration Bug**: Fixed an issue where `WireDoctorContextInitializer` would overwrite the `BufferingApplicationStartup` instance. Removed dead `WireDoctorRunListener` code as `WireDoctorStartupListener` successfully handles startup interception independently.
 - **Orphan Bean Noise**: Added default exclusion logic for internal `org.springframework`, `java.`, and `org.apache` packages. Users can still explicitly override this using the `wiredoctor.scan-packages` property.
+- **Self-Orphan Fix**: The `WireDoctorAnalyzer` bean itself is no longer incorrectly flagged as an orphan.
 - **Epistemic Honesty for Cycle Detection**: Documented the "Early-Reference Cycle Blindspot" acknowledging that cycles resolved silently by Spring's 3-level cache (when `allow-circular-references=true`) may bypass `getDependenciesForBean()` and remain unreported.

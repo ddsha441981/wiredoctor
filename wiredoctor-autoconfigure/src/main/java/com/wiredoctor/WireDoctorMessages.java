@@ -1,5 +1,20 @@
+/*
+ * Copyright (c) 2026 Deendayal Kumawat
+ *
+ * SPDX-License-Identifier: MIT OR Apache-2.0
+ */
 package com.wiredoctor;
 
+/**
+ * Centralized constant definitions for all console and log messages 
+ * emitted by the WireDoctor diagnostic suite.
+ * <p>
+ * Ensures consistency in formatting, localization readiness, and simplifies 
+ * log structure modifications without impacting core analysis logic.
+ *
+ * @author Deendayal Kumawat
+ * @since 0.1.0
+ */
 public final class WireDoctorMessages {
 
     public static final String BANNER_TOP = "\n==================================================";
@@ -27,6 +42,18 @@ public final class WireDoctorMessages {
     public static final String PROXY_JDK_ITEM = "  - JDK Proxies: {}";
     
     public static final String BANNER_END = "==================================================\n";
+
+    public static final String BEAN_CATEGORIES_HEADER = "\n[WireDoctor] Bean Category Summary:";
+    public static final String BEAN_USER_DEFINED     = "  - User-defined Beans : {}";
+    public static final String BEAN_FRAMEWORK        = "  - Framework Beans    : {}";
+    public static final String BEAN_ROLE_APP         = "  - Role Application   : {}";
+    public static final String BEAN_ROLE_INFRA       = "  - Role Infrastructure: {}";
+
+    public static final String SLOW_BEANS_HEADER     = "\n[WireDoctor] Slow Bean Instantiation (threshold: {}ms):";
+    public static final String SLOW_BEANS_NONE       = "  - None detected above threshold";
+    public static final String SLOW_BEAN_ITEM        = "  - {} ({}ms)";
+
+    public static final String OUTPUT_PATH_INFO      = "[WireDoctor] Output directory: {}";
 
     private WireDoctorMessages() {
         // Prevent instantiation

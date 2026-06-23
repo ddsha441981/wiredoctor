@@ -44,6 +44,12 @@ wiredoctor.scan-packages=com.yourcompany.app
 
 # Multiple packages (comma-separated)
 wiredoctor.scan-packages=com.yourcompany.app,io.yourteam.service
+
+# Configure the path where HTML and JSON reports are saved (default: project root)
+wiredoctor.output-path=/path/to/your/reports
+
+# Customize the threshold for flagging a bean as "slow" during instantiation (default: 100ms)
+wiredoctor.slow-bean-threshold-ms=50
 ```
 
 ### 🛑 Production Safety (Disabling WireDoctor)

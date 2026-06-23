@@ -5,9 +5,28 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.wiredoctor</groupId>
     <artifactId>wiredoctor-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>pom</packaging>
     
+    <licenses>
+      <license>
+        <name>MIT License</name>
+        <url>https://opensource.org/licenses/MIT</url>
+      </license>
+      <license>
+        <name>Apache License, Version 2.0</name>
+        <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+      </license>
+    </licenses>
+    
+    <developers>
+      <developer>
+        <id>ddsha441981</id>
+        <name>Deendayal Kumawat</name>
+        <email>deendayal_kumawat@hotmail.com</email>
+        <url>https://github.com/ddsha441981</url>
+      </developer>
+    </developers>
     <modules>
         <module>wiredoctor-autoconfigure</module>
         <module>wiredoctor-test</module>
