@@ -81,20 +81,30 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      * The entire analysis is defensively wrapped: no failure inside WireDoctor
      * (bad configuration, unexpected Spring state, reflection errors) is ever
      * allowed to propagate and affect the host application.
+     * <p>
+     * The single deliberate exception: when the user opted into a regression
+     * gate via {@code wiredoctor.fail-on} and it trips, a
+     * {@link WireDoctorRegressionException} is thrown AFTER analysis completes
+     * so a CI run fails with a non-zero exit code.
      *
      * @param event the event indicating that the application context is fully ready
      */
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        WireDoctorRegressionException trippedGate = null;
         try {
-            analyze(event);
+            trippedGate = analyze(event);
         } catch (Throwable t) {
             // Deliberately catch Throwable: a diagnostic tool must NEVER take down the host app.
             log.error(WireDoctorMessages.ANALYSIS_FAILED, t);
         }
+        if (trippedGate != null) {
+            // Opt-in CI gate: the ONLY path where WireDoctor fails the host — by explicit request.
+            throw trippedGate;
+        }
     }
 
-    private void analyze(ApplicationReadyEvent event) {
+    private WireDoctorRegressionException analyze(ApplicationReadyEvent event) {
         log.info(WireDoctorMessages.BANNER_TOP);
         log.info(WireDoctorMessages.BANNER_TEXT);
         log.info(WireDoctorMessages.BANNER_BOTTOM);
@@ -121,6 +131,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         ApplicationStartup applicationStartup = context.getApplicationStartup();
         List<Map<String, Object>> slowSteps = new ArrayList<>();
         List<Map<String, Object>> slowBeans = new ArrayList<>();
+        // Feature (v0.2.0): full per-bean instantiation times for the critical path —
+        // ALL beans, not just those above the slow threshold.
+        Map<String, Long> beanInstantiationMs = new HashMap<>();
 
         if (applicationStartup instanceof BufferingApplicationStartup bufferingStartup) {
             StartupTimeline timeline = bufferingStartup.getBufferedTimeline();
@@ -145,7 +158,6 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             for (StartupTimeline.TimelineEvent e : timeline.getEvents()) {
                 if (!"spring.beans.instantiate".equals(e.getStartupStep().getName())) continue;
                 long durationMs = e.getDuration().toMillis();
-                if (durationMs < slowBeanThresholdMs) continue;
 
                 String beanName = "unknown";
                 for (StartupStep.Tag tag : e.getStartupStep().getTags()) {
@@ -154,6 +166,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                         break;
                     }
                 }
+                // Instantiate steps nest (a bean's constructor triggers its deps),
+                // so keep the max per bean name rather than overwriting.
+                beanInstantiationMs.merge(beanName, durationMs, Math::max);
+
+                if (durationMs < slowBeanThresholdMs) continue;
                 Map<String, Object> beanInfo = new LinkedHashMap<>();
                 beanInfo.put("beanName", beanName);
                 beanInfo.put("durationMs", durationMs);
@@ -300,6 +317,20 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         dependencyInfo.put("graph",           graph);
         report.put("dependencies", dependencyInfo);
 
+        // ── Feature (v0.2.0): Startup Critical Path ──────────────────────────
+        // Longest instantiation-weighted dependency chain — what actually gated
+        // readiness, not a flat sorted list. Pure computation over data we
+        // already have; empty when timings are unavailable (non-buffering startup).
+        List<WireDoctorCriticalPath.PathNode> criticalPath =
+                WireDoctorCriticalPath.compute(graph, beanInstantiationMs);
+        long readinessMs = 0;
+        try {
+            if (event.getTimeTaken() != null) {
+                readinessMs = event.getTimeTaken().toMillis();
+            }
+        } catch (Exception ignored) {}
+        report.put("criticalPath", WireDoctorCriticalPath.toReportMap(criticalPath, readinessMs));
+
         // ── Write JSON ────────────────────────────────────────────────────────
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -316,6 +347,10 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } catch (Exception e) {
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
         }
+
+        // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
+        WireDoctorRegressionException trippedGate =
+                runRegressionGuard(graph, cycles, report, outputDir);
 
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
@@ -352,6 +387,116 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                              b.get("beanName"), b.get("durationMs")));
         }
 
+        // Feature (v0.2.0): Critical path console output
+        if (!criticalPath.isEmpty()) {
+            long pathMs = criticalPath.get(criticalPath.size() - 1).cumulativeMs();
+            if (readinessMs > 0) {
+                log.info(WireDoctorMessages.CRITICAL_PATH_HEADER_PCT,
+                         Math.round(pathMs * 1000.0 / readinessMs) / 10.0, pathMs);
+            } else {
+                log.info(WireDoctorMessages.CRITICAL_PATH_HEADER, pathMs);
+            }
+            log.info(WireDoctorMessages.CRITICAL_PATH_CHAIN,
+                     WireDoctorCriticalPath.render(criticalPath));
+            log.info(WireDoctorMessages.CRITICAL_PATH_NOTE);
+        }
+
         log.info(WireDoctorMessages.BANNER_END);
+        return trippedGate;
+    }
+
+    /**
+     * Architectural Regression Guard (v0.2.0).
+     * <p>
+     * In {@code baseline-write} mode, saves the current report as the new
+     * baseline. Otherwise, when a baseline path is configured, diffs the
+     * current graph against it, writes {@code wiredoctor-diff.json}, logs a
+     * summary, and — only if the user opted in via
+     * {@code wiredoctor.fail-on=new-cycle} — returns the gate exception for
+     * the caller to throw after analysis completes.
+     * <p>
+     * Every failure path here degrades gracefully: missing baseline → info
+     * log, unreadable baseline → warning, write failure → error log. The gate
+     * exception is the only intentional signal that leaves this method.
+     *
+     * @param graph     the current dependency graph
+     * @param cycles    the current detected cycles
+     * @param report    the full current report (persisted as baseline in write mode)
+     * @param outputDir directory for {@code wiredoctor-diff.json}
+     * @return the gate exception to throw, or {@code null} when no gate tripped
+     */
+    private WireDoctorRegressionException runRegressionGuard(Map<String, String[]> graph,
+                                                             List<List<String>> cycles,
+                                                             Map<String, Object> report,
+                                                             File outputDir) {
+        String baselinePath = properties.getBaseline();
+        if (baselinePath == null || baselinePath.isBlank()) {
+            return null; // feature not enabled
+        }
+        File baselineFile = new File(baselinePath);
+        ObjectMapper mapper = new ObjectMapper();
+
+        if (properties.isBaselineWrite()) {
+            try {
+                mapper.enable(SerializationFeature.INDENT_OUTPUT);
+                File parent = baselineFile.getAbsoluteFile().getParentFile();
+                if (parent != null && !parent.exists()) parent.mkdirs();
+                Files.writeString(baselineFile.toPath(), mapper.writeValueAsString(report));
+                log.info(WireDoctorMessages.BASELINE_WRITTEN, baselineFile.getAbsolutePath());
+            } catch (Exception e) {
+                log.error(WireDoctorMessages.BASELINE_WRITE_FAILED,
+                          baselineFile.getAbsolutePath(), e.getMessage());
+            }
+            return null; // write mode never diffs or gates
+        }
+
+        if (!baselineFile.isFile()) {
+            log.info(WireDoctorMessages.BASELINE_MISSING, baselineFile.getAbsolutePath());
+            return null;
+        }
+
+        WireDoctorBaselineDiff.Snapshot baseline;
+        try {
+            baseline = WireDoctorBaselineDiff.Snapshot.fromJson(mapper.readTree(baselineFile));
+        } catch (Exception e) {
+            log.warn(WireDoctorMessages.BASELINE_UNREADABLE,
+                     baselineFile.getAbsolutePath(), e.getMessage());
+            return null;
+        }
+
+        WireDoctorBaselineDiff.Snapshot current =
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles);
+        WireDoctorBaselineDiff.DiffResult diff = WireDoctorBaselineDiff.diff(baseline, current);
+
+        log.info(WireDoctorMessages.DIFF_HEADER, baselineFile.getName());
+        if (diff.isEmpty()) {
+            log.info(WireDoctorMessages.DIFF_NO_CHANGES);
+        } else {
+            log.info(WireDoctorMessages.DIFF_SUMMARY,
+                    diff.addedBeans().size(), diff.removedBeans().size(),
+                    diff.addedEdges().size(), diff.removedEdges().size(),
+                    diff.newCycles().size(), diff.resolvedCycles().size());
+            diff.newCycles().forEach(c ->
+                    log.info(WireDoctorMessages.DIFF_NEW_CYCLE_ITEM, String.join(" -> ", c)));
+        }
+
+        try {
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            File diffFile = new File(outputDir, "wiredoctor-diff.json");
+            Files.writeString(diffFile.toPath(), mapper.writeValueAsString(diff.toReportMap()));
+            log.info(WireDoctorMessages.DIFF_SAVED, diffFile.getAbsolutePath());
+        } catch (Exception e) {
+            log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
+        }
+
+        if (properties.isFailOnNewCycle() && diff.hasNewCycles()) {
+            log.error(WireDoctorMessages.GATE_TRIPPED,
+                      properties.getFailOn(), diff.newCycles().size());
+            return new WireDoctorRegressionException(
+                    "WireDoctor regression gate 'new-cycle' tripped: "
+                    + diff.newCycles().size() + " new bean dependency cycle(s) vs baseline "
+                    + baselineFile.getName() + ": " + diff.newCycles());
+        }
+        return null;
     }
 }

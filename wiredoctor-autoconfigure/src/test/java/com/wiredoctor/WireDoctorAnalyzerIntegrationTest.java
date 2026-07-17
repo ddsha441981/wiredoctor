@@ -167,6 +167,55 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    @Test
+    void criticalPathSectionIsInReportWithOrderedCumulativeTimes(@TempDir Path tempDir) throws Exception {
+        // v0.2.0 Feature 2: the report carries an instantiation-weighted critical
+        // path joined from the graph + full per-bean timings, with the honesty
+        // disclaimer attached.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+
+            JsonNode section = report.path("criticalPath");
+            assertThat(section.isObject()).isTrue();
+            assertThat(section.path("disclaimer").asText()).contains("approximation");
+
+            if (section.path("available").asBoolean()) {
+                List<JsonNode> nodes = iterableToList(section.path("path"));
+                assertThat(nodes).isNotEmpty();
+                // Cumulative times are non-decreasing along the chain and end at totalMs.
+                long previous = 0;
+                for (JsonNode node : nodes) {
+                    assertThat(node.path("beanName").asText()).isNotBlank();
+                    long cumulative = node.path("cumulativeMs").asLong();
+                    assertThat(cumulative).isGreaterThanOrEqualTo(previous);
+                    previous = cumulative;
+                }
+                assertThat(section.path("totalMs").asLong()).isEqualTo(previous);
+            }
+        }
+    }
+
+    @Test
+    void htmlReportIsSelfContainedWithInlinedGraphLibrary(@TempDir Path tempDir) throws Exception {
+        // v0.2.0: BUG-2 Option A — vis-network is bundled and inlined, so the
+        // report renders fully offline. No external <script src> may remain.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            String html = java.nio.file.Files.readString(
+                    tempDir.resolve("wiredoctor-report.html"));
+
+            assertThat(html)
+                    .as("graph library must be inlined, not loaded from a CDN")
+                    .doesNotContain("src=\"https://unpkg.com")
+                    .contains("vis-network")
+                    .contains("Almende B.V."); // attribution comment present
+            // The inlined UMD bundle is ~600KB — a self-contained report must carry it.
+            assertThat(html.length()).isGreaterThan(500_000);
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);

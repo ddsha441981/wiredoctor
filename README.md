@@ -1,16 +1,41 @@
 # 🩺 WireDoctor
 > *"Your bean graph has a story. WireDoctor reads it."*
 
-WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. It works as an auto-configuration starter that hooks directly into the real, resolved Spring `ApplicationContext` without requiring any build-tool changes. **Zero-intrusion, zero-dashboard-server, pure insights.** Compatible with Spring Boot **2.4+ and 3.x** (startup timings require `BufferingApplicationStartup`, available since Boot 2.4; a full verified compatibility matrix is planned for v0.2.0).
+WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. It works as an auto-configuration starter that hooks directly into the real, resolved Spring `ApplicationContext` without requiring any build-tool changes. **Zero-intrusion, zero-dashboard-server, pure insights.** See the [supported versions](#-supported-versions) table below — every listed combination is verified by CI on each build.
 
 ---
 
-## ✨ Features (v0.1.0)
-- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. *Note: the report data is fully embedded, but the graph library loads from a CDN — internet access is required for the graph view (the sidebar stats work offline).*
+## ✨ Features
+
+### New in v0.2.0
+- 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
+- ⛓️ **Startup Critical Path**: The longest instantiation-weighted dependency chain gating your startup — the `criticalPath` report section and a console summary show which chain of beans your readiness time actually sits on (instantiation-weighted approximation; parallel init is not modeled).
+- 📦 **Truly self-contained HTML**: The vis-network graph library is bundled and inlined into `wiredoctor-report.html` at generation time — the report renders fully offline.
+
+### Since v0.1.0
+- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. The report is fully self-contained — the vis-network graph library is bundled and inlined at generation time, so it renders completely offline.
 - ⏱️ **Startup Timings**: Hooks into `ApplicationStartup` via `BufferingApplicationStartup` early in the lifecycle to measure and report exact bean instantiation times without reflection-heavy heuristics.
 - 🔗 **Dependency Graph Analysis**: Directly hooks `ConfigurableListableBeanFactory.getDependenciesForBean` to view the completely resolved dependency graph.
 - 🔄 **Circular Dependency Detection**: Runs a Tarjan's SCC cycle detector over the bean graph to find structural design smells, even if Spring resolves them via proxies/setters.
 - 🎭 **Proxy Overhead Counter**: Scans for CGLIB and JDK proxies (e.g. `@Async`, `@Transactional`) in your bean graph to expose hidden indirection layers.
+
+---
+
+## ✅ Supported Versions
+
+The full test suite runs against this matrix in CI ([compat.yml](.github/workflows/compat.yml)); the table below reflects what is actually green, not what we hope works:
+
+| Spring Boot | Java 17 | Java 21 | Java 25 |
+|-------------|:-------:|:-------:|:-------:|
+| 2.7.x       | ✅      | ✅      | ✅      |
+| 3.3.x       | ✅      | ✅      | ✅      |
+| 3.5.x       | ✅      | ✅      | ✅      |
+| 4.0.x       | ✅      | ✅      | ✅      |
+
+Notes:
+- **Floor is Boot 2.4**: startup timings need `BufferingApplicationStartup`, introduced in Boot 2.4. Lines older than 2.7 are not CI-verified — they may work, but you're on your own.
+- Boot lines between the tested ones (3.0–3.2, 3.4) are expected to work since WireDoctor only uses stable `spring-context` / `spring-boot` APIs, but only the listed lines carry a CI guarantee.
+- WireDoctor itself is compiled for **Java 17** bytecode, so Java 8/11 apps cannot load it even on Boot 2.7.
 
 ---
 
@@ -50,7 +75,17 @@ wiredoctor.output-path=/path/to/your/reports
 
 # Customize the threshold for flagging a bean as "slow" during instantiation (default: 100ms)
 wiredoctor.slow-bean-threshold-ms=50
+
+# --- Architectural Regression Guard (v0.2.0, opt-in) ---
+# Path to the committed architecture baseline; enables the diff
+wiredoctor.baseline=wiredoctor-baseline.json
+# Run once with this to create/refresh the baseline (never diffs or gates)
+wiredoctor.baseline-write=true
+# CI gate: fail startup when a cycle not in the baseline appears
+wiredoctor.fail-on=new-cycle
 ```
+
+See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.
 
 ### 🛑 Production Safety (Disabling WireDoctor)
 WireDoctor is enabled by default. If you accidentally leave the dependency in your production build, you can completely disable the analyzer to prevent it from running, writing reports, or exposing bean structures by setting:

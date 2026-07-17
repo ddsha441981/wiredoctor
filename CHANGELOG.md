@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-17
+
+The category-defining release: WireDoctor stops being a snapshot visualizer and
+becomes an **architectural fitness function** that gates CI.
+
+### Highlights
+- 🛡️ **Architectural Regression Guard** — commit a baseline of your bean graph
+  like a lockfile, and **fail your PR when someone adds a bean cycle**
+  (`wiredoctor.fail-on=new-cycle`). See [docs/ci-gating.md](docs/ci-gating.md).
+- ⛓️ **Startup Critical Path** — the longest instantiation-weighted dependency
+  chain gating your readiness time, in the report and console.
+- 📦 **Truly self-contained HTML** — the graph library is now bundled and
+  inlined; the report renders fully offline. The v0.1.1 "honest docs" caveat
+  is retired.
+- ✅ **Verified compatibility matrix** — Boot 2.7 / 3.3 / 3.5 / 4.0 × Java
+  17 / 21 / 25, green in CI and published in the README.
+
+### Added
+- **Architectural Regression Guard** (opt-in, off by default):
+  - `wiredoctor.baseline=<path>` — diff the live bean graph against a committed
+    baseline JSON; differences are logged and written to `wiredoctor-diff.json`.
+  - `wiredoctor.baseline-write=true` — accept the current architecture as the
+    new baseline (never diffs or gates).
+  - `wiredoctor.fail-on=new-cycle` — throw `WireDoctorRegressionException`
+    after analysis completes so a CI run exits non-zero. This is the ONLY
+    exception WireDoctor ever lets escape, and only by explicit request.
+  - Cycle identity is the exact bean set: an existing cycle that grows counts
+    as a new cycle.
+  - `WireDoctorBaselineDiff` is a pure, Spring-free diff engine (12 unit tests);
+    7 integration tests cover the gate end-to-end, including a real
+    cyclic app tripping it.
+  - Graceful degradation everywhere: missing baseline → info log; unreadable
+    baseline → warning; diff write failure → error log. Never a crash.
+- **Startup Critical Path**: SCC-condensed dependency DAG → longest
+  instantiation-weighted path (iterative Kahn topological pass, O(V+E); cycle
+  super-nodes weigh the sum of their members). New `criticalPath` report
+  section (`totalMs`, `percentOfReadiness`, `path`, disclaimer) plus a one-line
+  console chain. Degrades gracefully when startup timings are unavailable
+  (non-buffering startup). Carries an explicit disclaimer: instantiation-weighted
+  approximation; parallel init is not modeled.
+- **CI gating guide** (`docs/ci-gating.md`): complete GitHub Actions recipe —
+  create the baseline, configure the gate, fail the PR, upload
+  `wiredoctor-diff.json` as an artifact on failure.
+- **Compatibility matrix CI** (`.github/workflows/compat.yml`) and a
+  supported-versions table in the README backed by it.
+
+### Changed
+- **HTML report is truly self-contained**: vis-network 10.0.1 (standalone UMD,
+  MIT/Apache-2.0) is bundled as a classpath resource and inlined into the HTML
+  at generation time with an attribution comment. The CDN is only a fallback
+  when the bundled resource is missing. README wording updated — the
+  "self-contained" claim is mechanically true again.
+- Analyzer now collects **all** bean instantiation timings (max-merge for
+  nested instantiate steps) instead of only slow ones, to feed the critical
+  path; readiness time comes from `ApplicationReadyEvent.getTimeTaken()`.
+- README compatibility claim replaced by the CI-verified matrix (floor remains
+  Boot 2.4 for startup timings; 2.7+ is what CI guarantees).
+
+### Notes
+- 62 tests green in `wiredoctor-autoconfigure`. Not published to Maven
+  Central — per the production roadmap, publishing resumes at v1.0.0.
+
 ## [0.1.2] - 2026-07-17
 
 Internal engineering release: no user-visible features. Test suite, typed
