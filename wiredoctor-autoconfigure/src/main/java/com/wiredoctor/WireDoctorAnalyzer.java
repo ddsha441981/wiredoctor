@@ -40,7 +40,16 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
     private static final Logger log = LoggerFactory.getLogger(WireDoctorAnalyzer.class);
 
-    private static final long DEFAULT_SLOW_BEAN_THRESHOLD_MS = 100L;
+    private final WireDoctorProperties properties;
+
+    /**
+     * Creates the analyzer with its typed configuration.
+     *
+     * @param properties the bound {@code wiredoctor.*} configuration
+     */
+    public WireDoctorAnalyzer(WireDoctorProperties properties) {
+        this.properties = properties;
+    }
 
     /**
      * Executes the comprehensive context analysis upon successful application startup.
@@ -70,20 +79,16 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 
         // ── Feature 1: Resolve output directory ──────────────────────────────
-        String outputPathProp = context.getEnvironment()
-                .getProperty("wiredoctor.output-path", System.getProperty("user.dir"));
-        File outputDir = new File(outputPathProp);
+        File outputDir = new File(properties.getOutputPath());
         if (!outputDir.exists()) outputDir.mkdirs();
         log.info(WireDoctorMessages.OUTPUT_PATH_INFO, outputDir.getAbsolutePath());
 
-        // ── Feature 3: Slow bean threshold (safe-parse, never crash on bad config) ──
-        long slowBeanThresholdMs = DEFAULT_SLOW_BEAN_THRESHOLD_MS;
-        String rawThreshold = context.getEnvironment()
-                .getProperty("wiredoctor.slow-bean-threshold-ms", String.valueOf(DEFAULT_SLOW_BEAN_THRESHOLD_MS));
-        try {
-            slowBeanThresholdMs = Long.parseLong(rawThreshold.trim());
-        } catch (NumberFormatException e) {
-            log.warn(WireDoctorMessages.BAD_THRESHOLD, rawThreshold, DEFAULT_SLOW_BEAN_THRESHOLD_MS);
+        // ── Feature 3: Slow bean threshold (lenient — never crash on bad config) ──
+        long slowBeanThresholdMs = properties.resolveSlowBeanThresholdMs();
+        if (!properties.isSlowBeanThresholdValid()) {
+            log.warn(WireDoctorMessages.BAD_THRESHOLD,
+                     properties.getSlowBeanThresholdMs(),
+                     WireDoctorProperties.DEFAULT_SLOW_BEAN_THRESHOLD_MS);
         }
 
         Map<String, Object> report = new LinkedHashMap<>();
@@ -220,7 +225,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         Set<String> allDependencies = new HashSet<>();
         graph.values().forEach(deps -> allDependencies.addAll(Arrays.asList(deps)));
 
-        String scanPackages = context.getEnvironment().getProperty("wiredoctor.scan-packages");
+        String scanPackages = properties.getScanPackages();
         List<String> orphanBeans = new ArrayList<>();
 
         for (String beanName : beanNames) {

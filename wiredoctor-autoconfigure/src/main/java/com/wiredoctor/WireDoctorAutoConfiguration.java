@@ -7,6 +7,7 @@ package com.wiredoctor;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Bean;
  * @since 0.1.0
  */
 @AutoConfiguration
+@EnableConfigurationProperties(WireDoctorProperties.class)
 @ConditionalOnProperty(
     name = "wiredoctor.enabled",
     havingValue = "true",
@@ -29,13 +31,14 @@ import org.springframework.context.annotation.Bean;
 public class WireDoctorAutoConfiguration {
 
     /**
-     * Provides the primary analyzer listener that processes startup metrics 
+     * Provides the primary analyzer listener that processes startup metrics
      * upon {@link org.springframework.boot.context.event.ApplicationReadyEvent}.
-     * 
+     *
+     * @param properties the typed {@code wiredoctor.*} configuration
      * @return the {@link WireDoctorAnalyzer} instance
      */
     @Bean
-    public WireDoctorAnalyzer wireDoctorAnalyzer() {
-        return new WireDoctorAnalyzer();
+    public WireDoctorAnalyzer wireDoctorAnalyzer(WireDoctorProperties properties) {
+        return new WireDoctorAnalyzer(properties);
     }
 }

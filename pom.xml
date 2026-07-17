@@ -73,6 +73,17 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.2.5</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <!-- JDK 23+ disables annotation processing by default; the
+                             spring-boot-configuration-processor needs it to generate
+                             spring-configuration-metadata.json (IDE autocomplete). -->
+                        <proc>full</proc>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
