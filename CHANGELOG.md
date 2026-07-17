@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-07-17
+
+Internal engineering release: no user-visible features. Test suite, typed
+properties, iterative Tarjan, and a CI coverage gate make every future
+release safe to ship.
+
+### Added
+- **Test suite (29 tests, 87% line coverage)**: `CycleDetector` unit tests (self-loop, nested SCCs, disconnected graphs, 10k-node deep chain and giant cycle), `WireDoctorProperties` binding/parsing tests, and 7 end-to-end integration tests that boot a real Spring context and pin down every v0.1.1 trust guarantee (bad config never crashes host, `@Lazy` beans never instantiated, `enabled=false` truly disables, read-only filesystem degrades to log-only, repeated analysis is idempotent).
+- **`WireDoctorProperties` (@ConfigurationProperties("wiredoctor"))**: typed binding with all defaults in one place; generated `spring-configuration-metadata.json` gives IDE autocomplete for `wiredoctor.*` keys. The slow-bean threshold binds leniently (a malformed value degrades to the 100ms default with a warning, never a bind failure).
+- **JaCoCo coverage gate**: build fails under 80% line coverage on `wiredoctor-autoconfigure`.
+- **CI matrix**: `mvn verify` on Java 17 and 21; JaCoCo report uploaded as a build artifact.
+
+### Changed
+- **Iterative Tarjan**: `CycleDetector` now uses an explicit frame stack instead of recursion — arbitrarily deep dependency chains can no longer cause `StackOverflowError`.
+- **Orphan-bean list**: the application's own `@SpringBootApplication` class is skipped (it always has 0 incoming dependencies; listing it was noise).
+- Raw `Environment.getProperty` reads replaced by the typed properties class throughout the analyzer.
+
+### Fixed
+- Configuration metadata was silently never generated in v0.1.x: JDK 23+ disables annotation processing by default; the compiler plugin now sets `proc=full`.
+
 ## [0.1.1] - 2026-07-17
 
 Trust patch: WireDoctor must never hurt the host application.
