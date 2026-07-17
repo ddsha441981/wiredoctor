@@ -59,6 +59,17 @@ public final class WireDoctorMessages {
     public static final String ANALYSIS_FAILED      = "[WireDoctor] Analysis failed; the host application is NOT affected. Cause:";
     public static final String PROXY_SKIPPED_ITEM   = "  - Not instantiated (skipped): {}";
 
+    public static final String BASELINE_WRITTEN       = "[WireDoctor] Baseline written to: {}";
+    public static final String BASELINE_WRITE_FAILED  = "[WireDoctor] Could not write baseline to {}: {}";
+    public static final String BASELINE_MISSING       = "[WireDoctor] No baseline found at {} — skipping diff. Run once with wiredoctor.baseline-write=true to create it.";
+    public static final String BASELINE_UNREADABLE    = "[WireDoctor] Baseline at {} could not be parsed ({}) — skipping diff.";
+    public static final String DIFF_HEADER            = "\n[WireDoctor] Baseline Diff (vs {}):";
+    public static final String DIFF_NO_CHANGES        = "  - No architectural changes vs baseline";
+    public static final String DIFF_SUMMARY           = "  - Beans: +{} -{} | Edges: +{} -{} | New cycles: {} | Resolved cycles: {}";
+    public static final String DIFF_NEW_CYCLE_ITEM    = "  - NEW CYCLE: {}";
+    public static final String DIFF_SAVED             = "[WireDoctor] Saved baseline diff to: {}";
+    public static final String GATE_TRIPPED           = "[WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on={}): {} new cycle(s) introduced vs baseline. Failing the application as configured.";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

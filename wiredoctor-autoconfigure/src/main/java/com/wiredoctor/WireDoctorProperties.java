@@ -53,6 +53,29 @@ public class WireDoctorProperties {
     private String slowBeanThresholdMs = String.valueOf(DEFAULT_SLOW_BEAN_THRESHOLD_MS);
 
     /**
+     * Path to a committed baseline report (typically
+     * {@code wiredoctor-baseline.json} in the repo root). When set, the current
+     * bean graph is diffed against it and {@code wiredoctor-diff.json} is
+     * written. A missing/unreadable file logs an info message and skips the
+     * diff — it never fails the application.
+     */
+    private String baseline;
+
+    /**
+     * When {@code true}, the current run's report is (re)written to the
+     * {@link #baseline} path instead of being diffed against it. Use this to
+     * intentionally accept the current architecture as the new baseline.
+     */
+    private boolean baselineWrite = false;
+
+    /**
+     * Comma-separated regression gates that fail the application after the
+     * report is written. Supported in v0.2.0: {@code new-cycle}. Empty
+     * (default) means report-only — the diff is written but never gates.
+     */
+    private String failOn;
+
+    /**
      * Parses {@link #slowBeanThresholdMs} leniently.
      *
      * @return the configured threshold, or {@value #DEFAULT_SLOW_BEAN_THRESHOLD_MS}
@@ -114,5 +137,40 @@ public class WireDoctorProperties {
 
     public void setSlowBeanThresholdMs(String slowBeanThresholdMs) {
         this.slowBeanThresholdMs = slowBeanThresholdMs;
+    }
+
+    public String getBaseline() {
+        return baseline;
+    }
+
+    public void setBaseline(String baseline) {
+        this.baseline = baseline;
+    }
+
+    public boolean isBaselineWrite() {
+        return baselineWrite;
+    }
+
+    public void setBaselineWrite(boolean baselineWrite) {
+        this.baselineWrite = baselineWrite;
+    }
+
+    public String getFailOn() {
+        return failOn;
+    }
+
+    public void setFailOn(String failOn) {
+        this.failOn = failOn;
+    }
+
+    /**
+     * @return {@code true} when the {@code new-cycle} gate is enabled via {@link #failOn}
+     */
+    public boolean isFailOnNewCycle() {
+        if (failOn == null || failOn.isBlank()) return false;
+        for (String gate : failOn.split(",")) {
+            if ("new-cycle".equals(gate.trim())) return true;
+        }
+        return false;
     }
 }
