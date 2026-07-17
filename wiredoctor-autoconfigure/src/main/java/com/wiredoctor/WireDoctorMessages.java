@@ -55,6 +55,10 @@ public final class WireDoctorMessages {
 
     public static final String OUTPUT_PATH_INFO      = "[WireDoctor] Output directory: {}";
 
+    public static final String BAD_THRESHOLD        = "[WireDoctor] Invalid value '{}' for wiredoctor.slow-bean-threshold-ms; using default {}ms";
+    public static final String ANALYSIS_FAILED      = "[WireDoctor] Analysis failed; the host application is NOT affected. Cause:";
+    public static final String PROXY_SKIPPED_ITEM   = "  - Not instantiated (skipped): {}";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

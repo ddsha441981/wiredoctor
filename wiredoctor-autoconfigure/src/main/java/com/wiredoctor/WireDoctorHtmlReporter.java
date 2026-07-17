@@ -10,11 +10,12 @@ import java.nio.file.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
- * Utility responsible for generating the self-contained, interactive HTML diagnostic report.
+ * Utility responsible for generating the single-file, interactive HTML diagnostic report.
  * <p>
  * Injects serialized JSON context data into a predefined HTML template utilizing
- * Vis.js for physics-based network graph rendering. The output is a zero-dependency 
- * file designed for immediate developer consumption.
+ * Vis.js for physics-based network graph rendering. The report data is fully embedded
+ * in the file; the graph library itself is loaded from a CDN (internet required for
+ * the graph view — a graceful notice is shown when offline).
  *
  * @author Deendayal Kumawat
  * @since 0.1.0
@@ -256,16 +257,26 @@ public class WireDoctorHtmlReporter {
                 });
 
                 const container = document.getElementById('graph-container');
-                const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-                const options = {
-                    physics: {
-                        barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 95 },
-                        minVelocity: 0.75
-                    },
-                    interaction: { hover: true, tooltipDelay: 100 },
-                    nodes: { borderWidth: 2 }
-                };
-                new vis.Network(container, data, options);
+                if (typeof vis === 'undefined') {
+                    // vis-network failed to load (offline / CDN blocked) — say so instead of a blank canvas.
+                    container.innerHTML = '<div style="display:flex;height:100%;align-items:center;justify-content:center;padding:40px;text-align:center;color:#94a3b8;font-size:15px;line-height:1.7;">' +
+                        '<div><div style="font-size:40px;margin-bottom:16px;">&#128268;</div>' +
+                        '<b style="color:#f8fafc;">Graph library could not be loaded</b><br>' +
+                        'The network graph uses vis-network from a CDN (unpkg.com).<br>' +
+                        'You appear to be offline or the CDN is blocked.<br>' +
+                        'All stats and lists in the sidebar are still available; reconnect and reload to see the graph.</div></div>';
+                } else {
+                    const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+                    const options = {
+                        physics: {
+                            barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 95 },
+                            minVelocity: 0.75
+                        },
+                        interaction: { hover: true, tooltipDelay: 100 },
+                        nodes: { borderWidth: 2 }
+                    };
+                    new vis.Network(container, data, options);
+                }
             </script>
         </body>
         </html>

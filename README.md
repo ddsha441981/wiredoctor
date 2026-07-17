@@ -1,12 +1,12 @@
 # 🩺 WireDoctor
 > *"Your bean graph has a story. WireDoctor reads it."*
 
-WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. It works as an auto-configuration starter that hooks directly into the real, resolved Spring `ApplicationContext` without requiring any build-tool changes. **Zero-intrusion, zero-dashboard-server, pure insights.** Fully compatible with Spring Boot **2.x, 3.x, and 4.x**.
+WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. It works as an auto-configuration starter that hooks directly into the real, resolved Spring `ApplicationContext` without requiring any build-tool changes. **Zero-intrusion, zero-dashboard-server, pure insights.** Compatible with Spring Boot **2.4+ and 3.x** (startup timings require `BufferingApplicationStartup`, available since Boot 2.4; a full verified compatibility matrix is planned for v0.2.0).
 
 ---
 
 ## ✨ Features (v0.1.0)
-- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a self-contained, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser.
+- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. *Note: the report data is fully embedded, but the graph library loads from a CDN — internet access is required for the graph view (the sidebar stats work offline).*
 - ⏱️ **Startup Timings**: Hooks into `ApplicationStartup` via `BufferingApplicationStartup` early in the lifecycle to measure and report exact bean instantiation times without reflection-heavy heuristics.
 - 🔗 **Dependency Graph Analysis**: Directly hooks `ConfigurableListableBeanFactory.getDependenciesForBean` to view the completely resolved dependency graph.
 - 🔄 **Circular Dependency Detection**: Runs a Tarjan's SCC cycle detector over the bean graph to find structural design smells, even if Spring resolves them via proxies/setters.
@@ -23,13 +23,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.1.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.1.1'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.

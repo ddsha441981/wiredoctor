@@ -40,13 +40,28 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
     private static final Logger log = LoggerFactory.getLogger(WireDoctorAnalyzer.class);
 
+    private static final long DEFAULT_SLOW_BEAN_THRESHOLD_MS = 100L;
+
     /**
      * Executes the comprehensive context analysis upon successful application startup.
+     * <p>
+     * The entire analysis is defensively wrapped: no failure inside WireDoctor
+     * (bad configuration, unexpected Spring state, reflection errors) is ever
+     * allowed to propagate and affect the host application.
      *
      * @param event the event indicating that the application context is fully ready
      */
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
+        try {
+            analyze(event);
+        } catch (Throwable t) {
+            // Deliberately catch Throwable: a diagnostic tool must NEVER take down the host app.
+            log.error(WireDoctorMessages.ANALYSIS_FAILED, t);
+        }
+    }
+
+    private void analyze(ApplicationReadyEvent event) {
         log.info(WireDoctorMessages.BANNER_TOP);
         log.info(WireDoctorMessages.BANNER_TEXT);
         log.info(WireDoctorMessages.BANNER_BOTTOM);
@@ -61,11 +76,15 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         if (!outputDir.exists()) outputDir.mkdirs();
         log.info(WireDoctorMessages.OUTPUT_PATH_INFO, outputDir.getAbsolutePath());
 
-        // ── Feature 3: Slow bean threshold ───────────────────────────────────
-        long slowBeanThresholdMs = Long.parseLong(
-                context.getEnvironment()
-                       .getProperty("wiredoctor.slow-bean-threshold-ms", "100")
-        );
+        // ── Feature 3: Slow bean threshold (safe-parse, never crash on bad config) ──
+        long slowBeanThresholdMs = DEFAULT_SLOW_BEAN_THRESHOLD_MS;
+        String rawThreshold = context.getEnvironment()
+                .getProperty("wiredoctor.slow-bean-threshold-ms", String.valueOf(DEFAULT_SLOW_BEAN_THRESHOLD_MS));
+        try {
+            slowBeanThresholdMs = Long.parseLong(rawThreshold.trim());
+        } catch (NumberFormatException e) {
+            log.warn(WireDoctorMessages.BAD_THRESHOLD, rawThreshold, DEFAULT_SLOW_BEAN_THRESHOLD_MS);
+        }
 
         Map<String, Object> report = new LinkedHashMap<>();
 
@@ -174,13 +193,21 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         Map<String, String[]> graph = new HashMap<>();
         List<String> cglibProxies = new ArrayList<>();
         List<String> jdkProxies   = new ArrayList<>();
+        int proxyScanSkipped = 0;
         int totalDependencies = 0;
 
         for (String beanName : beanNames) {
+            // Zero-intrusion proxy scan: only inspect beans that are ALREADY instantiated.
+            // Calling getBean() here would force-instantiate @Lazy singletons, prototypes
+            // and FactoryBean products — mutating application state at report time.
             try {
-                Object bean = beanFactory.getBean(beanName);
-                if (AopUtils.isCglibProxy(bean))       cglibProxies.add(beanName);
-                else if (AopUtils.isJdkDynamicProxy(bean)) jdkProxies.add(beanName);
+                if (beanFactory.containsSingleton(beanName)) {
+                    Object bean = beanFactory.getSingleton(beanName);
+                    if (AopUtils.isCglibProxy(bean))           cglibProxies.add(beanName);
+                    else if (AopUtils.isJdkDynamicProxy(bean)) jdkProxies.add(beanName);
+                } else {
+                    proxyScanSkipped++;
+                }
             } catch (Exception ignored) {}
 
             String[] dependencies = beanFactory.getDependenciesForBean(beanName);
@@ -225,6 +252,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         proxyInfo.put("jdkCount",   jdkProxies.size());
         proxyInfo.put("cglibBeans", cglibProxies);
         proxyInfo.put("jdkBeans",   jdkProxies);
+        // Beans not yet instantiated (@Lazy, prototype, unresolved FactoryBean products)
+        // are deliberately NOT instantiated for this scan — honest count instead.
+        proxyInfo.put("notInstantiatedSkipped", proxyScanSkipped);
         report.put("proxies", proxyInfo);
 
         Map<String, Object> dependencyInfo = new LinkedHashMap<>();
@@ -268,6 +298,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         log.info(WireDoctorMessages.PROXY_HEADER);
         log.info(WireDoctorMessages.PROXY_CGLIB_ITEM, cglibProxies.size());
         log.info(WireDoctorMessages.PROXY_JDK_ITEM,   jdkProxies.size());
+        if (proxyScanSkipped > 0) {
+            log.info(WireDoctorMessages.PROXY_SKIPPED_ITEM, proxyScanSkipped);
+        }
 
         // Feature 2: Bean category summary console output
         log.info(WireDoctorMessages.BEAN_CATEGORIES_HEADER);
