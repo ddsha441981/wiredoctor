@@ -6,7 +6,7 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 ---
 
 ## ✨ Features (v0.1.0)
-- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. *Note: the report data is fully embedded, but the graph library loads from a CDN — internet access is required for the graph view (the sidebar stats work offline).*
+- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. The report is fully self-contained — the vis-network graph library is bundled and inlined at generation time, so it renders completely offline.
 - ⏱️ **Startup Timings**: Hooks into `ApplicationStartup` via `BufferingApplicationStartup` early in the lifecycle to measure and report exact bean instantiation times without reflection-heavy heuristics.
 - 🔗 **Dependency Graph Analysis**: Directly hooks `ConfigurableListableBeanFactory.getDependenciesForBean` to view the completely resolved dependency graph.
 - 🔄 **Circular Dependency Detection**: Runs a Tarjan's SCC cycle detector over the bean graph to find structural design smells, even if Spring resolves them via proxies/setters.

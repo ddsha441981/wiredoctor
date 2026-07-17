@@ -6,22 +6,53 @@
 package com.wiredoctor;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
  * Utility responsible for generating the single-file, interactive HTML diagnostic report.
  * <p>
- * Injects serialized JSON context data into a predefined HTML template utilizing
- * Vis.js for physics-based network graph rendering. The report data is fully embedded
- * in the file; the graph library itself is loaded from a CDN (internet required for
- * the graph view — a graceful notice is shown when offline).
+ * Injects serialized JSON context data into a predefined HTML template. The
+ * vis-network graph library (dual-licensed Apache-2.0 / MIT, © visjs
+ * contributors) is bundled on the classpath and inlined into the report, so
+ * the generated file is fully self-contained and renders offline. Only if the
+ * bundled resource is missing does the template fall back to loading the
+ * library from a CDN.
  *
  * @author Deendayal Kumawat
  * @since 0.1.0
  */
 public class WireDoctorHtmlReporter {
     private static final Logger log = LoggerFactory.getLogger(WireDoctorHtmlReporter.class);
+
+    /** Classpath location of the bundled vis-network standalone UMD build. */
+    static final String VIS_NETWORK_RESOURCE = "/wiredoctor/vis-network.min.js";
+
+    /**
+     * Loads the bundled vis-network library as an inline {@code <script>} block.
+     *
+     * @return the inline script tag, or a CDN {@code <script src>} tag when the
+     *         bundled resource cannot be read (never returns broken HTML)
+     */
+    private static String visNetworkScriptTag() {
+        try (InputStream in = WireDoctorHtmlReporter.class.getResourceAsStream(VIS_NETWORK_RESOURCE)) {
+            if (in != null) {
+                String js = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                // vis-network is dual-licensed Apache-2.0 / MIT; the bundle keeps its
+                // own copyright header. Attribution comment required for redistribution.
+                return "<!-- vis-network (https://visjs.github.io/vis-network/), "
+                        + "(c) 2011-2017 Almende B.V., (c) 2017+ vis.js contributors. "
+                        + "Dual-licensed Apache-2.0 / MIT. Inlined for offline use. -->\n"
+                        + "    <script type=\"text/javascript\">" + js + "</script>";
+            }
+        } catch (Exception e) {
+            log.warn(WireDoctorMessages.VIS_BUNDLE_UNAVAILABLE, e.getMessage());
+        }
+        log.warn(WireDoctorMessages.VIS_BUNDLE_UNAVAILABLE, "resource not found on classpath");
+        return "<script type=\"text/javascript\" src=\"https://unpkg.com/vis-network/standalone/umd/vis-network.min.js\"></script>";
+    }
 
     /**
      * Generates and writes the HTML report to the specified output directory.
@@ -37,7 +68,7 @@ public class WireDoctorHtmlReporter {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>WireDoctor Diagnostic Report</title>
-            <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+            <!-- VIS_NETWORK_INJECTION_POINT -->
             <style>
                 :root {
                     --bg-color: #0f172a;
@@ -258,13 +289,14 @@ public class WireDoctorHtmlReporter {
 
                 const container = document.getElementById('graph-container');
                 if (typeof vis === 'undefined') {
-                    // vis-network failed to load (offline / CDN blocked) — say so instead of a blank canvas.
+                    // Should not happen with the inlined bundle; only reachable via the
+                    // CDN fallback (bundled resource missing) while offline.
                     container.innerHTML = '<div style="display:flex;height:100%;align-items:center;justify-content:center;padding:40px;text-align:center;color:#94a3b8;font-size:15px;line-height:1.7;">' +
                         '<div><div style="font-size:40px;margin-bottom:16px;">&#128268;</div>' +
                         '<b style="color:#f8fafc;">Graph library could not be loaded</b><br>' +
-                        'The network graph uses vis-network from a CDN (unpkg.com).<br>' +
-                        'You appear to be offline or the CDN is blocked.<br>' +
-                        'All stats and lists in the sidebar are still available; reconnect and reload to see the graph.</div></div>';
+                        'This report was generated without the bundled vis-network library<br>' +
+                        'and the CDN fallback (unpkg.com) is unreachable.<br>' +
+                        'All stats and lists in the sidebar are still available.</div></div>';
                 } else {
                     const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
                     const options = {
@@ -280,7 +312,8 @@ public class WireDoctorHtmlReporter {
             </script>
         </body>
         </html>
-        """.replace("/* DATA_INJECTION_POINT */", jsonReport);
+        """.replace("<!-- VIS_NETWORK_INJECTION_POINT -->", visNetworkScriptTag())
+           .replace("/* DATA_INJECTION_POINT */", jsonReport);
 
         try {
             File htmlFile = new File(outputDir, "wiredoctor-report.html");

@@ -75,6 +75,8 @@ public final class WireDoctorMessages {
     public static final String CRITICAL_PATH_CHAIN      = "  - {}";
     public static final String CRITICAL_PATH_NOTE       = "    (Instantiation-weighted approximation; parallel init is not modeled)";
 
+    public static final String VIS_BUNDLE_UNAVAILABLE   = "[WireDoctor] Bundled vis-network library unavailable ({}); HTML report falls back to CDN (needs internet for the graph view).";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

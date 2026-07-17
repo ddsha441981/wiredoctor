@@ -197,6 +197,25 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    @Test
+    void htmlReportIsSelfContainedWithInlinedGraphLibrary(@TempDir Path tempDir) throws Exception {
+        // v0.2.0: BUG-2 Option A — vis-network is bundled and inlined, so the
+        // report renders fully offline. No external <script src> may remain.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            String html = java.nio.file.Files.readString(
+                    tempDir.resolve("wiredoctor-report.html"));
+
+            assertThat(html)
+                    .as("graph library must be inlined, not loaded from a CDN")
+                    .doesNotContain("src=\"https://unpkg.com")
+                    .contains("vis-network")
+                    .contains("Almende B.V."); // attribution comment present
+            // The inlined UMD bundle is ~600KB — a self-contained report must carry it.
+            assertThat(html.length()).isGreaterThan(500_000);
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);
