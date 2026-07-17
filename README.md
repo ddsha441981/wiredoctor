@@ -5,7 +5,14 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ---
 
-## ✨ Features (v0.1.0)
+## ✨ Features
+
+### New in v0.2.0
+- 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
+- ⛓️ **Startup Critical Path**: The longest instantiation-weighted dependency chain gating your startup — the `criticalPath` report section and a console summary show which chain of beans your readiness time actually sits on (instantiation-weighted approximation; parallel init is not modeled).
+- 📦 **Truly self-contained HTML**: The vis-network graph library is bundled and inlined into `wiredoctor-report.html` at generation time — the report renders fully offline.
+
+### Since v0.1.0
 - 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. The report is fully self-contained — the vis-network graph library is bundled and inlined at generation time, so it renders completely offline.
 - ⏱️ **Startup Timings**: Hooks into `ApplicationStartup` via `BufferingApplicationStartup` early in the lifecycle to measure and report exact bean instantiation times without reflection-heavy heuristics.
 - 🔗 **Dependency Graph Analysis**: Directly hooks `ConfigurableListableBeanFactory.getDependenciesForBean` to view the completely resolved dependency graph.
@@ -68,7 +75,17 @@ wiredoctor.output-path=/path/to/your/reports
 
 # Customize the threshold for flagging a bean as "slow" during instantiation (default: 100ms)
 wiredoctor.slow-bean-threshold-ms=50
+
+# --- Architectural Regression Guard (v0.2.0, opt-in) ---
+# Path to the committed architecture baseline; enables the diff
+wiredoctor.baseline=wiredoctor-baseline.json
+# Run once with this to create/refresh the baseline (never diffs or gates)
+wiredoctor.baseline-write=true
+# CI gate: fail startup when a cycle not in the baseline appears
+wiredoctor.fail-on=new-cycle
 ```
+
+See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.
 
 ### 🛑 Production Safety (Disabling WireDoctor)
 WireDoctor is enabled by default. If you accidentally leave the dependency in your production build, you can completely disable the analyzer to prevent it from running, writing reports, or exposing bean structures by setting:
