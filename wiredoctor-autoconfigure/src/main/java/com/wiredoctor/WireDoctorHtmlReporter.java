@@ -251,18 +251,25 @@ public class WireDoctorHtmlReporter {
                     });
                 }
 
+                // v0.3.0: scale node size by fan-in (more dependents = bigger).
+                // sqrt scaling keeps hubs prominent without dwarfing the rest.
+                const fanInMap = (reportData.smells && reportData.smells.fanIn) || {};
+
                 nodeSet.forEach(bean => {
                     let color = '#10b981';
                     let shadow = false;
                     let size = 15;
 
+                    const fanIn = fanInMap[bean] || 0;
+                    size = 15 + Math.round(Math.sqrt(fanIn) * 4);
+
                     if (cycleBeans.has(bean)) {
                         color = '#ef4444';
                         shadow = { color: '#ef4444', size: 15 };
-                        size = 25;
+                        size = Math.max(size, 25);
                     } else if (proxyBeans.has(bean)) {
                         color = '#e76c87';
-                        size = 20;
+                        size = Math.max(size, 20);
                     } else if (orphanBeans.has(bean)) {
                         color = '#f97316';
                         size = 10;
@@ -271,7 +278,7 @@ public class WireDoctorHtmlReporter {
                     nodes.push({
                         id: bean,
                         label: bean.length > 25 ? bean.substring(0, 22) + '...' : bean,
-                        title: '<b>' + bean + '</b><br>' + (proxyBeans.has(bean) ? 'Status: Proxied<br>' : '') + (cycleBeans.has(bean) ? 'Status: In Circular Dependency<br>' : ''),
+                        title: '<b>' + bean + '</b><br>Dependents (fan-in): ' + fanIn + '<br>' + (proxyBeans.has(bean) ? 'Status: Proxied<br>' : '') + (cycleBeans.has(bean) ? 'Status: In Circular Dependency<br>' : ''),
                         color: { background: color, border: 'rgba(0,0,0,0.3)', highlight: { background: '#34d399', border: '#fff'} },
                         shadow: shadow,
                         size: size,

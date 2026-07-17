@@ -80,6 +80,11 @@ public final class WireDoctorMessages {
     public static final String LAZY_SUGGESTIONS_HEADER  = "\n[WireDoctor] @Lazy Suggestions to Break Cycles:";
     public static final String LAZY_SUGGESTION_ITEM     = "  {}. Make '{}' @Lazy (breaks {} cycle(s), impacts {} bean(s))";
 
+    public static final String SMELLS_HEADER            = "\n[WireDoctor] Architecture Smells (live graph):";
+    public static final String SMELL_FAN_IN_ITEM        = "  - Coupling hotspot : '{}' has {} dependents (fan-in)";
+    public static final String SMELL_FAN_OUT_ITEM       = "  - Wide dependency  : '{}' depends on {} beans (fan-out)";
+    public static final String SMELL_UNSTABLE_ITEM      = "  - Unstable         : '{}' I={} (fan-in {}, fan-out {})";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

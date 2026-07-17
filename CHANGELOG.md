@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blast radius (asc), then name for deterministic output. The console prints
   the top 5 with impact counts. Empty array (not absent) when no cycles exist.
   Pure computation over the already-built graph — zero-intrusion guarantees hold.
+- 📐 **Architecture Smell Metrics** — new `smells` report section computed on
+  the live resolved graph: top-10 fan-in hotspots (`highFanIn`, with dependents
+  listed), top-10 fan-out hotspots (`highFanOut`, with dependencies listed),
+  and beans over Martin's instability threshold (`unstable`,
+  `I = Ce/(Ca+Ce) ≥ 0.8`, fan-out ≥ 2 floor to skip trivial leaves). Console
+  prints top 3 per category. HTML graph nodes are now sized by fan-in
+  (sqrt-scaled) with fan-in shown in the hover tooltip.
 
 ## [0.2.0] - 2026-07-17
 

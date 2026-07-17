@@ -325,6 +325,13 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 WireDoctorLazySimulator.suggestLazyPlacements(graph, cycles);
         report.put("lazySuggestions", WireDoctorLazySimulator.toReportList(lazySuggestions));
 
+        // ── Feature (v0.3.0): Architecture Smell Metrics ─────────────────────
+        // Fan-in/fan-out hotspots + Martin's instability metric, computed on
+        // the live resolved graph (what Spring actually wired — proxies,
+        // conditionals, profiles included). Pure graph functions, no heuristics.
+        Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(graph);
+        report.put("smells", smells);
+
         // ── Feature (v0.2.0): Startup Critical Path ──────────────────────────
         // Longest instantiation-weighted dependency chain — what actually gated
         // readiness, not a flat sorted list. Pure computation over data we
@@ -382,6 +389,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             }
         }
 
+        // Feature (v0.3.0): architecture smell console output (top 3 per direction)
+        logSmellSummary(smells);
+
         log.info(WireDoctorMessages.PROXY_HEADER);
         log.info(WireDoctorMessages.PROXY_CGLIB_ITEM, cglibProxies.size());
         log.info(WireDoctorMessages.PROXY_JDK_ITEM,   jdkProxies.size());
@@ -422,6 +432,30 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         log.info(WireDoctorMessages.BANNER_END);
         return trippedGate;
+    }
+
+    /**
+     * Console summary for the {@code smells} report section (v0.3.0):
+     * top 3 fan-in hotspots, top 3 fan-out hotspots, and any beans over the
+     * instability threshold. Sections with no entries are skipped entirely.
+     */
+    @SuppressWarnings("unchecked")
+    private void logSmellSummary(Map<String, Object> smells) {
+        List<Map<String, Object>> highFanIn  = (List<Map<String, Object>>) smells.get("highFanIn");
+        List<Map<String, Object>> highFanOut = (List<Map<String, Object>>) smells.get("highFanOut");
+        List<Map<String, Object>> unstable   = (List<Map<String, Object>>) smells.get("unstable");
+
+        if (highFanIn.isEmpty() && highFanOut.isEmpty() && unstable.isEmpty()) {
+            return;
+        }
+        log.info(WireDoctorMessages.SMELLS_HEADER);
+        highFanIn.stream().limit(3).forEach(e ->
+                log.info(WireDoctorMessages.SMELL_FAN_IN_ITEM, e.get("beanName"), e.get("inDegree")));
+        highFanOut.stream().limit(3).forEach(e ->
+                log.info(WireDoctorMessages.SMELL_FAN_OUT_ITEM, e.get("beanName"), e.get("outDegree")));
+        unstable.stream().limit(3).forEach(e ->
+                log.info(WireDoctorMessages.SMELL_UNSTABLE_ITEM,
+                         e.get("beanName"), e.get("instability"), e.get("fanIn"), e.get("fanOut")));
     }
 
     /**

@@ -14,6 +14,7 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
     1. Make 'alphaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
     2. Make 'betaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
   ```
+- 📐 **Architecture Smell Metrics**: Classic architecture-health metrics computed on the *live, resolved* bean graph — what Spring actually wired (proxies, conditionals, profiles), not what the source declares. The `smells` report section includes top-10 **fan-in hotspots** (coupling / God Object smell), top-10 **fan-out hotspots** (Shotgun Surgery smell), and beans over Martin's **instability** threshold (`I = Ce/(Ca+Ce) ≥ 0.8`). Graph nodes in the HTML report are now sized by fan-in — the bigger the dot, the more beans depend on it.
 
 ### New in v0.2.0
 - 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
