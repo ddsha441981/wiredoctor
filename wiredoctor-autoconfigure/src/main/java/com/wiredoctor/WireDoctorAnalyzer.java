@@ -317,6 +317,14 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         dependencyInfo.put("graph",           graph);
         report.put("dependencies", dependencyInfo);
 
+        // ── Feature (v0.3.0): Counterfactual @Lazy Simulator ─────────────────
+        // For each detected cycle, rank which beans would break it if marked
+        // @Lazy — most cycles broken first, smallest blast radius (fan-in) next.
+        // Pure computation over the graph we already built; empty when no cycles.
+        List<WireDoctorLazySimulator.LazySuggestion> lazySuggestions =
+                WireDoctorLazySimulator.suggestLazyPlacements(graph, cycles);
+        report.put("lazySuggestions", WireDoctorLazySimulator.toReportList(lazySuggestions));
+
         // ── Feature (v0.2.0): Startup Critical Path ──────────────────────────
         // Longest instantiation-weighted dependency chain — what actually gated
         // readiness, not a flat sorted list. Pure computation over data we
@@ -361,6 +369,17 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         for (List<String> cycle : cycles) {
             log.info(WireDoctorMessages.CYCLE_ITEM, String.join(" -> ", cycle), cycle.get(0));
             log.info(WireDoctorMessages.CYCLE_NOTE);
+        }
+
+        // Feature (v0.3.0): @Lazy suggestions console output (top 5)
+        if (!lazySuggestions.isEmpty()) {
+            log.info(WireDoctorMessages.LAZY_SUGGESTIONS_HEADER);
+            int rank = 1;
+            for (WireDoctorLazySimulator.LazySuggestion s
+                    : lazySuggestions.subList(0, Math.min(5, lazySuggestions.size()))) {
+                log.info(WireDoctorMessages.LAZY_SUGGESTION_ITEM,
+                         rank++, s.beanName, s.breaksCycles.size(), s.downstreamImpact);
+            }
         }
 
         log.info(WireDoctorMessages.PROXY_HEADER);

@@ -77,6 +77,9 @@ public final class WireDoctorMessages {
 
     public static final String VIS_BUNDLE_UNAVAILABLE   = "[WireDoctor] Bundled vis-network library unavailable ({}); HTML report falls back to CDN (needs internet for the graph view).";
 
+    public static final String LAZY_SUGGESTIONS_HEADER  = "\n[WireDoctor] @Lazy Suggestions to Break Cycles:";
+    public static final String LAZY_SUGGESTION_ITEM     = "  {}. Make '{}' @Lazy (breaks {} cycle(s), impacts {} bean(s))";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }
