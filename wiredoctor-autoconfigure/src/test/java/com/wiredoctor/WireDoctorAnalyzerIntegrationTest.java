@@ -167,6 +167,36 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    @Test
+    void criticalPathSectionIsInReportWithOrderedCumulativeTimes(@TempDir Path tempDir) throws Exception {
+        // v0.2.0 Feature 2: the report carries an instantiation-weighted critical
+        // path joined from the graph + full per-bean timings, with the honesty
+        // disclaimer attached.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+
+            JsonNode section = report.path("criticalPath");
+            assertThat(section.isObject()).isTrue();
+            assertThat(section.path("disclaimer").asText()).contains("approximation");
+
+            if (section.path("available").asBoolean()) {
+                List<JsonNode> nodes = iterableToList(section.path("path"));
+                assertThat(nodes).isNotEmpty();
+                // Cumulative times are non-decreasing along the chain and end at totalMs.
+                long previous = 0;
+                for (JsonNode node : nodes) {
+                    assertThat(node.path("beanName").asText()).isNotBlank();
+                    long cumulative = node.path("cumulativeMs").asLong();
+                    assertThat(cumulative).isGreaterThanOrEqualTo(previous);
+                    previous = cumulative;
+                }
+                assertThat(section.path("totalMs").asLong()).isEqualTo(previous);
+            }
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);

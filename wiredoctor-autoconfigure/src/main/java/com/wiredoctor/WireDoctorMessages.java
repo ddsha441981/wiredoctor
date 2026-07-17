@@ -70,6 +70,11 @@ public final class WireDoctorMessages {
     public static final String DIFF_SAVED             = "[WireDoctor] Saved baseline diff to: {}";
     public static final String GATE_TRIPPED           = "[WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on={}): {} new cycle(s) introduced vs baseline. Failing the application as configured.";
 
+    public static final String CRITICAL_PATH_HEADER_PCT = "\n[WireDoctor] Startup Critical Path ({}% of readiness, {}ms):";
+    public static final String CRITICAL_PATH_HEADER     = "\n[WireDoctor] Startup Critical Path ({}ms):";
+    public static final String CRITICAL_PATH_CHAIN      = "  - {}";
+    public static final String CRITICAL_PATH_NOTE       = "    (Instantiation-weighted approximation; parallel init is not modeled)";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

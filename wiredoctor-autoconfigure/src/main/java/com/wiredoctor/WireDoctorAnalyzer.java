@@ -131,6 +131,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         ApplicationStartup applicationStartup = context.getApplicationStartup();
         List<Map<String, Object>> slowSteps = new ArrayList<>();
         List<Map<String, Object>> slowBeans = new ArrayList<>();
+        // Feature (v0.2.0): full per-bean instantiation times for the critical path —
+        // ALL beans, not just those above the slow threshold.
+        Map<String, Long> beanInstantiationMs = new HashMap<>();
 
         if (applicationStartup instanceof BufferingApplicationStartup bufferingStartup) {
             StartupTimeline timeline = bufferingStartup.getBufferedTimeline();
@@ -155,7 +158,6 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             for (StartupTimeline.TimelineEvent e : timeline.getEvents()) {
                 if (!"spring.beans.instantiate".equals(e.getStartupStep().getName())) continue;
                 long durationMs = e.getDuration().toMillis();
-                if (durationMs < slowBeanThresholdMs) continue;
 
                 String beanName = "unknown";
                 for (StartupStep.Tag tag : e.getStartupStep().getTags()) {
@@ -164,6 +166,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                         break;
                     }
                 }
+                // Instantiate steps nest (a bean's constructor triggers its deps),
+                // so keep the max per bean name rather than overwriting.
+                beanInstantiationMs.merge(beanName, durationMs, Math::max);
+
+                if (durationMs < slowBeanThresholdMs) continue;
                 Map<String, Object> beanInfo = new LinkedHashMap<>();
                 beanInfo.put("beanName", beanName);
                 beanInfo.put("durationMs", durationMs);
@@ -310,6 +317,20 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         dependencyInfo.put("graph",           graph);
         report.put("dependencies", dependencyInfo);
 
+        // ── Feature (v0.2.0): Startup Critical Path ──────────────────────────
+        // Longest instantiation-weighted dependency chain — what actually gated
+        // readiness, not a flat sorted list. Pure computation over data we
+        // already have; empty when timings are unavailable (non-buffering startup).
+        List<WireDoctorCriticalPath.PathNode> criticalPath =
+                WireDoctorCriticalPath.compute(graph, beanInstantiationMs);
+        long readinessMs = 0;
+        try {
+            if (event.getTimeTaken() != null) {
+                readinessMs = event.getTimeTaken().toMillis();
+            }
+        } catch (Exception ignored) {}
+        report.put("criticalPath", WireDoctorCriticalPath.toReportMap(criticalPath, readinessMs));
+
         // ── Write JSON ────────────────────────────────────────────────────────
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -364,6 +385,20 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             slowBeans.stream().limit(10).forEach(b ->
                     log.info(WireDoctorMessages.SLOW_BEAN_ITEM,
                              b.get("beanName"), b.get("durationMs")));
+        }
+
+        // Feature (v0.2.0): Critical path console output
+        if (!criticalPath.isEmpty()) {
+            long pathMs = criticalPath.get(criticalPath.size() - 1).cumulativeMs();
+            if (readinessMs > 0) {
+                log.info(WireDoctorMessages.CRITICAL_PATH_HEADER_PCT,
+                         Math.round(pathMs * 1000.0 / readinessMs) / 10.0, pathMs);
+            } else {
+                log.info(WireDoctorMessages.CRITICAL_PATH_HEADER, pathMs);
+            }
+            log.info(WireDoctorMessages.CRITICAL_PATH_CHAIN,
+                     WireDoctorCriticalPath.render(criticalPath));
+            log.info(WireDoctorMessages.CRITICAL_PATH_NOTE);
         }
 
         log.info(WireDoctorMessages.BANNER_END);
