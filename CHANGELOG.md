@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-07-17
+
+Trust patch: WireDoctor must never hurt the host application.
+
+### Fixed
+- **[HIGH] Crash-safety**: the entire analysis is now wrapped in `try/catch(Throwable)` — no failure inside WireDoctor (bad configuration, unexpected Spring state) can ever fail host application startup. Previously a malformed `wiredoctor.slow-bean-threshold-ms` (e.g. `50ms`) crashed the host app with "Application run failed".
+- **[HIGH] Zero-intrusion — forced bean instantiation**: the proxy scan no longer calls `getBean()` for every bean definition. It only inspects beans that are already instantiated (`containsSingleton`), so `@Lazy` singletons, prototypes, and `FactoryBean` products are never force-instantiated at report time. Skipped beans are reported honestly as `notInstantiatedSkipped`.
+- **[HIGH] Classpath pollution**: removed the `spring-boot-starter-actuator` compile dependency (`BufferingApplicationStartup` lives in spring-boot core). Host apps no longer silently get actuator + micrometer on their classpath. Dependencies are now only `spring-boot-autoconfigure`, `slf4j-api`, and `jackson-databind`.
+- **Threshold parsing**: `wiredoctor.slow-bean-threshold-ms` is safe-parsed; invalid values log a warning and fall back to the 100ms default.
+- **Demo app boots out-of-the-box**: `wiredoctor-test` now sets `spring.main.allow-circular-references=true` so its intentional AlphaBean↔BetaBean demo cycle boots flag-free and WireDoctor detects it.
+- **HTML report offline behavior**: when the vis-network CDN is unreachable, the report now shows a clear notice instead of a silent blank canvas (sidebar stats always work offline).
+
+### Changed
+- **Honest docs**: README no longer claims the HTML report is "self-contained" — report data is embedded but the graph library loads from a CDN (true self-containment is planned for v0.2.0). Compatibility claim corrected from "2.x, 3.x, 4.x" to "2.4+ and 3.x" pending a verified matrix.
+- **Single listener registration**: `WireDoctorStartupListener` is now registered only via `META-INF/spring.factories` (the mechanism Boot uses for `ApplicationStartingEvent`-time listeners); the redundant `ApplicationListener.imports` entry was removed.
+
 ## [0.1.0] - 2026-04-07
 
 ### Added
