@@ -9,16 +9,31 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '17', '21' ]
+    name: Build & Test (Java ${{ matrix.java }})
 
     steps:
     - uses: actions/checkout@v7
-    
-    - name: Set up JDK 17
+
+    - name: Set up JDK ${{ matrix.java }}
       uses: actions/setup-java@v5
       with:
-        java-version: '17'
+        java-version: ${{ matrix.java }}
         distribution: 'temurin'
         cache: maven
-        
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+
+    # 'verify' runs the full test suite AND the JaCoCo >=80% line-coverage
+    # gate on wiredoctor-autoconfigure — the build is red on any test
+    # failure or coverage drop.
+    - name: Build, test & coverage gate
+      run: mvn -B verify --file pom.xml
+
+    - name: Upload coverage report
+      if: matrix.java == '17'
+      uses: actions/upload-artifact@v4
+      with:
+        name: jacoco-report
+        path: wiredoctor-autoconfigure/target/site/jacoco/
