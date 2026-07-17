@@ -1,0 +1,41 @@
+name: Compatibility Matrix
+
+# Verifies wiredoctor-autoconfigure against every supported Spring Boot line
+# on every supported JDK. This backs the supported-versions table in the
+# README — if a combo turns red here, the table must change.
+#
+# Only the library module is built (-P '!dev'): the wiredoctor-test demo pins
+# its own spring-boot-maven-plugin and is not part of the compat contract.
+# JaCoCo is skipped — the coverage gate already runs in maven.yml.
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        boot: [ '2.7.18', '3.3.13', '3.5.15', '4.0.1' ]
+        java: [ '17', '21', '25' ]
+    name: Boot ${{ matrix.boot }} / Java ${{ matrix.java }}
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up JDK ${{ matrix.java }}
+      uses: actions/setup-java@v5
+      with:
+        java-version: ${{ matrix.java }}
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Verify against Boot ${{ matrix.boot }}
+      run: >
+        mvn -B -P '!dev' -pl wiredoctor-autoconfigure verify
+        -Dspring-boot.version=${{ matrix.boot }}
+        -Djacoco.skip=true
