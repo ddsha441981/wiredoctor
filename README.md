@@ -7,6 +7,14 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
+### New in v0.3.0 (unreleased)
+- 💡 **@Lazy Suggestions to Break Cycles**: When a cycle is detected, WireDoctor doesn't just report it — it tells you how to fix it. The `lazySuggestions` report section (and a ranked console summary) lists which beans, if marked `@Lazy`, would break the cycle — ranked by cycles broken first, then smallest blast radius (fewest downstream dependents):
+  ```
+  [WireDoctor] @Lazy Suggestions to Break Cycles:
+    1. Make 'alphaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
+    2. Make 'betaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
+  ```
+
 ### New in v0.2.0
 - 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
 - ⛓️ **Startup Critical Path**: The longest instantiation-weighted dependency chain gating your startup — the `criticalPath` report section and a console summary show which chain of beans your readiness time actually sits on (instantiation-weighted approximation; parallel init is not modeled).

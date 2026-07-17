@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- 💡 **Counterfactual @Lazy Simulator** — when cycles are detected, the report
+  now includes a `lazySuggestions` section listing which beans, if marked
+  `@Lazy`, would break each cycle. Ranked by cycles broken (desc), then fan-in
+  blast radius (asc), then name for deterministic output. The console prints
+  the top 5 with impact counts. Empty array (not absent) when no cycles exist.
+  Pure computation over the already-built graph — zero-intrusion guarantees hold.
+
 ## [0.2.0] - 2026-07-17
 
 The category-defining release: WireDoctor stops being a snapshot visualizer and
