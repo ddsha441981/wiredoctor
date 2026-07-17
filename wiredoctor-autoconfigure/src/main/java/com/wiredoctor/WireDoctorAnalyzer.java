@@ -10,13 +10,16 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.context.metrics.buffering.BufferingApplicationStartup;
 import org.springframework.boot.context.metrics.buffering.StartupTimeline;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.metrics.ApplicationStartup;
 import org.springframework.core.metrics.StartupStep;
+import org.springframework.util.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +52,27 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      */
     public WireDoctorAnalyzer(WireDoctorProperties properties) {
         this.properties = properties;
+    }
+
+    /**
+     * Returns whether the bean is the application's own {@code @SpringBootApplication}
+     * (or plain {@code @SpringBootConfiguration}) main class.
+     *
+     * @param beanFactory the bean factory to resolve the bean type from
+     * @param beanName    the bean to check
+     * @return {@code true} when the bean's user class carries {@code @SpringBootConfiguration}
+     */
+    private static boolean isSpringBootApplicationClass(ConfigurableListableBeanFactory beanFactory,
+                                                        String beanName) {
+        try {
+            Class<?> beanType = beanFactory.getType(beanName);
+            if (beanType == null) return false;
+            Class<?> userClass = ClassUtils.getUserClass(beanType); // unwrap CGLIB enhancement
+            // @SpringBootApplication is meta-annotated with @SpringBootConfiguration.
+            return AnnotatedElementUtils.hasAnnotation(userClass, SpringBootConfiguration.class);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -231,6 +255,10 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         for (String beanName : beanNames) {
             if (allDependencies.contains(beanName)) continue;
             if (beanName.toLowerCase().startsWith("wiredoctor")) continue;
+            // The @SpringBootApplication main class legitimately has 0 incoming
+            // dependencies — listing it as an "orphan" is correct per the heuristic
+            // but pure noise, so skip it.
+            if (isSpringBootApplicationClass(beanFactory, beanName)) continue;
             boolean include;
             try {
                 Class<?> beanType = beanFactory.getType(beanName);
