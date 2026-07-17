@@ -65,6 +65,16 @@
     </dependencyManagement>
 
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Default surefire from the Maven super-pom is too old for JUnit 5 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <!-- Core build plugins can go here -->
         </plugins>
