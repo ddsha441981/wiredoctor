@@ -54,6 +54,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shared baseline, as before). The report now records `activeProfiles`, and the
   `wiredoctor-gate.status` marker gains a `profiles=` line for traceability.
 
+### Documentation
+- 🔒 **Security posture guide** (`docs/security-posture.md`) — what the reports
+  expose (bean names ≈ internal architecture, edges, profiles, timings; never
+  credentials or bean state), recommendations (gitignore reports, disable in
+  production, guard the actuator endpoint), and the **offline-only promise**:
+  WireDoctor's JVM does zero network I/O ever — an auditable claim with a
+  one-line grep to verify it, plus the one honest nuance (the generated HTML's
+  browser-side CDN fallback for vis-network when the bundled copy is missing).
+  Linked from the README.
+
 ## [0.3.0] - 2026-07-18
 
 The "from report to advice" release: WireDoctor stops just describing your

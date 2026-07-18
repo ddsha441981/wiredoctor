@@ -111,6 +111,8 @@ WireDoctor is enabled by default. If you accidentally leave the dependency in yo
 wiredoctor.enabled=false
 ```
 
+For what the reports expose, how to handle them, and WireDoctor's **offline-only** network behavior (its JVM does zero network I/O), see the **[security posture guide](docs/security-posture.md)**.
+
 ---
 
 ## 🔬 Epistemic Honesty & Known Limitations
