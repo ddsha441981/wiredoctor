@@ -93,6 +93,19 @@ public class WireDoctorProperties {
     private String maxGraphNodes = String.valueOf(DEFAULT_MAX_GRAPH_NODES);
 
     /**
+     * Whether the architecture-smell rankings ({@code highFanIn},
+     * {@code highFanOut}, {@code unstable}) include framework-owned beans.
+     * <p>
+     * Defaults to {@code false}: framework beans (Spring, Tomcat, Jackson, ...)
+     * genuinely are the coupling hotspots of any Boot app, but users cannot
+     * refactor them, so ranking them first buries the actionable user-bean
+     * signal. The full {@code fanIn} map (used for HTML node sizing) is always
+     * complete regardless of this toggle. Set to {@code true} to rank every
+     * bean, framework included.
+     */
+    private boolean includeFrameworkSmells = false;
+
+    /**
      * Parses {@link #slowBeanThresholdMs} leniently.
      *
      * @return the configured threshold, or {@value #DEFAULT_SLOW_BEAN_THRESHOLD_MS}
@@ -197,6 +210,14 @@ public class WireDoctorProperties {
 
     public void setMaxGraphNodes(String maxGraphNodes) {
         this.maxGraphNodes = maxGraphNodes;
+    }
+
+    public boolean isIncludeFrameworkSmells() {
+        return includeFrameworkSmells;
+    }
+
+    public void setIncludeFrameworkSmells(boolean includeFrameworkSmells) {
+        this.includeFrameworkSmells = includeFrameworkSmells;
     }
 
     /**

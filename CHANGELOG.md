@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   JVM exit codes. Stale markers are deleted at the start of every guarded run —
   absence means "no verdict", so a crashed or skipped diff can never leave a
   previous run's verdict behind.
+- 🧹 **User-bean smell filtering** — the `smells` rankings (`highFanIn`,
+  `highFanOut`, `unstable`) now default to user-defined beans only. On real
+  apps the coupling hotspots are dominated by framework infrastructure
+  (`WebMvcAutoConfiguration`, `environment`, endpoint handler mappings) that
+  users cannot refactor, burying the actionable signal. The new
+  `wiredoctor.include-framework-smells` property (default `false`) restores the
+  full framework-included rankings. The report records `smells.frameworkFiltered`
+  so a consumer can tell "no smells" from "framework filtered out". The full
+  `smells.fanIn` map is never filtered — HTML node sizing keeps every node's
+  true coupling weight. As a side effect, the synthetic
+  `...ApplicationContext@hash` fan-in entries (which carry a per-boot JVM
+  identity hash) no longer surface in the rankings.
 
 ## [0.3.0] - 2026-07-18
 

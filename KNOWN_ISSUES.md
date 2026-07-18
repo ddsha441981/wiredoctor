@@ -4,7 +4,7 @@
 
 **Impact:** Medium / Feature-value  
 **Affected Feature:** Architecture Smell Metrics (`smells` report section)  
-**Status:** Fix planned (framework filtering)
+**Status:** ✅ Fixed in v0.4.0 (user-bean filtering, default on)
 
 ### Description
 
@@ -29,15 +29,22 @@ The metrics are honest — framework beans genuinely ARE the coupling hotspots
 of any Boot app. But users can't refactor framework wiring, so ranking it
 first buries the actionable signal.
 
-### Planned Fix (v0.4.0)
+### Fix (shipped v0.4.0)
 
-Reuse the existing framework classification (the `frameworkPkgs` list /
-`wiredoctor.scan-packages`) to either:
-- default the smell rankings to user-defined beans with a
-  `includeFramework: false` toggle, OR
-- report two parallel lists (`highFanIn` / `highFanInUser`).
+The framework classification (`frameworkPkgs`, now `WireDoctorBeanClassifier`)
+is reused to narrow the smell rankings to user beans by default:
+- `highFanIn` / `highFanOut` / `unstable` list user-defined beans only.
+- New `wiredoctor.include-framework-smells` property (default `false`) restores
+  the full framework-included rankings.
+- `smells.frameworkFiltered` records whether filtering was applied, so a
+  consumer can distinguish "no smells" from "framework filtered out".
+- The full `smells.fanIn` map stays unfiltered — HTML node sizing keeps every
+  node's true coupling weight.
 
-Console summary should print user-bean smells only.
+The console summary prints the (filtered) rankings, so it shows user-bean
+smells only by default. The synthetic `...ApplicationContext@hash` entries are
+classified framework and no longer leak into the rankings — resolving the
+identity-hash churn noted above.
 
 ### Discovered
 

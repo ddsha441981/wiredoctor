@@ -195,13 +195,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         int roleInfra        = 0;
         int userDefined      = 0;
         int frameworkOwned   = 0;
-
-        // Package prefixes that indicate "framework-owned" beans
-        List<String> frameworkPkgs = List.of(
-            "org.springframework", "org.apache", "com.sun",
-            "java.", "javax.", "jakarta.", "io.netty",
-            "com.fasterxml", "io.micrometer"
-        );
+        // Beans classified framework-owned by resolved type — reused below to
+        // filter the smell rankings down to beans a user can actually refactor.
+        Set<String> frameworkBeanNames = new HashSet<>();
 
         for (String beanName : beanNames) {
             // Role classification
@@ -219,9 +215,13 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 Class<?> beanType = beanFactory.getType(beanName);
                 if (beanType != null && beanType.getPackage() != null) {
                     String pkg = beanType.getPackage().getName();
-                    boolean isFramework = frameworkPkgs.stream().anyMatch(pkg::startsWith);
-                    if (isFramework) frameworkOwned++;
-                    else userDefined++;
+                    boolean isFramework = WireDoctorBeanClassifier.isFrameworkPackage(pkg);
+                    if (isFramework) {
+                        frameworkOwned++;
+                        frameworkBeanNames.add(beanName);
+                    } else {
+                        userDefined++;
+                    }
                 }
             } catch (Exception ignored) {}
         }
@@ -286,7 +286,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                 .map(String::trim)
                                 .anyMatch(pkg::startsWith);
                     } else {
-                        include = frameworkPkgs.stream().noneMatch(pkg::startsWith);
+                        include = !WireDoctorBeanClassifier.isFrameworkPackage(pkg);
                     }
                 } else {
                     include = scanPackages == null; // unknown package: include only in default mode
@@ -320,7 +320,20 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // the live resolved graph (what Spring actually wired — proxies,
         // conditionals, profiles included). Pure graph functions, no heuristics.
         // Computed BEFORE graph serialization: truncation below reuses fan-in.
-        Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(graph);
+        // By default the ranked lists (highFanIn/highFanOut/unstable) are
+        // narrowed to user beans: framework beans genuinely dominate the
+        // coupling hotspots of any Boot app, but users cannot refactor them,
+        // so ranking them first buries the actionable signal. A bean is
+        // "framework" if it was classified so by resolved type above, or if its
+        // name is itself a framework-package FQN (the synthetic
+        // ...ApplicationContext@hash fan-in entries that carry no bean type).
+        boolean includeFramework = properties.isIncludeFrameworkSmells();
+        java.util.function.Predicate<String> userBean = name ->
+                !frameworkBeanNames.contains(name)
+                        && !WireDoctorBeanClassifier.isFrameworkPackage(name);
+        Map<String, Object> smells = includeFramework
+                ? WireDoctorSmellDetector.toReportMap(graph)
+                : WireDoctorSmellDetector.toReportMap(graph, userBean, true);
         report.put("smells", smells);
 
         // ── Feature (v0.3.0): Large-Context Hardening ────────────────────────
