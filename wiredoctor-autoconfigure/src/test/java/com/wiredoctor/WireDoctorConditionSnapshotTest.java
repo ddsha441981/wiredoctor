@@ -8,10 +8,11 @@ package com.wiredoctor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport;
-import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
@@ -23,13 +24,40 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Extraction runs against a real {@link ConditionEvaluationReport} produced by
  * an {@link ApplicationContextRunner} — not a mock — so the test breaks if a
  * Boot upgrade changes the report API semantics we depend on.
+ * <p>
+ * The fixture uses only WireDoctor's own autoconfiguration plus a local
+ * {@code @ConditionalOnProperty} config: Spring Boot's autoconfig classes move
+ * between packages across major versions (e.g. Jackson in Boot 4), so relying
+ * on a specific Boot autoconfig would break the compat matrix (2.7 → 4.x).
+ * {@code @ConditionalOnProperty} is a {@code SpringBootCondition}, so its
+ * outcomes are recorded in the report exactly like an autoconfig's.
  */
 class WireDoctorConditionSnapshotTest {
 
+    /**
+     * Local condition fixture: one bean whose condition matches by default,
+     * one that never matches — giving deterministic {@code matched} +
+     * {@code notMatched} outcomes independent of the Boot version.
+     */
+    @Configuration(proxyBeanMethods = false)
+    static class ConditionFixture {
+        @Bean
+        @ConditionalOnProperty(name = "wd.fixture.on", havingValue = "true", matchIfMissing = true)
+        String matchedBean() {
+            return "on";
+        }
+
+        @Bean
+        @ConditionalOnProperty(name = "wd.fixture.absent", havingValue = "true")
+        String notMatchedBean() {
+            return "off";
+        }
+    }
+
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(
-                    JacksonAutoConfiguration.class,
-                    WireDoctorAutoConfiguration.class));
+            .withConfiguration(org.springframework.boot.autoconfigure.AutoConfigurations.of(
+                    WireDoctorAutoConfiguration.class))
+            .withUserConfiguration(ConditionFixture.class);
 
     // ── extract ──────────────────────────────────────────────────────────────
 
@@ -41,28 +69,23 @@ class WireDoctorConditionSnapshotTest {
     @Test
     void extractCapturesMatchedAndNotMatchedOutcomes() {
         runner.run(context -> {
-            ConditionEvaluationReport report =
-                    ConditionEvaluationReport.get(context.getSourceApplicationContext().getBeanFactory());
-            Map<String, WireDoctorConditionSnapshot.Outcome> outcomes =
-                    WireDoctorConditionSnapshot.extract(report);
+            Map<String, WireDoctorConditionSnapshot.Outcome> outcomes = extract(context);
 
             assertThat(outcomes).isNotEmpty();
-            // Jackson autoconfig is on the classpath and applies → matched.
-            assertThat(outcomes.keySet())
-                    .anyMatch(name -> name.contains("JacksonAutoConfiguration"));
+            // Our fixture guarantees both a matched and a notMatched outcome,
+            // regardless of the Boot version under test.
             assertThat(outcomes.values())
                     .extracting(WireDoctorConditionSnapshot.Outcome::outcome)
-                    .contains("matched");
+                    .contains("matched", "notMatched");
+            assertThat(outcomes.keySet()).anyMatch(name -> name.contains("matchedBean"));
+            assertThat(outcomes.keySet()).anyMatch(name -> name.contains("notMatchedBean"));
         });
     }
 
     @Test
     void notMatchedOutcomeCarriesReason() {
         runner.run(context -> {
-            ConditionEvaluationReport report =
-                    ConditionEvaluationReport.get(context.getSourceApplicationContext().getBeanFactory());
-            Map<String, WireDoctorConditionSnapshot.Outcome> outcomes =
-                    WireDoctorConditionSnapshot.extract(report);
+            Map<String, WireDoctorConditionSnapshot.Outcome> outcomes = extract(context);
 
             outcomes.values().stream()
                     .filter(o -> "notMatched".equals(o.outcome()))
@@ -74,13 +97,16 @@ class WireDoctorConditionSnapshotTest {
     @Test
     void extractIsSortedByClassNameForDeterministicBaselines() {
         runner.run(context -> {
-            ConditionEvaluationReport report =
-                    ConditionEvaluationReport.get(context.getSourceApplicationContext().getBeanFactory());
-            Map<String, WireDoctorConditionSnapshot.Outcome> outcomes =
-                    WireDoctorConditionSnapshot.extract(report);
-
+            Map<String, WireDoctorConditionSnapshot.Outcome> outcomes = extract(context);
             assertThat(new java.util.ArrayList<>(outcomes.keySet())).isSorted();
         });
+    }
+
+    private static Map<String, WireDoctorConditionSnapshot.Outcome> extract(
+            org.springframework.boot.test.context.assertj.AssertableApplicationContext context) {
+        ConditionEvaluationReport report = ConditionEvaluationReport.get(
+                context.getSourceApplicationContext().getBeanFactory());
+        return WireDoctorConditionSnapshot.extract(report);
     }
 
     // ── outcome equality (the diff signal) ───────────────────────────────────
