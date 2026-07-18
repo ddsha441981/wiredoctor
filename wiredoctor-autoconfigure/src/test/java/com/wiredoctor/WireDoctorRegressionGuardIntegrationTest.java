@@ -280,4 +280,144 @@ class WireDoctorRegressionGuardIntegrationTest {
                 "wiredoctor.output-path=" + tempDir)) { }
         assertThat(tempDir.resolve("wiredoctor-gate.status")).doesNotExist();
     }
+
+    // ── v0.5.0: condition diff + condition-changed gate ──────────────────────
+
+    /** Autoconfig class we flip from matched → excluded between baseline and diff. */
+    private static final String FLIP_AUTOCONFIG =
+            "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration";
+
+    @Test
+    void baselineCapturesConditionsSection(@TempDir Path tempDir) throws Exception {
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        JsonNode parsed = new ObjectMapper().readTree(baseline.toFile());
+        assertThat(parsed.path("conditions").isObject()).isTrue();
+        assertThat(parsed.path("conditions").size()).isPositive();
+    }
+
+    @Test
+    void flippedConditionWithGateArmedFailsTheApplication(@TempDir Path tempDir) throws Exception {
+        // 1. Baseline with Jackson autoconfig applying (matched).
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        // 2. Same app, but Jackson autoconfig now excluded → condition flips.
+        assertThatThrownBy(() -> boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.fail-on=condition-changed",
+                "spring.autoconfigure.exclude=" + FLIP_AUTOCONFIG))
+                .isInstanceOf(WireDoctorRegressionException.class)
+                .hasMessageContaining("condition-changed")
+                .hasMessageContaining("JacksonAutoConfiguration");
+
+        // Diff written before the gate fired — condition change is recorded.
+        JsonNode diff = new ObjectMapper()
+                .readTree(tempDir.resolve("wiredoctor-diff.json").toFile());
+        assertThat(diff.path("conditionDiff").path("available").asBoolean()).isTrue();
+        assertThat(diff.path("conditionDiff").path("changedCount").asInt()).isPositive();
+    }
+
+    @Test
+    void flippedConditionWithoutGateOnlyReports(@TempDir Path tempDir) throws Exception {
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        // No fail-on: condition change reported, app boots fine.
+        try (var context = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "spring.autoconfigure.exclude=" + FLIP_AUTOCONFIG)) {
+            assertThat(context.isActive()).isTrue();
+        }
+        JsonNode diff = new ObjectMapper()
+                .readTree(tempDir.resolve("wiredoctor-diff.json").toFile());
+        assertThat(diff.path("conditionDiff").path("changedCount").asInt()).isPositive();
+    }
+
+    @Test
+    void flippedConditionWritesFailMarkerWithConditionGate(@TempDir Path tempDir) throws Exception {
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        try (var context = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "spring.autoconfigure.exclude=" + FLIP_AUTOCONFIG)) {
+            assertThat(context.isActive()).isTrue();
+        }
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(lines.get(0)).isEqualTo("FAIL:condition-changed");
+        assertThat(lines).anyMatch(l -> l.startsWith("conditionsChanged="))
+                         .noneMatch(l -> l.equals("conditionsChanged=0"));
+    }
+
+    @Test
+    void combinedGatesReportBothInMarker(@TempDir Path tempDir) throws Exception {
+        // new-cycle AND condition-changed both fire → FAIL lists both, order stable.
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        try (var context = boot(CyclicApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "spring.autoconfigure.exclude=" + FLIP_AUTOCONFIG)) {
+            assertThat(context.isActive()).isTrue();
+        }
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(lines.get(0)).isEqualTo("FAIL:new-cycle,condition-changed");
+    }
+
+    @Test
+    void oldBaselineWithoutConditionsSkipsConditionDiffGracefully(@TempDir Path tempDir)
+            throws Exception {
+        // BACKWARD COMPAT: a v0.2.0-era baseline (no conditions section) must
+        // NOT trip the condition gate and must mark conditionDiff=skipped.
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        // Simulate an old baseline: dependencies only, no conditions.
+        Files.writeString(baseline,
+                "{\"dependencies\": {\"graph\": {\"standalone\": []}, \"cycles\": []}}");
+
+        try (var context = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.fail-on=condition-changed")) {
+            assertThat(context.isActive()).isTrue(); // gate must NOT trip
+        }
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(lines).anyMatch(l -> l.equals("conditionDiff=skipped"));
+    }
+
+    @Test
+    void conditionGateParsingHandlesListsAndCombos() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setFailOn("condition-changed");
+        assertThat(p.isFailOnConditionChanged()).isTrue();
+        assertThat(p.isFailOnNewCycle()).isFalse();
+        p.setFailOn(" new-cycle , condition-changed ");
+        assertThat(p.isFailOnNewCycle()).isTrue();
+        assertThat(p.isFailOnConditionChanged()).isTrue();
+        p.setFailOn("new-cycle");
+        assertThat(p.isFailOnConditionChanged()).isFalse();
+        p.setFailOn(null);
+        assertThat(p.isFailOnConditionChanged()).isFalse();
+    }
 }

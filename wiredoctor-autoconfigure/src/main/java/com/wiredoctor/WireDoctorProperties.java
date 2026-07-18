@@ -205,9 +205,21 @@ public class WireDoctorProperties {
      * @return {@code true} when the {@code new-cycle} gate is enabled via {@link #failOn}
      */
     public boolean isFailOnNewCycle() {
+        return hasGate("new-cycle");
+    }
+
+    /**
+     * @return {@code true} when the {@code condition-changed} gate is enabled
+     *         via {@link #failOn} (v0.5.0 Upgrade Guardian)
+     */
+    public boolean isFailOnConditionChanged() {
+        return hasGate("condition-changed");
+    }
+
+    private boolean hasGate(String gate) {
         if (failOn == null || failOn.isBlank()) return false;
-        for (String gate : failOn.split(",")) {
-            if ("new-cycle".equals(gate.trim())) return true;
+        for (String candidate : failOn.split(",")) {
+            if (gate.equals(candidate.trim())) return true;
         }
         return false;
     }

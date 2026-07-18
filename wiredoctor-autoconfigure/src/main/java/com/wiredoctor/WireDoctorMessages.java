@@ -70,6 +70,12 @@ public final class WireDoctorMessages {
     public static final String DIFF_SAVED             = "[WireDoctor] Saved baseline diff to: {}";
     public static final String GATE_TRIPPED           = "[WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on={}): {} new cycle(s) introduced vs baseline. Failing the application as configured.";
 
+    public static final String CONDITIONS_UNAVAILABLE         = "[WireDoctor] Condition evaluation report unavailable ({}) — conditions section skipped.";
+    public static final String CONDITION_DIFF_SUMMARY         = "  - Conditions: {} changed | {} added | {} removed";
+    public static final String CONDITION_DIFF_CHANGED_ITEM    = "  - CONDITION CHANGED: {} ({} -> {})";
+    public static final String CONDITION_DIFF_BASELINE_PREDATES = "  - Condition diff skipped: baseline predates condition tracking (v0.5.0). Rewrite the baseline to enable it.";
+    public static final String CONDITION_GATE_TRIPPED         = "[WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on={}): {} autoconfiguration condition outcome(s) changed vs baseline. Failing the application as configured.";
+
     public static final String CRITICAL_PATH_HEADER_PCT = "\n[WireDoctor] Startup Critical Path ({}% of readiness, {}ms):";
     public static final String CRITICAL_PATH_HEADER     = "\n[WireDoctor] Startup Critical Path ({}ms):";
     public static final String CRITICAL_PATH_CHAIN      = "  - {}";
