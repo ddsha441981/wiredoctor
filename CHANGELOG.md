@@ -29,6 +29,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   true coupling weight. As a side effect, the synthetic
   `...ApplicationContext@hash` fan-in entries (which carry a per-boot JVM
   identity hash) no longer surface in the rankings.
+- 🩺 **Actuator endpoint (new `wiredoctor-actuator` module)** — an optional,
+  separately-published artifact exposing the diagnostic report over
+  `/actuator/wiredoctor`. Read-only: it serves the in-memory report the core
+  produced at application-ready time (no analysis is triggered by an HTTP call,
+  the `BeanFactory` is never touched), and returns `{status: "PENDING"}` until
+  startup analysis completes. The endpoint auto-configures only when Actuator
+  is already on the classpath, WireDoctor is enabled, and the `wiredoctor`
+  endpoint is exposed per the standard `management.endpoints.web.exposure`
+  rules. **The core `wiredoctor-autoconfigure` artifact remains actuator-free**
+  — Actuator appears only in this module (verified by its dependency tree), so
+  the v0.1.1 classpath-neutrality guarantee never regresses. The core analyzer
+  now retains its last report in memory (`WireDoctorAnalyzer.getLastReport()`)
+  to back the endpoint.
 
 ## [0.3.0] - 2026-07-18
 

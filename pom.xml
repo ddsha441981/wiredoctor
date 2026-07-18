@@ -43,6 +43,7 @@
     </developers>
     <modules>
         <module>wiredoctor-autoconfigure</module>
+        <module>wiredoctor-actuator</module>
     </modules>
 
     <properties>

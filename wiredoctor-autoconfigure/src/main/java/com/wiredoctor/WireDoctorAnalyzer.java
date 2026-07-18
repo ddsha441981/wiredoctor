@@ -46,12 +46,39 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
     private final WireDoctorProperties properties;
 
     /**
+     * The most recently generated report, retained in memory after startup
+     * analysis completes. {@code null} until the {@link ApplicationReadyEvent}
+     * has been processed (or if analysis failed before the report was built).
+     * <p>
+     * Exposed via {@link #getLastReport()} so an out-of-core integration (the
+     * optional {@code wiredoctor-actuator} module) can serve the report without
+     * re-reading it from disk. Written once at the end of analysis and only
+     * read afterwards; {@code volatile} guarantees visibility across the
+     * startup thread and any later reader thread (e.g. an HTTP worker).
+     */
+    private volatile Map<String, Object> lastReport;
+
+    /**
      * Creates the analyzer with its typed configuration.
      *
      * @param properties the bound {@code wiredoctor.*} configuration
      */
     public WireDoctorAnalyzer(WireDoctorProperties properties) {
         this.properties = properties;
+    }
+
+    /**
+     * Returns the most recently generated diagnostic report, or {@code null}
+     * before startup analysis has completed.
+     * <p>
+     * The returned map is the live report instance; callers should treat it as
+     * read-only. Provided for the optional {@code wiredoctor-actuator} module —
+     * the core itself never depends on Spring Boot Actuator.
+     *
+     * @return the last report map, or {@code null} if none has been produced yet
+     */
+    public Map<String, Object> getLastReport() {
+        return lastReport;
     }
 
     /**
@@ -376,6 +403,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             }
         } catch (Exception ignored) {}
         report.put("criticalPath", WireDoctorCriticalPath.toReportMap(criticalPath, readinessMs));
+
+        // Retain the completed report in memory for out-of-core consumers (the
+        // optional wiredoctor-actuator endpoint). Set BEFORE the disk write so a
+        // failed write never leaves the endpoint without a report to serve.
+        this.lastReport = report;
 
         // ── Write JSON ────────────────────────────────────────────────────────
         try {

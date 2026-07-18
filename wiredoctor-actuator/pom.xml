@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.github.ddsha441981</groupId>
+        <artifactId>wiredoctor-parent</artifactId>
+        <version>0.3.0</version>
+    </parent>
+    <artifactId>wiredoctor-actuator</artifactId>
+    <name>WireDoctor Actuator</name>
+    <description>Optional Spring Boot Actuator endpoint (/actuator/wiredoctor) exposing the WireDoctor diagnostic report. Kept separate so the core stays actuator-free.</description>
+
+    <dependencies>
+        <!-- The core diagnostic engine: this module only adds an actuator surface. -->
+        <dependency>
+            <groupId>io.github.ddsha441981</groupId>
+            <artifactId>wiredoctor-autoconfigure</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Actuator lives ONLY in this module. Optional so it never leaks onto
+             a consumer's classpath transitively; the endpoint auto-configures
+             only when the consumer already has actuator on the classpath. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-actuator</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-actuator-autoconfigure</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Test-only: full actuator web layer to exercise the endpoint. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
