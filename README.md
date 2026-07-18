@@ -7,6 +7,16 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
+### New in v0.5.0
+- 🩺 **Upgrade Guard (Autoconfig Condition Diff)**: Bumped Spring Boot and a feature quietly broke because an autoconfiguration stopped applying? WireDoctor now snapshots Spring Boot's **condition evaluation report** into your baseline and diffs it across builds — so a `matched → notMatched` flip is caught automatically. Your bean diff already shows *what* vanished; the condition diff shows **why**, with the exact `@ConditionalOnBean`/`@ConditionalOnClass` message. Gate it in CI with `wiredoctor.fail-on=condition-changed` (combinable with `new-cycle`). Validated on Spring PetClinic (Boot 4.1) — excluding one autoconfig surfaced the direct flip *and* the downstream cascade it triggered. → **[Upgrade Guard guide](docs/upgrade-guard.md)**
+  ```
+  [WireDoctor] Baseline Diff (vs wiredoctor-baseline-default.json):
+    - Conditions: 2 changed | 0 added | 7 removed
+    - CONDITION CHANGED: JacksonAutoConfiguration (matched -> excluded)
+    - CONDITION CHANGED: JacksonJsonHttpMessageConverterConfiguration$... (matched -> notMatched)
+  ```
+  Backward compatible: a pre-v0.5.0 baseline (no condition data) skips the condition diff gracefully — the gate never trips on it.
+
 ### New in v0.3.0
 - 💡 **@Lazy Suggestions to Break Cycles**: When a cycle is detected, WireDoctor doesn't just report it — it tells you how to fix it. The `lazySuggestions` report section (and a ranked console summary) lists which beans, if marked `@Lazy`, would break the cycle — ranked by cycles broken first, then smallest blast radius (fewest downstream dependents):
   ```
@@ -58,13 +68,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.4.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.5.0'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
@@ -134,14 +144,14 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
 
 ---
-## 🔮 Roadmap (v0.4.0 & Beyond)
+## 🔮 Roadmap (v0.6.0 & Beyond)
 
-We are actively researching advanced diagnostic capabilities for the next releases:
+Shipped: **v0.4.0** (Enterprise Fit — CI marker-file contract, actuator module, multi-profile baselines) and **v0.5.0** (Upgrade Guard — autoconfig condition diff). Next up:
 
-1. 🏢 **Enterprise Fit (v0.4.0):**
-   *CI exit-code contract, optional actuator endpoint module, and multi-profile baselines — making the regression guard first-class in real pipelines.*
-2. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector, v0.5.0):**
-   *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. This will likely involve a lightweight, non-invasive access-tracking proxy mechanism.*
+1. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector, v0.6.0):**
+   *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. Phase 1 is passive (zero new intrusion); Phase 2 is an opt-in, non-invasive access-tracking proxy.*
+2. 💰 **Cost Guardian (v0.7.0):**
+   *Startup-time and slow-bean regression gates — tie a PR that makes boot slower to a CI failure, framed around Kubernetes cold-start cost.*
 3. 🧠 **Memory Footprint Estimation:**
    *Moving beyond measuring instantiation **time** to measuring object **space**. Exploring per-bean heap consumption metrics (potentially requiring Java Agent instrumentation for deep size-of calculations).*
 

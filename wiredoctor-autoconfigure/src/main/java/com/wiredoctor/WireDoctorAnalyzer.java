@@ -450,6 +450,24 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } catch (Exception ignored) {}
         report.put("criticalPath", WireDoctorCriticalPath.toReportMap(criticalPath, readinessMs));
 
+        // ── Feature (v0.5.0): Autoconfig condition snapshot ──────────────────
+        // Read-only capture of the ConditionEvaluationReport Boot already keeps
+        // in memory (the --debug report's data source). Recorded in the report/
+        // baseline so the regression guard can diff condition outcomes across
+        // builds and Boot upgrades — "the cause" where the bean diff is "the
+        // effect". Absent report (exotic contexts) → null, section skipped.
+        Map<String, WireDoctorConditionSnapshot.Outcome> conditionOutcomes = null;
+        try {
+            org.springframework.boot.autoconfigure.condition.ConditionEvaluationReport
+                    conditionReport = org.springframework.boot.autoconfigure.condition
+                    .ConditionEvaluationReport.get(beanFactory);
+            conditionOutcomes = WireDoctorConditionSnapshot.extract(conditionReport);
+            report.put("conditions", WireDoctorConditionSnapshot.toReportMap(conditionOutcomes));
+        } catch (Throwable t) {
+            // Additive section — never let it disturb the analysis.
+            log.warn(WireDoctorMessages.CONDITIONS_UNAVAILABLE, t.getMessage());
+        }
+
         // Retain the completed report in memory for out-of-core consumers (the
         // optional wiredoctor-actuator endpoint). Set BEFORE the disk write so a
         // failed write never leaves the endpoint without a report to serve.
@@ -474,7 +492,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
         WireDoctorRegressionException trippedGate =
-                runRegressionGuard(graph, cycles, report, outputDir, activeProfiles);
+                runRegressionGuard(graph, cycles, conditionOutcomes, report, outputDir, activeProfiles);
 
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
@@ -583,6 +601,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      *
      * @param graph     the current dependency graph
      * @param cycles    the current detected cycles
+     * @param conditionOutcomes autoconfig condition outcomes (v0.5.0), or
+     *                          {@code null} when the condition report was unavailable
      * @param report    the full current report (persisted as baseline in write mode)
      * @param outputDir directory for {@code wiredoctor-diff.json}
      * @param activeProfiles the environment's active profiles, used to resolve a
@@ -591,6 +611,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      */
     private WireDoctorRegressionException runRegressionGuard(Map<String, String[]> graph,
                                                              List<List<String>> cycles,
+                                                             Map<String, WireDoctorConditionSnapshot.Outcome> conditionOutcomes,
                                                              Map<String, Object> report,
                                                              File outputDir,
                                                              String[] activeProfiles) {
@@ -653,7 +674,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         WireDoctorBaselineDiff.Snapshot current =
-                WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles);
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles, conditionOutcomes);
         WireDoctorBaselineDiff.DiffResult diff = WireDoctorBaselineDiff.diff(baseline, current);
 
         log.info(WireDoctorMessages.DIFF_HEADER, baselineFile.getName());
@@ -666,6 +687,17 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     diff.newCycles().size(), diff.resolvedCycles().size());
             diff.newCycles().forEach(c ->
                     log.info(WireDoctorMessages.DIFF_NEW_CYCLE_ITEM, String.join(" -> ", c)));
+        }
+        // v0.5.0: condition diff summary — only when both sides carried data.
+        if (diff.conditionDiffAvailable()) {
+            log.info(WireDoctorMessages.CONDITION_DIFF_SUMMARY,
+                    diff.conditionsChanged().size(),
+                    diff.conditionsAdded().size(), diff.conditionsRemoved().size());
+            diff.conditionsChanged().stream().limit(10).forEach(c ->
+                    log.info(WireDoctorMessages.CONDITION_DIFF_CHANGED_ITEM,
+                            c.className(), c.oldOutcome(), c.newOutcome()));
+        } else if (baseline.conditions() == null && conditionOutcomes != null) {
+            log.info(WireDoctorMessages.CONDITION_DIFF_BASELINE_PREDATES);
         }
 
         try {
@@ -694,6 +726,22 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     + diff.newCycles().size() + " new bean dependency cycle(s) vs baseline "
                     + baselineFile.getName() + ": " + diff.newCycles());
         }
+        // v0.5.0: condition-changed gate — trips only when the condition diff
+        // actually ran (an old baseline must not trip a false FAIL).
+        if (properties.isFailOnConditionChanged()
+                && diff.conditionDiffAvailable() && diff.hasConditionChanges()) {
+            log.error(WireDoctorMessages.CONDITION_GATE_TRIPPED,
+                      properties.getFailOn(), diff.conditionsChanged().size());
+            return new WireDoctorRegressionException(
+                    "WireDoctor regression gate 'condition-changed' tripped: "
+                    + diff.conditionsChanged().size()
+                    + " autoconfiguration condition outcome(s) changed vs baseline "
+                    + baselineFile.getName() + ": "
+                    + diff.conditionsChanged().stream()
+                            .map(c -> c.className() + " (" + c.oldOutcome()
+                                    + " -> " + c.newOutcome() + ")")
+                            .collect(Collectors.toList()));
+        }
         return null;
     }
 
@@ -720,10 +768,20 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                  String baselineName,
                                  String profileKey) {
         StringBuilder status = new StringBuilder();
+        // Line 1 contract: "PASS" or "FAIL:<gate>[,<gate>...]" — a gate appears
+        // in the FAIL list when its SIGNAL fired, armed or not (gateArmed tells
+        // the consumer whether the JVM was configured to die over it).
+        List<String> failedGates = new ArrayList<>();
         if (diff.hasNewCycles()) {
-            status.append("FAIL:new-cycle");
-        } else {
+            failedGates.add("new-cycle");
+        }
+        if (diff.conditionDiffAvailable() && diff.hasConditionChanges()) {
+            failedGates.add("condition-changed");
+        }
+        if (failedGates.isEmpty()) {
             status.append("PASS");
+        } else {
+            status.append("FAIL:").append(String.join(",", failedGates));
         }
         status.append('\n');
         status.append("baseline=").append(baselineName).append('\n');
@@ -732,7 +790,16 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         status.append("resolvedCycles=").append(diff.resolvedCycles().size()).append('\n');
         status.append("addedBeans=").append(diff.addedBeans().size()).append('\n');
         status.append("removedBeans=").append(diff.removedBeans().size()).append('\n');
-        status.append("gateArmed=").append(properties.isFailOnNewCycle()).append('\n');
+        // v0.5.0: condition info. conditionDiff=skipped distinguishes "no
+        // changes" from "baseline predates condition tracking".
+        if (diff.conditionDiffAvailable()) {
+            status.append("conditionsChanged=").append(diff.conditionsChanged().size()).append('\n');
+        } else {
+            status.append("conditionDiff=skipped").append('\n');
+        }
+        status.append("gateArmed=")
+              .append(properties.isFailOnNewCycle() || properties.isFailOnConditionChanged())
+              .append('\n');
         try {
             Files.writeString(gateStatusFile.toPath(), status.toString());
             log.info(WireDoctorMessages.GATE_STATUS_WRITTEN, gateStatusFile.getAbsolutePath());

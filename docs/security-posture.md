@@ -25,6 +25,13 @@ structural map of your application's internals:
   coupling concentrates.
 - **Active profiles** (`activeProfiles`) — e.g. `prod`, `db`, `eu-west`.
 - **Startup timings** — per-bean instantiation durations and the critical path.
+- **Autoconfiguration outcomes** (`conditions`, since v0.5.0) — which Spring Boot
+  autoconfigurations applied, were excluded, or did not match, plus the condition
+  message for non-matches. This reveals your autoconfig surface (which starters and
+  optional features are active) — the same class of internal-architecture information
+  as bean names, and it lives in the report and baseline files. The same
+  recommendations below apply: gitignore the reports and baseline, and treat them as
+  internal build artifacts.
 
 None of this is a secret in the cryptographic sense — there are no credentials,
 tokens, connection strings, or user data in the report. WireDoctor reads bean

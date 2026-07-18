@@ -158,7 +158,8 @@ class WireDoctorBaselineDiffTest {
                 "addedEdgesCount", "addedEdges",
                 "removedEdgesCount", "removedEdges",
                 "newCyclesCount", "newCycles",
-                "resolvedCyclesCount", "resolvedCycles");
+                "resolvedCyclesCount", "resolvedCycles",
+                "conditionDiff");
         assertThat(map.get("newCyclesCount")).isEqualTo(1);
         assertThat((List<String>) map.get("addedBeans")).containsExactly("b");
     }
@@ -167,5 +168,146 @@ class WireDoctorBaselineDiffTest {
     void emptySnapshotsDiffClean() {
         var empty = snapshot(Map.of(), List.of());
         assertThat(WireDoctorBaselineDiff.diff(empty, empty).isEmpty()).isTrue();
+    }
+
+    // ── v0.5.0: condition diff ───────────────────────────────────────────────
+
+    private static Map<String, WireDoctorConditionSnapshot.Outcome> conditions(
+            Map<String, String> outcomes) {
+        var map = new java.util.TreeMap<String, WireDoctorConditionSnapshot.Outcome>();
+        outcomes.forEach((k, v) -> map.put(k, new WireDoctorConditionSnapshot.Outcome(v, null)));
+        return map;
+    }
+
+    private static WireDoctorBaselineDiff.Snapshot snapshotWithConditions(
+            Map<String, String> conditionOutcomes) {
+        return WireDoctorBaselineDiff.Snapshot.fromAnalysis(
+                Map.of("a", new String[0]), List.of(), conditions(conditionOutcomes));
+    }
+
+    @Test
+    void conditionOutcomeFlipIsReportedAsChanged() {
+        var baseline = snapshotWithConditions(Map.of(
+                "com.example.AAuto", "matched",
+                "com.example.BAuto", "matched"));
+        var current = snapshotWithConditions(Map.of(
+                "com.example.AAuto", "matched",
+                "com.example.BAuto", "notMatched"));
+
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.conditionDiffAvailable()).isTrue();
+        assertThat(diff.hasConditionChanges()).isTrue();
+        assertThat(diff.conditionsChanged()).hasSize(1);
+        var change = diff.conditionsChanged().get(0);
+        assertThat(change.className()).isEqualTo("com.example.BAuto");
+        assertThat(change.oldOutcome()).isEqualTo("matched");
+        assertThat(change.newOutcome()).isEqualTo("notMatched");
+        assertThat(diff.isEmpty()).isFalse();
+    }
+
+    @Test
+    void conditionClassAppearingOrVanishingIsAddedRemovedNotChanged() {
+        // A Boot version bump changes the autoconfig candidate list itself —
+        // expected churn, kept separate from the headline "changed" list.
+        var baseline = snapshotWithConditions(Map.of(
+                "com.example.OldAuto", "matched",
+                "com.example.KeptAuto", "matched"));
+        var current = snapshotWithConditions(Map.of(
+                "com.example.KeptAuto", "matched",
+                "com.example.NewAuto", "notMatched"));
+
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.conditionsChanged()).isEmpty();
+        assertThat(diff.conditionsAdded()).containsExactly("com.example.NewAuto");
+        assertThat(diff.conditionsRemoved()).containsExactly("com.example.OldAuto");
+    }
+
+    @Test
+    void oldBaselineWithoutConditionsSkipsConditionDiff() {
+        // BACKWARD COMPATIBILITY (hard requirement): a v0.2.0-era baseline has
+        // no conditions section — the condition diff must be unavailable, and
+        // the current run's autoconfigs must NOT be reported as all-added.
+        var oldBaseline = snapshot(Map.of("a", new String[0]), List.of());
+        var current = snapshotWithConditions(Map.of("com.example.AAuto", "matched"));
+
+        var diff = WireDoctorBaselineDiff.diff(oldBaseline, current);
+        assertThat(diff.conditionDiffAvailable()).isFalse();
+        assertThat(diff.hasConditionChanges()).isFalse();
+        assertThat(diff.conditionsChanged()).isEmpty();
+        assertThat(diff.conditionsAdded()).isEmpty();
+        assertThat(diff.conditionsRemoved()).isEmpty();
+        // bean diff still works untouched
+        assertThat(diff.isEmpty()).isTrue();
+    }
+
+    @Test
+    void v020BaselineJsonStillParsesAndDiffsBeansOnly() throws Exception {
+        // A real pre-v0.5.0 baseline file shape: dependencies only, no conditions.
+        String oldJson = """
+                {"dependencies": {"graph": {"a": ["b"], "b": []}, "cycles": []}}
+                """;
+        var baseline = WireDoctorBaselineDiff.Snapshot.fromJson(
+                new ObjectMapper().readTree(oldJson));
+        assertThat(baseline.conditions()).isNull();
+
+        var current = WireDoctorBaselineDiff.Snapshot.fromAnalysis(
+                Map.of("a", new String[]{"b"}, "b", new String[0]), List.of(),
+                conditions(Map.of("com.example.AAuto", "matched")));
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.conditionDiffAvailable()).isFalse();
+        assertThat(diff.isEmpty()).isTrue();
+    }
+
+    @Test
+    void conditionRoundTripThroughBaselineJson() throws Exception {
+        // Write-mode serializes conditions into the baseline; fromJson must
+        // read them back so the NEXT run's diff sees them.
+        String json = """
+                {
+                  "dependencies": {"graph": {"a": []}, "cycles": []},
+                  "conditions": {
+                    "com.example.AAuto": {"outcome": "matched"},
+                    "com.example.BAuto": {"outcome": "notMatched", "reason": "no class B"}
+                  }
+                }
+                """;
+        var baseline = WireDoctorBaselineDiff.Snapshot.fromJson(
+                new ObjectMapper().readTree(json));
+        assertThat(baseline.conditions()).isNotNull().hasSize(2);
+
+        var current = snapshotWithConditions(Map.of(
+                "com.example.AAuto", "notMatched",
+                "com.example.BAuto", "notMatched"));
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.conditionsChanged()).hasSize(1);
+        assertThat(diff.conditionsChanged().get(0).className()).isEqualTo("com.example.AAuto");
+    }
+
+    @Test
+    void conditionChangedListIsSortedByClassName() {
+        var baseline = snapshotWithConditions(Map.of(
+                "com.z.ZAuto", "matched", "com.a.AAuto", "matched", "com.m.MAuto", "matched"));
+        var current = snapshotWithConditions(Map.of(
+                "com.z.ZAuto", "excluded", "com.a.AAuto", "excluded", "com.m.MAuto", "excluded"));
+
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.conditionsChanged())
+                .extracting(WireDoctorBaselineDiff.ConditionChange::className)
+                .containsExactly("com.a.AAuto", "com.m.MAuto", "com.z.ZAuto");
+    }
+
+    @Test
+    void conditionDiffSectionInReportMap() {
+        var baseline = snapshotWithConditions(Map.of("com.example.AAuto", "matched"));
+        var current = snapshotWithConditions(Map.of("com.example.AAuto", "notMatched"));
+
+        Map<String, Object> map = WireDoctorBaselineDiff.diff(baseline, current).toReportMap();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> conditionDiff = (Map<String, Object>) map.get("conditionDiff");
+        assertThat(conditionDiff.get("available")).isEqualTo(true);
+        assertThat(conditionDiff.get("changedCount")).isEqualTo(1);
+        assertThat(conditionDiff.keySet()).containsExactly(
+                "available", "changedCount", "changed",
+                "addedCount", "added", "removedCount", "removed");
     }
 }
