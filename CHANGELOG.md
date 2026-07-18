@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2026-07-18
 
 ### Added
 - 🚦 **CI marker-file contract** — every completed baseline diff now writes
@@ -53,6 +53,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "baseline missing → skip" path. Paths without the token are unchanged (single
   shared baseline, as before). The report now records `activeProfiles`, and the
   `wiredoctor-gate.status` marker gains a `profiles=` line for traceability.
+
+### Fixed
+- **Smell-filter classification gaps** (found in real-world testing on Spring
+  Initializr, 391 beans): well-known Spring infrastructure singletons registered
+  outside `beanDefinitionNames` (`environment`, `systemProperties`,
+  `systemEnvironment`, `applicationStartup`, `messageSource`) no longer surface
+  in the filtered smell rankings; and when `wiredoctor.scan-packages` is
+  configured it now also acts as the user-bean allowlist for the smell rankings
+  (consistent with the orphan-bean logic), keeping third-party autoconfig beans
+  (e.g. `com.azure.spring…`) out of the actionable lists.
 
 ### Documentation
 - 🔒 **Security posture guide** (`docs/security-posture.md`) — what the reports
