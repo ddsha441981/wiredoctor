@@ -183,6 +183,14 @@ Or as a soft gate in GitHub Actions — warn on the PR without failing it:
           fi
 ```
 
+> **Keep configuration consistent between baseline-write and diff runs.** The
+> diff compares the *live* graph against the snapshot, so any config that
+> changes which beans exist will show up as added/removed beans. A common
+> example: writing the baseline with `management.endpoints.web.exposure.include=wiredoctor`
+> set but diffing without it reports `removedBeans:[wireDoctorEndpoint]` —
+> technically correct, practically noise. Write and diff under the same profile
+> and exposure settings.
+
 ---
 
 ### Available gates
