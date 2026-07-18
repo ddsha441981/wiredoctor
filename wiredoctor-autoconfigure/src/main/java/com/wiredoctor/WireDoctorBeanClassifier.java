@@ -6,6 +6,7 @@
 package com.wiredoctor;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Single source of truth for classifying a bean as framework-owned versus
@@ -35,6 +36,18 @@ public final class WireDoctorBeanClassifier {
             "com.fasterxml", "io.micrometer"
     );
 
+    /**
+     * Well-known Spring infrastructure singletons registered outside
+     * {@code beanDefinitionNames} (e.g. via {@code registerSingleton}). Their
+     * names are plain words, not FQNs, so {@link #isFrameworkPackage} cannot
+     * catch them.  The set is intentionally small; unknown beans default to
+     * user-defined (show rather than silently drop).
+     */
+    static final Set<String> WELL_KNOWN_FRAMEWORK_NAMES = Set.of(
+            "environment", "systemProperties", "systemEnvironment",
+            "applicationStartup", "messageSource"
+    );
+
     private WireDoctorBeanClassifier() {
         // Static utility
     }
@@ -48,5 +61,14 @@ public final class WireDoctorBeanClassifier {
             return false;
         }
         return FRAMEWORK_PACKAGES.stream().anyMatch(packageName::startsWith);
+    }
+
+    /**
+     * @param beanName a bean name as returned by the bean factory
+     * @return {@code true} when the name is a well-known Spring infrastructure
+     *         singleton that lives outside {@code beanDefinitionNames}
+     */
+    public static boolean isWellKnownFrameworkBean(String beanName) {
+        return WELL_KNOWN_FRAMEWORK_NAMES.contains(beanName);
     }
 }

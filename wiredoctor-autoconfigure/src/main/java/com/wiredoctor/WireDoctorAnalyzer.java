@@ -248,17 +248,26 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 }
             } catch (Exception ignored) {}
 
-            // User-defined vs framework (package heuristic)
+            // User-defined vs framework (package heuristic + well-known names)
             try {
-                Class<?> beanType = beanFactory.getType(beanName);
-                if (beanType != null && beanType.getPackage() != null) {
-                    String pkg = beanType.getPackage().getName();
-                    boolean isFramework = WireDoctorBeanClassifier.isFrameworkPackage(pkg);
-                    if (isFramework) {
-                        frameworkOwned++;
-                        frameworkBeanNames.add(beanName);
-                    } else {
-                        userDefined++;
+                // Well-known Spring infrastructure singletons registered outside
+                // beanDefinitionNames (e.g. "environment") are not reachable via
+                // getType() in the normal class. Pre-seed them here so the smell
+                // filter does not surface them as user beans.
+                if (WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)) {
+                    frameworkOwned++;
+                    frameworkBeanNames.add(beanName);
+                } else {
+                    Class<?> beanType = beanFactory.getType(beanName);
+                    if (beanType != null && beanType.getPackage() != null) {
+                        String pkg = beanType.getPackage().getName();
+                        boolean isFramework = WireDoctorBeanClassifier.isFrameworkPackage(pkg);
+                        if (isFramework) {
+                            frameworkOwned++;
+                            frameworkBeanNames.add(beanName);
+                        } else {
+                            userDefined++;
+                        }
                     }
                 }
             } catch (Exception ignored) {}
@@ -366,9 +375,35 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // name is itself a framework-package FQN (the synthetic
         // ...ApplicationContext@hash fan-in entries that carry no bean type).
         boolean includeFramework = properties.isIncludeFrameworkSmells();
-        java.util.function.Predicate<String> userBean = name ->
-                !frameworkBeanNames.contains(name)
-                        && !WireDoctorBeanClassifier.isFrameworkPackage(name);
+        // When scan-packages is configured, it defines what "user code" means for
+        // this app.  Restrict the smell rankings to that allowlist (consistent with
+        // the orphan-bean logic above) so that third-party autoconfig packages that
+        // are not in FRAMEWORK_PACKAGES don't surface as smells.
+        // Without scan-packages: fall back to the package-prefix heuristic + the
+        // well-known-name set pre-seeded in frameworkBeanNames above.
+        java.util.function.Predicate<String> userBean;
+        if (scanPackages != null && !scanPackages.isEmpty()) {
+            String[] pkgPrefixes = Arrays.stream(scanPackages.split(","))
+                    .map(String::trim).toArray(String[]::new);
+            userBean = name -> {
+                try {
+                    Class<?> t = beanFactory.getType(name);
+                    if (t != null && t.getPackage() != null) {
+                        String pkg = t.getPackage().getName();
+                        for (String prefix : pkgPrefixes) {
+                            if (pkg.startsWith(prefix)) return true;
+                        }
+                        return false;
+                    }
+                } catch (Exception ignored) {}
+                return false; // unknown type: not in user's declared packages
+            };
+        } else {
+            userBean = name ->
+                    !frameworkBeanNames.contains(name)
+                            && !WireDoctorBeanClassifier.isFrameworkPackage(name)
+                            && !WireDoctorBeanClassifier.isWellKnownFrameworkBean(name);
+        }
         Map<String, Object> smells = includeFramework
                 ? WireDoctorSmellDetector.toReportMap(graph)
                 : WireDoctorSmellDetector.toReportMap(graph, userBean, true);
