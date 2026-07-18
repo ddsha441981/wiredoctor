@@ -45,11 +45,20 @@ public final class WireDoctorBaselineDiff {
         private final Set<String> beans;
         private final Map<String, Set<String>> edges;
         private final List<Set<String>> cycles;
+        // v0.5.0: autoconfig condition outcomes. null = snapshot predates
+        // condition tracking (old baseline) → condition diff is skipped.
+        private final Map<String, WireDoctorConditionSnapshot.Outcome> conditions;
 
         Snapshot(Set<String> beans, Map<String, Set<String>> edges, List<Set<String>> cycles) {
+            this(beans, edges, cycles, null);
+        }
+
+        Snapshot(Set<String> beans, Map<String, Set<String>> edges, List<Set<String>> cycles,
+                 Map<String, WireDoctorConditionSnapshot.Outcome> conditions) {
             this.beans = beans;
             this.edges = edges;
             this.cycles = cycles;
+            this.conditions = conditions;
         }
 
         /**
@@ -61,16 +70,32 @@ public final class WireDoctorBaselineDiff {
          * @return the snapshot
          */
         public static Snapshot fromAnalysis(Map<String, String[]> graph, List<List<String>> cycles) {
+            return fromAnalysis(graph, cycles, null);
+        }
+
+        /**
+         * Builds a snapshot from the live analysis including autoconfig
+         * condition outcomes (v0.5.0).
+         *
+         * @param graph      bean name → dependency names
+         * @param cycles     detected cycles, each a list of bean names
+         * @param conditions autoconfig class → outcome, or {@code null} when
+         *                   the condition report was unavailable
+         * @return the snapshot
+         */
+        public static Snapshot fromAnalysis(Map<String, String[]> graph, List<List<String>> cycles,
+                                            Map<String, WireDoctorConditionSnapshot.Outcome> conditions) {
             Map<String, Set<String>> edges = new LinkedHashMap<>();
             graph.forEach((bean, deps) -> edges.put(bean, new LinkedHashSet<>(List.of(deps))));
             List<Set<String>> cycleSets = new ArrayList<>();
             cycles.forEach(c -> cycleSets.add(new LinkedHashSet<>(c)));
-            return new Snapshot(new LinkedHashSet<>(graph.keySet()), edges, cycleSets);
+            return new Snapshot(new LinkedHashSet<>(graph.keySet()), edges, cycleSets, conditions);
         }
 
         /**
          * Builds a snapshot from a parsed {@code wiredoctor-report.json} /
-         * baseline file ({@code dependencies.graph} + {@code dependencies.cycles}).
+         * baseline file ({@code dependencies.graph} + {@code dependencies.cycles}
+         * + optional top-level {@code conditions} since v0.5.0).
          *
          * @param reportRoot the parsed report root node
          * @return the snapshot
@@ -89,12 +114,51 @@ public final class WireDoctorBaselineDiff {
                 cycle.forEach(b -> beansInCycle.add(b.asText()));
                 cycles.add(beansInCycle);
             });
-            return new Snapshot(new LinkedHashSet<>(edges.keySet()), edges, cycles);
+            // Absent section → null (pre-v0.5.0 baseline): condition diff skipped.
+            Map<String, WireDoctorConditionSnapshot.Outcome> conditions =
+                    WireDoctorConditionSnapshot.fromJson(reportRoot.path("conditions"));
+            return new Snapshot(new LinkedHashSet<>(edges.keySet()), edges, cycles, conditions);
         }
 
         public Set<String> beans() { return beans; }
         public Map<String, Set<String>> edges() { return edges; }
         public List<Set<String>> cycles() { return cycles; }
+        /** @return autoconfig outcomes, or {@code null} when unavailable/pre-v0.5.0 */
+        public Map<String, WireDoctorConditionSnapshot.Outcome> conditions() { return conditions; }
+    }
+
+    /**
+     * One autoconfiguration whose condition outcome flipped between baseline
+     * and current run — the "cause" signal of the Upgrade Guardian (v0.5.0).
+     */
+    public static final class ConditionChange {
+        private final String className;
+        private final String oldOutcome;
+        private final String newOutcome;
+        private final String newReason; // null unless newOutcome carries one
+
+        ConditionChange(String className, String oldOutcome, String newOutcome, String newReason) {
+            this.className = className;
+            this.oldOutcome = oldOutcome;
+            this.newOutcome = newOutcome;
+            this.newReason = newReason;
+        }
+
+        public String className()  { return className; }
+        public String oldOutcome() { return oldOutcome; }
+        public String newOutcome() { return newOutcome; }
+        public String newReason()  { return newReason; }
+
+        Map<String, Object> toReportMap() {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("className", className);
+            map.put("oldOutcome", oldOutcome);
+            map.put("newOutcome", newOutcome);
+            if (newReason != null) {
+                map.put("newReason", newReason);
+            }
+            return map;
+        }
     }
 
     /**
@@ -108,16 +172,38 @@ public final class WireDoctorBaselineDiff {
         private final Set<String> removedEdges;
         private final List<Set<String>> newCycles;
         private final List<Set<String>> resolvedCycles;
+        // v0.5.0 condition diff. conditionDiffAvailable=false when either side
+        // lacks condition data (old baseline / absent report) — the three
+        // lists are then empty AND meaningless, never "no changes".
+        private final boolean conditionDiffAvailable;
+        private final List<ConditionChange> conditionsChanged;
+        private final Set<String> conditionsAdded;
+        private final Set<String> conditionsRemoved;
 
         DiffResult(Set<String> addedBeans, Set<String> removedBeans,
                    Set<String> addedEdges, Set<String> removedEdges,
                    List<Set<String>> newCycles, List<Set<String>> resolvedCycles) {
+            this(addedBeans, removedBeans, addedEdges, removedEdges, newCycles, resolvedCycles,
+                 false, List.of(), Set.of(), Set.of());
+        }
+
+        DiffResult(Set<String> addedBeans, Set<String> removedBeans,
+                   Set<String> addedEdges, Set<String> removedEdges,
+                   List<Set<String>> newCycles, List<Set<String>> resolvedCycles,
+                   boolean conditionDiffAvailable,
+                   List<ConditionChange> conditionsChanged,
+                   Set<String> conditionsAdded,
+                   Set<String> conditionsRemoved) {
             this.addedBeans = addedBeans;
             this.removedBeans = removedBeans;
             this.addedEdges = addedEdges;
             this.removedEdges = removedEdges;
             this.newCycles = newCycles;
             this.resolvedCycles = resolvedCycles;
+            this.conditionDiffAvailable = conditionDiffAvailable;
+            this.conditionsChanged = conditionsChanged;
+            this.conditionsAdded = conditionsAdded;
+            this.conditionsRemoved = conditionsRemoved;
         }
 
         public Set<String> addedBeans() { return addedBeans; }
@@ -130,17 +216,32 @@ public final class WireDoctorBaselineDiff {
         public List<Set<String>> newCycles() { return newCycles; }
         /** Cycles present in the baseline but gone now — improvements, reported for symmetry. */
         public List<Set<String>> resolvedCycles() { return resolvedCycles; }
+        /** @return {@code true} when BOTH snapshots carried condition data and the diff ran */
+        public boolean conditionDiffAvailable() { return conditionDiffAvailable; }
+        /** Autoconfigs whose outcome flipped (matched → notMatched etc.) — the headline list. */
+        public List<ConditionChange> conditionsChanged() { return conditionsChanged; }
+        /** Autoconfig classes evaluated now but not in the baseline (Boot version bump). */
+        public Set<String> conditionsAdded() { return conditionsAdded; }
+        /** Autoconfig classes in the baseline but no longer evaluated. */
+        public Set<String> conditionsRemoved() { return conditionsRemoved; }
 
         /** @return {@code true} when nothing changed at all */
         public boolean isEmpty() {
             return addedBeans.isEmpty() && removedBeans.isEmpty()
                     && addedEdges.isEmpty() && removedEdges.isEmpty()
-                    && newCycles.isEmpty() && resolvedCycles.isEmpty();
+                    && newCycles.isEmpty() && resolvedCycles.isEmpty()
+                    && conditionsChanged.isEmpty()
+                    && conditionsAdded.isEmpty() && conditionsRemoved.isEmpty();
         }
 
         /** @return {@code true} when at least one new cycle was introduced */
         public boolean hasNewCycles() {
             return !newCycles.isEmpty();
+        }
+
+        /** @return {@code true} when at least one condition outcome flipped (v0.5.0 gate signal) */
+        public boolean hasConditionChanges() {
+            return !conditionsChanged.isEmpty();
         }
 
         /**
@@ -162,6 +263,19 @@ public final class WireDoctorBaselineDiff {
             map.put("newCycles", cyclesAsLists(newCycles));
             map.put("resolvedCyclesCount", resolvedCycles.size());
             map.put("resolvedCycles", cyclesAsLists(resolvedCycles));
+            // v0.5.0: condition diff section. "available" lets a consumer tell
+            // "no condition changes" from "condition diff could not run".
+            Map<String, Object> conditionDiff = new LinkedHashMap<>();
+            conditionDiff.put("available", conditionDiffAvailable);
+            conditionDiff.put("changedCount", conditionsChanged.size());
+            List<Map<String, Object>> changed = new ArrayList<>();
+            conditionsChanged.forEach(c -> changed.add(c.toReportMap()));
+            conditionDiff.put("changed", changed);
+            conditionDiff.put("addedCount", conditionsAdded.size());
+            conditionDiff.put("added", new ArrayList<>(conditionsAdded));
+            conditionDiff.put("removedCount", conditionsRemoved.size());
+            conditionDiff.put("removed", new ArrayList<>(conditionsRemoved));
+            map.put("conditionDiff", conditionDiff);
             return map;
         }
 
@@ -207,13 +321,45 @@ public final class WireDoctorBaselineDiff {
             if (!currentCycles.contains(cycle)) resolvedCycles.add(cycle);
         }
 
+        // ── v0.5.0: condition diff — only when BOTH sides carry condition data.
+        // An old baseline (null conditions) must skip, not report every current
+        // autoconfig as "added".
+        boolean conditionDiffAvailable =
+                baseline.conditions() != null && current.conditions() != null;
+        List<ConditionChange> conditionsChanged = new ArrayList<>();
+        Set<String> conditionsAdded = new TreeSet<>();
+        Set<String> conditionsRemoved = new TreeSet<>();
+        if (conditionDiffAvailable) {
+            Map<String, WireDoctorConditionSnapshot.Outcome> base = baseline.conditions();
+            Map<String, WireDoctorConditionSnapshot.Outcome> curr = current.conditions();
+            // TreeMap iteration → changed list is sorted by class name.
+            for (Map.Entry<String, WireDoctorConditionSnapshot.Outcome> e
+                    : new java.util.TreeMap<>(curr).entrySet()) {
+                WireDoctorConditionSnapshot.Outcome old = base.get(e.getKey());
+                if (old == null) {
+                    conditionsAdded.add(e.getKey());
+                } else if (!old.equals(e.getValue())) {
+                    conditionsChanged.add(new ConditionChange(
+                            e.getKey(), old.outcome(), e.getValue().outcome(),
+                            e.getValue().reason()));
+                }
+            }
+            for (String baseClass : base.keySet()) {
+                if (!curr.containsKey(baseClass)) conditionsRemoved.add(baseClass);
+            }
+        }
+
         return new DiffResult(
                 Collections.unmodifiableSet(addedBeans),
                 Collections.unmodifiableSet(removedBeans),
                 Collections.unmodifiableSet(addedEdges),
                 Collections.unmodifiableSet(removedEdges),
                 Collections.unmodifiableList(newCycles),
-                Collections.unmodifiableList(resolvedCycles));
+                Collections.unmodifiableList(resolvedCycles),
+                conditionDiffAvailable,
+                Collections.unmodifiableList(conditionsChanged),
+                Collections.unmodifiableSet(conditionsAdded),
+                Collections.unmodifiableSet(conditionsRemoved));
     }
 
     private static Set<String> flattenEdges(Map<String, Set<String>> edges) {
