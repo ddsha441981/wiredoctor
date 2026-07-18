@@ -77,6 +77,16 @@ public final class WireDoctorMessages {
 
     public static final String VIS_BUNDLE_UNAVAILABLE   = "[WireDoctor] Bundled vis-network library unavailable ({}); HTML report falls back to CDN (needs internet for the graph view).";
 
+    public static final String LAZY_SUGGESTIONS_HEADER  = "\n[WireDoctor] @Lazy Suggestions to Break Cycles:";
+    public static final String LAZY_SUGGESTION_ITEM     = "  {}. Make '{}' @Lazy (breaks {} cycle(s), impacts {} bean(s))";
+
+    public static final String SMELLS_HEADER            = "\n[WireDoctor] Architecture Smells (live graph):";
+    public static final String SMELL_FAN_IN_ITEM        = "  - Coupling hotspot : '{}' has {} dependents (fan-in)";
+    public static final String SMELL_FAN_OUT_ITEM       = "  - Wide dependency  : '{}' depends on {} beans (fan-out)";
+    public static final String SMELL_UNSTABLE_ITEM      = "  - Unstable         : '{}' I={} (fan-in {}, fan-out {})";
+
+    public static final String GRAPH_TRUNCATED          = "[WireDoctor] Graph serialized with top {} of {} nodes (by fan-in; cycle members always kept). Analysis ran on the full graph. Raise wiredoctor.max-graph-nodes (0 = unlimited) to serialize everything.";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

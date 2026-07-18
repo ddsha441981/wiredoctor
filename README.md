@@ -7,6 +7,16 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
+### New in v0.3.0
+- 💡 **@Lazy Suggestions to Break Cycles**: When a cycle is detected, WireDoctor doesn't just report it — it tells you how to fix it. The `lazySuggestions` report section (and a ranked console summary) lists which beans, if marked `@Lazy`, would break the cycle — ranked by cycles broken first, then smallest blast radius (fewest downstream dependents):
+  ```
+  [WireDoctor] @Lazy Suggestions to Break Cycles:
+    1. Make 'alphaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
+    2. Make 'betaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
+  ```
+- 📐 **Architecture Smell Metrics**: Classic architecture-health metrics computed on the *live, resolved* bean graph — what Spring actually wired (proxies, conditionals, profiles), not what the source declares. The `smells` report section includes top-10 **fan-in hotspots** (coupling / God Object smell), top-10 **fan-out hotspots** (Shotgun Surgery smell), and beans over Martin's **instability** threshold (`I = Ce/(Ca+Ce) ≥ 0.8`). Graph nodes in the HTML report are now sized by fan-in — the bigger the dot, the more beans depend on it.
+- 🏋️ **Large-application hardening**: Verified against a 5,000-bean synthetic context. Above `wiredoctor.max-graph-nodes` (default 2000), the serialized graph is capped to the top-N beans by fan-in (cycle members always kept), with honest `graphTruncated` metadata and an HTML warning banner. Analysis — cycles, smells, critical path, baseline diff — always runs on the full graph; only the serialized view is capped.
+
 ### New in v0.2.0
 - 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
 - ⛓️ **Startup Critical Path**: The longest instantiation-weighted dependency chain gating your startup — the `criticalPath` report section and a console summary show which chain of beans your readiness time actually sits on (instantiation-weighted approximation; parallel init is not modeled).
@@ -83,6 +93,13 @@ wiredoctor.baseline=wiredoctor-baseline.json
 wiredoctor.baseline-write=true
 # CI gate: fail startup when a cycle not in the baseline appears
 wiredoctor.fail-on=new-cycle
+
+# --- Large-application graph cap (v0.3.0) ---
+# Above this many beans, the SERIALIZED graph (JSON + HTML view) is capped to the
+# top-N by fan-in (cycle members always kept) so the report stays reviewable and
+# the browser doesn't freeze. Analysis itself (cycles, smells, critical path,
+# baseline diff) ALWAYS runs on the full graph. 0 = unlimited. Default: 2000.
+wiredoctor.max-graph-nodes=2000
 ```
 
 See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.
@@ -115,16 +132,16 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
 
 ---
-## 🔮 Roadmap (v0.2.0 & Beyond)
+## 🔮 Roadmap (v0.4.0 & Beyond)
 
-We are actively researching advanced diagnostic capabilities for the next major release:
+We are actively researching advanced diagnostic capabilities for the next releases:
 
-1. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector):**
+1. 🏢 **Enterprise Fit (v0.4.0):**
+   *CI exit-code contract, optional actuator endpoint module, and multi-profile baselines — making the regression guard first-class in real pipelines.*
+2. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector, v0.5.0):**
    *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. This will likely involve a lightweight, non-invasive access-tracking proxy mechanism.*
-2. 🧠 **Memory Footprint Estimation:**
+3. 🧠 **Memory Footprint Estimation:**
    *Moving beyond measuring instantiation **time** to measuring object **space**. Exploring per-bean heap consumption metrics (potentially requiring Java Agent instrumentation for deep size-of calculations).*
-3. 🛠️ **Smart Resolution Insights:**
-   *Providing actionable, AI-driven suggestions when structural issues are found (e.g., suggesting exactly which dependency to mark as `@Lazy` to safely break a cycle without side effects).*
 
 ---
 

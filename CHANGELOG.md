@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-18
+
+The "from report to advice" release: WireDoctor stops just describing your
+architecture and starts telling you what to do about it — and survives
+enterprise-scale contexts while doing so.
+
+### Added
+- 💡 **Counterfactual @Lazy Simulator** — when cycles are detected, the report
+  now includes a `lazySuggestions` section listing which beans, if marked
+  `@Lazy`, would break each cycle. Ranked by cycles broken (desc), then fan-in
+  blast radius (asc), then name for deterministic output. The console prints
+  the top 5 with impact counts. Empty array (not absent) when no cycles exist.
+  Pure computation over the already-built graph — zero-intrusion guarantees hold.
+- 📐 **Architecture Smell Metrics** — new `smells` report section computed on
+  the live resolved graph: top-10 fan-in hotspots (`highFanIn`, with dependents
+  listed), top-10 fan-out hotspots (`highFanOut`, with dependencies listed),
+  and beans over Martin's instability threshold (`unstable`,
+  `I = Ce/(Ca+Ce) ≥ 0.8`, fan-out ≥ 2 floor to skip trivial leaves). Console
+  prints top 3 per category. HTML graph nodes are now sized by fan-in
+  (sqrt-scaled) with fan-in shown in the hover tooltip.
+- 🏋️ **Large-Context Hardening** — new `wiredoctor.max-graph-nodes` property
+  (default 2000, 0 = unlimited, lenient parsing). Above the cap, the
+  serialized `graph` section is truncated to the top-N beans by fan-in with
+  cycle participants always retained; `graphTruncated` /
+  `graphNodesTotal` / `graphNodesKept` metadata is added and the HTML report
+  shows a warning banner. Analysis (cycles, smells, critical path, baseline
+  diff) always runs on the full graph, and `baseline-write` always persists
+  the full graph so future diffs stay accurate. Verified with a 5,000-bean
+  synthetic context test.
+
 ## [0.2.0] - 2026-07-17
 
 The category-defining release: WireDoctor stops being a snapshot visualizer and

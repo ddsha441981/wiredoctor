@@ -196,6 +196,18 @@ public class WireDoctorHtmlReporter {
             <script>
                 const reportData = /* DATA_INJECTION_POINT */;
 
+                // v0.3.0: honest truncation banner — the graph view is capped,
+                // the analysis (cycles/smells/critical path) was not. Attached
+                // to <body> (fixed) because vis.Network clears its container.
+                if (reportData.dependencies.graphTruncated) {
+                    const banner = document.createElement('div');
+                    banner.style.cssText = 'position:fixed;top:12px;right:24px;z-index:10;background:rgba(245,158,11,0.15);border:1px solid #f59e0b;color:#fbbf24;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;backdrop-filter:blur(4px);max-width:480px;';
+                    banner.textContent = '⚠ Graph shows top ' + reportData.dependencies.graphNodesKept +
+                        ' of ' + reportData.dependencies.graphNodesTotal +
+                        ' beans (by fan-in; cycle members always shown). Analysis used the full graph. Raise wiredoctor.max-graph-nodes to see everything.';
+                    document.body.appendChild(banner);
+                }
+
                 document.getElementById('stat-beans').textContent = reportData.dependencies.totalBeans;
                 document.getElementById('stat-edges').textContent = reportData.dependencies.totalEdges;
                 document.getElementById('stat-cycles').textContent = reportData.dependencies.cyclesCount;
@@ -251,18 +263,25 @@ public class WireDoctorHtmlReporter {
                     });
                 }
 
+                // v0.3.0: scale node size by fan-in (more dependents = bigger).
+                // sqrt scaling keeps hubs prominent without dwarfing the rest.
+                const fanInMap = (reportData.smells && reportData.smells.fanIn) || {};
+
                 nodeSet.forEach(bean => {
                     let color = '#10b981';
                     let shadow = false;
                     let size = 15;
 
+                    const fanIn = fanInMap[bean] || 0;
+                    size = 15 + Math.round(Math.sqrt(fanIn) * 4);
+
                     if (cycleBeans.has(bean)) {
                         color = '#ef4444';
                         shadow = { color: '#ef4444', size: 15 };
-                        size = 25;
+                        size = Math.max(size, 25);
                     } else if (proxyBeans.has(bean)) {
                         color = '#e76c87';
-                        size = 20;
+                        size = Math.max(size, 20);
                     } else if (orphanBeans.has(bean)) {
                         color = '#f97316';
                         size = 10;
@@ -271,7 +290,7 @@ public class WireDoctorHtmlReporter {
                     nodes.push({
                         id: bean,
                         label: bean.length > 25 ? bean.substring(0, 22) + '...' : bean,
-                        title: '<b>' + bean + '</b><br>' + (proxyBeans.has(bean) ? 'Status: Proxied<br>' : '') + (cycleBeans.has(bean) ? 'Status: In Circular Dependency<br>' : ''),
+                        title: '<b>' + bean + '</b><br>Dependents (fan-in): ' + fanIn + '<br>' + (proxyBeans.has(bean) ? 'Status: Proxied<br>' : '') + (cycleBeans.has(bean) ? 'Status: In Circular Dependency<br>' : ''),
                         color: { background: color, border: 'rgba(0,0,0,0.3)', highlight: { background: '#34d399', border: '#fff'} },
                         shadow: shadow,
                         size: size,

@@ -25,6 +25,9 @@ public class WireDoctorProperties {
     /** Default slow-bean threshold applied when no or an invalid value is configured. */
     public static final long DEFAULT_SLOW_BEAN_THRESHOLD_MS = 100L;
 
+    /** Default cap on graph nodes serialized into the JSON/HTML report. */
+    public static final int DEFAULT_MAX_GRAPH_NODES = 2000;
+
     /**
      * Whether WireDoctor runs at all. Set to {@code false} to fully disable
      * analysis, report writing, and console output (e.g. in production).
@@ -74,6 +77,20 @@ public class WireDoctorProperties {
      * (default) means report-only — the diff is written but never gates.
      */
     private String failOn;
+
+    /**
+     * Maximum number of graph nodes serialized into the JSON report (and thus
+     * the HTML visualizer). Above the cap, the graph is truncated to the top-N
+     * beans by fan-in (the most-depended-on nodes carry the most signal) and
+     * {@code dependencies.graphTruncated} is set. Analysis itself (cycles,
+     * smells, critical path, diff) always runs on the FULL graph — only the
+     * serialized {@code graph} section is capped.
+     * <p>
+     * Deliberately typed as {@link String}: a malformed value must degrade to
+     * the default with a warning, never fail context startup. {@code 0} means
+     * unlimited (pre-v0.3.0 behavior). Use {@link #resolveMaxGraphNodes()}.
+     */
+    private String maxGraphNodes = String.valueOf(DEFAULT_MAX_GRAPH_NODES);
 
     /**
      * Parses {@link #slowBeanThresholdMs} leniently.
@@ -172,5 +189,32 @@ public class WireDoctorProperties {
             if ("new-cycle".equals(gate.trim())) return true;
         }
         return false;
+    }
+
+    public String getMaxGraphNodes() {
+        return maxGraphNodes;
+    }
+
+    public void setMaxGraphNodes(String maxGraphNodes) {
+        this.maxGraphNodes = maxGraphNodes;
+    }
+
+    /**
+     * Parses {@link #maxGraphNodes} leniently.
+     *
+     * @return the configured cap, or {@value #DEFAULT_MAX_GRAPH_NODES} if the
+     *         raw value is missing, negative, or not a valid number; {@code 0}
+     *         means unlimited
+     */
+    public int resolveMaxGraphNodes() {
+        if (maxGraphNodes == null) {
+            return DEFAULT_MAX_GRAPH_NODES;
+        }
+        try {
+            int parsed = Integer.parseInt(maxGraphNodes.trim());
+            return parsed < 0 ? DEFAULT_MAX_GRAPH_NODES : parsed;
+        } catch (NumberFormatException e) {
+            return DEFAULT_MAX_GRAPH_NODES;
+        }
     }
 }
