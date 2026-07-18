@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-07-18
+
+The "Upgrade Guardian" release: WireDoctor stops at describing your bean graph and
+starts guarding it across Spring Boot upgrades — catching the autoconfiguration
+condition flips that silently break apps.
+
+### Added
+- 🩺 **Autoconfig Condition Diff (the Upgrade Guard)** — WireDoctor now snapshots
+  Spring Boot's `ConditionEvaluationReport` (the same data `--debug` renders) into the
+  report and baseline as a `conditions` section: one stable outcome per
+  autoconfiguration class — `matched`, `notMatched` (with the condition message as
+  `reason`), `excluded`, or `unconditional`. The regression guard diffs these across
+  builds and produces a `conditionDiff` in `wiredoctor-diff.json`:
+  `changed` (outcome flips like `matched → notMatched` — the headline), `added`/`removed`
+  (autoconfig classes that appear/vanish, e.g. from a Boot version bump). Where the bean
+  diff shows *what* changed (beans gone), the condition diff shows *why* (which condition
+  flipped), with the exact `@ConditionalOnBean`/`@ConditionalOnClass` message. Read-only
+  access to an object Boot already keeps in memory — zero new intrusion. Validated on
+  Spring PetClinic (Boot 4.1): excluding one autoconfiguration surfaced the direct flip,
+  a downstream `@ConditionalOnBean` cascade, and 16 vanished beans in a single diff.
+- 🚦 **`condition-changed` regression gate** — `wiredoctor.fail-on=condition-changed`
+  fails the build (in CI) when an autoconfiguration condition outcome flips vs the
+  baseline. Combinable with `new-cycle` via the comma-separated contract
+  (`wiredoctor.fail-on=new-cycle,condition-changed`); the `wiredoctor-gate.status` marker
+  lists every fired gate (`FAIL:new-cycle,condition-changed`) and records
+  `conditionsChanged=N`. A pre-0.5.0 baseline without condition data is handled
+  gracefully: the condition diff is **skipped** (`conditionDiff=skipped`), the verdict
+  stays `PASS`, and the gate never trips — full backward compatibility.
+
+### Documentation
+- 📘 **Upgrade Guard guide** (`docs/upgrade-guard.md`) — the Boot-upgrade workflow
+  (baseline on the old version, diff on the new, gate in CI), how to read the condition
+  diff, and the backward-compatibility contract. Written from the real PetClinic
+  validation. Linked from the README; `ci-gating.md` and `security-posture.md` updated
+  for the new gate and the autoconfig-surface disclosure.
+
 ## [0.4.0] - 2026-07-18
 
 ### Added
