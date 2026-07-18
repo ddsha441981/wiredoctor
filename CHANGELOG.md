@@ -42,6 +42,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the v0.1.1 classpath-neutrality guarantee never regresses. The core analyzer
   now retains its last report in memory (`WireDoctorAnalyzer.getLastReport()`)
   to back the endpoint.
+- 🎚️ **Multi-profile baselines** — the `wiredoctor.baseline` path now accepts a
+  `{profiles}` token, replaced at runtime with a stable key derived from the
+  active profiles (sorted, dash-joined, or `default` when none are active). So
+  `wiredoctor-baseline-{profiles}.json` diffs a `prod` run against
+  `wiredoctor-baseline-prod.json` and a `dev` run against
+  `wiredoctor-baseline-dev.json` — profile-specific bean graphs compare
+  like-with-like instead of churning against one shared baseline. A missing
+  per-profile baseline degrades gracefully through the existing
+  "baseline missing → skip" path. Paths without the token are unchanged (single
+  shared baseline, as before). The report now records `activeProfiles`, and the
+  `wiredoctor-gate.status` marker gains a `profiles=` line for traceability.
 
 ## [0.3.0] - 2026-07-18
 

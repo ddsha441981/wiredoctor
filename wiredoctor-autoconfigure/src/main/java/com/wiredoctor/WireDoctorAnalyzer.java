@@ -139,6 +139,16 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         ConfigurableApplicationContext context = event.getApplicationContext();
         ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 
+        // Active profiles: recorded in the report for traceability and used to
+        // resolve a profile-keyed baseline path (v0.4.0) — the bean graph
+        // differs per profile, so each profile diffs against its own baseline.
+        String[] activeProfiles;
+        try {
+            activeProfiles = context.getEnvironment().getActiveProfiles();
+        } catch (Exception e) {
+            activeProfiles = new String[0];
+        }
+
         // ── Feature 1: Resolve output directory ──────────────────────────────
         File outputDir = new File(properties.getOutputPath());
         if (!outputDir.exists()) outputDir.mkdirs();
@@ -153,6 +163,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         Map<String, Object> report = new LinkedHashMap<>();
+        report.put("activeProfiles", Arrays.asList(activeProfiles));
 
         // ── Section 1: Startup timing + Slow bean instantiation ──────────────
         ApplicationStartup applicationStartup = context.getApplicationStartup();
@@ -428,7 +439,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
         WireDoctorRegressionException trippedGate =
-                runRegressionGuard(graph, cycles, report, outputDir);
+                runRegressionGuard(graph, cycles, report, outputDir, activeProfiles);
 
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
@@ -539,16 +550,22 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      * @param cycles    the current detected cycles
      * @param report    the full current report (persisted as baseline in write mode)
      * @param outputDir directory for {@code wiredoctor-diff.json}
+     * @param activeProfiles the environment's active profiles, used to resolve a
+     *                       {@code {profiles}} token in the baseline path (v0.4.0)
      * @return the gate exception to throw, or {@code null} when no gate tripped
      */
     private WireDoctorRegressionException runRegressionGuard(Map<String, String[]> graph,
                                                              List<List<String>> cycles,
                                                              Map<String, Object> report,
-                                                             File outputDir) {
+                                                             File outputDir,
+                                                             String[] activeProfiles) {
         String baselinePath = properties.getBaseline();
         if (baselinePath == null || baselinePath.isBlank()) {
             return null; // feature not enabled — no marker file either
         }
+        // v0.4.0: resolve a {profiles} token to a per-profile baseline so dev/prod
+        // graphs diff like-with-like. No token → path unchanged (pre-v0.4.0 behavior).
+        baselinePath = WireDoctorBaselineResolver.resolve(baselinePath, activeProfiles);
         File baselineFile = new File(baselinePath);
         ObjectMapper mapper = new ObjectMapper();
 
@@ -631,7 +648,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // diff — armed or not — so teams can gate softly (check the file)
         // without opting into fail-on. Format, line 1: "PASS" or
         // "FAIL:<gate>[,<gate>...]"; subsequent lines are informational.
-        writeGateStatus(gateStatusFile, diff, baselineFile.getName());
+        writeGateStatus(gateStatusFile, diff, baselineFile.getName(),
+                        WireDoctorBaselineResolver.profileKey(activeProfiles));
 
         if (properties.isFailOnNewCycle() && diff.hasNewCycles()) {
             log.error(WireDoctorMessages.GATE_TRIPPED,
@@ -660,10 +678,12 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      * @param gateStatusFile target marker file (stale copy already deleted)
      * @param diff           the completed baseline diff
      * @param baselineName   baseline file name, echoed for traceability
+     * @param profileKey     active-profile key the baseline was resolved for
      */
     private void writeGateStatus(File gateStatusFile,
                                  WireDoctorBaselineDiff.DiffResult diff,
-                                 String baselineName) {
+                                 String baselineName,
+                                 String profileKey) {
         StringBuilder status = new StringBuilder();
         if (diff.hasNewCycles()) {
             status.append("FAIL:new-cycle");
@@ -672,6 +692,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
         status.append('\n');
         status.append("baseline=").append(baselineName).append('\n');
+        status.append("profiles=").append(profileKey).append('\n');
         status.append("newCycles=").append(diff.newCycles().size()).append('\n');
         status.append("resolvedCycles=").append(diff.resolvedCycles().size()).append('\n');
         status.append("addedBeans=").append(diff.addedBeans().size()).append('\n');

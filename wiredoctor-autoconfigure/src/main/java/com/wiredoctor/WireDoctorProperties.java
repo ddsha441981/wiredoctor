@@ -61,6 +61,14 @@ public class WireDoctorProperties {
      * bean graph is diffed against it and {@code wiredoctor-diff.json} is
      * written. A missing/unreadable file logs an info message and skips the
      * diff — it never fails the application.
+     * <p>
+     * The path may contain a {@code {profiles}} token (v0.4.0), replaced at
+     * runtime with a stable key derived from the active profiles (sorted,
+     * dash-joined, or {@code default} when none are active). For example
+     * {@code wiredoctor-baseline-{profiles}.json} diffs a {@code prod} run
+     * against {@code wiredoctor-baseline-prod.json} — so profile-specific bean
+     * graphs compare like-with-like instead of producing spurious churn. A path
+     * without the token behaves exactly as before (a single shared baseline).
      */
     private String baseline;
 
