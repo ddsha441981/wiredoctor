@@ -87,6 +87,9 @@ public final class WireDoctorMessages {
 
     public static final String GRAPH_TRUNCATED          = "[WireDoctor] Graph serialized with top {} of {} nodes (by fan-in; cycle members always kept). Analysis ran on the full graph. Raise wiredoctor.max-graph-nodes (0 = unlimited) to serialize everything.";
 
+    public static final String GATE_STATUS_WRITTEN      = "[WireDoctor] Gate status written to: {}";
+    public static final String GATE_STATUS_WRITE_FAILED = "[WireDoctor] Could not write gate status to {}: {}";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

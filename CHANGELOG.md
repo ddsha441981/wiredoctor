@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- 🚦 **CI marker-file contract** — every completed baseline diff now writes
+  `wiredoctor-gate.status` next to the reports. Line 1 is the contract:
+  `PASS` or `FAIL:new-cycle`; following `key=value` lines are informational
+  (baseline name, cycle/bean counts, whether the hard gate was armed).
+  Written whether or not `wiredoctor.fail-on` is set, so teams can gate softly
+  (`grep -q '^PASS' wiredoctor-gate.status`) without log parsing or relying on
+  JVM exit codes. Stale markers are deleted at the start of every guarded run —
+  absence means "no verdict", so a crashed or skipped diff can never leave a
+  previous run's verdict behind.
+- 🧹 **User-bean smell filtering** — the `smells` rankings (`highFanIn`,
+  `highFanOut`, `unstable`) now default to user-defined beans only. On real
+  apps the coupling hotspots are dominated by framework infrastructure
+  (`WebMvcAutoConfiguration`, `environment`, endpoint handler mappings) that
+  users cannot refactor, burying the actionable signal. The new
+  `wiredoctor.include-framework-smells` property (default `false`) restores the
+  full framework-included rankings. The report records `smells.frameworkFiltered`
+  so a consumer can tell "no smells" from "framework filtered out". The full
+  `smells.fanIn` map is never filtered — HTML node sizing keeps every node's
+  true coupling weight. As a side effect, the synthetic
+  `...ApplicationContext@hash` fan-in entries (which carry a per-boot JVM
+  identity hash) no longer surface in the rankings.
+- 🩺 **Actuator endpoint (new `wiredoctor-actuator` module)** — an optional,
+  separately-published artifact exposing the diagnostic report over
+  `/actuator/wiredoctor`. Read-only: it serves the in-memory report the core
+  produced at application-ready time (no analysis is triggered by an HTTP call,
+  the `BeanFactory` is never touched), and returns `{status: "PENDING"}` until
+  startup analysis completes. The endpoint auto-configures only when Actuator
+  is already on the classpath, WireDoctor is enabled, and the `wiredoctor`
+  endpoint is exposed per the standard `management.endpoints.web.exposure`
+  rules. **The core `wiredoctor-autoconfigure` artifact remains actuator-free**
+  — Actuator appears only in this module (verified by its dependency tree), so
+  the v0.1.1 classpath-neutrality guarantee never regresses. The core analyzer
+  now retains its last report in memory (`WireDoctorAnalyzer.getLastReport()`)
+  to back the endpoint.
+- 🎚️ **Multi-profile baselines** — the `wiredoctor.baseline` path now accepts a
+  `{profiles}` token, replaced at runtime with a stable key derived from the
+  active profiles (sorted, dash-joined, or `default` when none are active). So
+  `wiredoctor-baseline-{profiles}.json` diffs a `prod` run against
+  `wiredoctor-baseline-prod.json` and a `dev` run against
+  `wiredoctor-baseline-dev.json` — profile-specific bean graphs compare
+  like-with-like instead of churning against one shared baseline. A missing
+  per-profile baseline degrades gracefully through the existing
+  "baseline missing → skip" path. Paths without the token are unchanged (single
+  shared baseline, as before). The report now records `activeProfiles`, and the
+  `wiredoctor-gate.status` marker gains a `profiles=` line for traceability.
+
+### Documentation
+- 🔒 **Security posture guide** (`docs/security-posture.md`) — what the reports
+  expose (bean names ≈ internal architecture, edges, profiles, timings; never
+  credentials or bean state), recommendations (gitignore reports, disable in
+  production, guard the actuator endpoint), and the **offline-only promise**:
+  WireDoctor's JVM does zero network I/O ever — an auditable claim with a
+  one-line grep to verify it, plus the one honest nuance (the generated HTML's
+  browser-side CDN fallback for vis-network when the bundled copy is missing).
+  Linked from the README.
+- 🤝 **Community scaffolding** — `CONTRIBUTING.md` (build/test conventions, the
+  zero-intrusion posture, PR expectations, good-first-issue guidance),
+  `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), GitHub issue forms
+  (bug report + feature request, with WireDoctor-specific fields), and a pull
+  request template.
+
 ## [0.3.0] - 2026-07-18
 
 The "from report to advice" release: WireDoctor stops just describing your

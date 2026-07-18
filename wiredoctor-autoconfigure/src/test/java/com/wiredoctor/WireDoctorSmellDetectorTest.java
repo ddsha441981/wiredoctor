@@ -164,6 +164,60 @@ class WireDoctorSmellDetectorTest {
         Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(graph);
         Map<String, Integer> fanIn = (Map<String, Integer>) smells.get("fanIn");
         assertThat(fanIn).containsEntry("hub", 2);
-        assertThat(smells).containsOnlyKeys("highFanIn", "highFanOut", "unstable", "fanIn");
+        assertThat(smells).containsOnlyKeys(
+                "highFanIn", "highFanOut", "unstable", "frameworkFiltered", "fanIn");
+        assertThat(smells.get("frameworkFiltered")).isEqualTo(false);
+    }
+
+    // ── v0.4.0: user-bean filtering of the ranked lists ──────────────────────
+
+    @Test
+    void filteredRankingsExcludeFrameworkBeansButKeepUserBeans() {
+        // "fw" is a heavily depended-on framework bean; "svc" is a user bean.
+        Map<String, String[]> graph = Map.of(
+                "a", new String[]{"fw", "svc"},
+                "b", new String[]{"fw"},
+                "c", new String[]{"fw"}
+        );
+        List<Map<String, Object>> hotspots = WireDoctorSmellDetector.highFanIn(
+                graph, WireDoctorSmellDetector.computeDegrees(graph),
+                name -> !name.equals("fw"));
+
+        assertThat(hotspots).extracting(e -> e.get("beanName"))
+                .containsExactly("svc")
+                .doesNotContain("fw");
+    }
+
+    @Test
+    void filteredReportMapKeepsFullFanInMapForNodeSizing() {
+        // Framework "fw" is filtered out of the ranked lists, but its true
+        // fan-in must still appear in the fanIn map (HTML sizes every node).
+        Map<String, String[]> graph = Map.of(
+                "a", new String[]{"fw"},
+                "b", new String[]{"fw"}
+        );
+        Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(
+                graph, name -> !name.equals("fw"), true);
+
+        assertThat((List<Map<String, Object>>) smells.get("highFanIn")).isEmpty();
+        assertThat(smells.get("frameworkFiltered")).isEqualTo(true);
+        Map<String, Integer> fanIn = (Map<String, Integer>) smells.get("fanIn");
+        assertThat(fanIn).containsEntry("fw", 2); // full weight preserved
+    }
+
+    @Test
+    void filteredUnstableExcludesFrameworkBeans() {
+        // Both "fwEdge" and "userEdge" are unstable (I=1.0), but only the user
+        // bean should survive filtering.
+        Map<String, String[]> graph = Map.of(
+                "fwEdge",   new String[]{"w", "x", "y"},
+                "userEdge", new String[]{"m", "n", "o"}
+        );
+        List<Map<String, Object>> unstable = WireDoctorSmellDetector.unstable(
+                WireDoctorSmellDetector.computeDegrees(graph),
+                name -> !name.startsWith("fw"));
+
+        assertThat(unstable).extracting(e -> e.get("beanName"))
+                .containsExactly("userEdge");
     }
 }

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Computes classic architecture-health metrics over the runtime-resolved bean
@@ -46,6 +47,9 @@ public final class WireDoctorSmellDetector {
 
     /** Instability threshold above which a bean is flagged as a refactor candidate. */
     static final double INSTABILITY_THRESHOLD = 0.8;
+
+    /** Predicate that admits every bean — the pre-v0.4.0 "rank everything" behavior. */
+    static final Predicate<String> INCLUDE_ALL = bean -> true;
 
     private WireDoctorSmellDetector() {
         // Static utility
@@ -92,9 +96,24 @@ public final class WireDoctorSmellDetector {
      * @return report entries {@code {beanName, inDegree, dependents}}, highest first
      */
     public static List<Map<String, Object>> highFanIn(Map<String, String[]> graph, Degrees degrees) {
+        return highFanIn(graph, degrees, INCLUDE_ALL);
+    }
+
+    /**
+     * Top-{@value TOP_N} beans by fan-in, restricted to beans accepted by
+     * {@code include} (used since v0.4.0 to rank user beans only).
+     *
+     * @param graph   dependency graph
+     * @param degrees precomputed degrees from {@link #computeDegrees}
+     * @param include predicate deciding which bean names may be ranked
+     * @return report entries {@code {beanName, inDegree, dependents}}, highest first
+     */
+    public static List<Map<String, Object>> highFanIn(
+            Map<String, String[]> graph, Degrees degrees, Predicate<String> include) {
         List<Map<String, Object>> out = new ArrayList<>();
         degrees.fanIn.entrySet().stream()
                 .filter(e -> e.getValue() > 0)
+                .filter(e -> include.test(e.getKey()))
                 .sorted(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue).reversed()
                         .thenComparing(Map.Entry::getKey))
                 .limit(TOP_N)
@@ -116,9 +135,24 @@ public final class WireDoctorSmellDetector {
      * @return report entries {@code {beanName, outDegree, dependencies}}, highest first
      */
     public static List<Map<String, Object>> highFanOut(Map<String, String[]> graph, Degrees degrees) {
+        return highFanOut(graph, degrees, INCLUDE_ALL);
+    }
+
+    /**
+     * Top-{@value TOP_N} beans by fan-out, restricted to beans accepted by
+     * {@code include} (used since v0.4.0 to rank user beans only).
+     *
+     * @param graph   dependency graph
+     * @param degrees precomputed degrees from {@link #computeDegrees}
+     * @param include predicate deciding which bean names may be ranked
+     * @return report entries {@code {beanName, outDegree, dependencies}}, highest first
+     */
+    public static List<Map<String, Object>> highFanOut(
+            Map<String, String[]> graph, Degrees degrees, Predicate<String> include) {
         List<Map<String, Object>> out = new ArrayList<>();
         degrees.fanOut.entrySet().stream()
                 .filter(e -> e.getValue() > 0)
+                .filter(e -> include.test(e.getKey()))
                 .sorted(Comparator.<Map.Entry<String, Integer>>comparingInt(Map.Entry::getValue).reversed()
                         .thenComparing(Map.Entry::getKey))
                 .limit(TOP_N)
@@ -146,9 +180,22 @@ public final class WireDoctorSmellDetector {
      * @return report entries {@code {beanName, instability, fanIn, fanOut}}
      */
     public static List<Map<String, Object>> unstable(Degrees degrees) {
+        return unstable(degrees, INCLUDE_ALL);
+    }
+
+    /**
+     * Unstable beans (as {@link #unstable(Degrees)}) restricted to beans
+     * accepted by {@code include} (used since v0.4.0 to rank user beans only).
+     *
+     * @param degrees precomputed degrees from {@link #computeDegrees}
+     * @param include predicate deciding which bean names may be ranked
+     * @return report entries {@code {beanName, instability, fanIn, fanOut}}
+     */
+    public static List<Map<String, Object>> unstable(Degrees degrees, Predicate<String> include) {
         List<Map<String, Object>> out = new ArrayList<>();
         degrees.fanOut.entrySet().stream()
                 .filter(e -> e.getValue() >= 2)
+                .filter(e -> include.test(e.getKey()))
                 .map(e -> {
                     int ce = e.getValue();
                     int ca = degrees.fanIn.getOrDefault(e.getKey(), 0);
@@ -172,18 +219,43 @@ public final class WireDoctorSmellDetector {
     }
 
     /**
-     * Full {@code smells} report section.
+     * Full {@code smells} report section, ranking every bean (framework included).
      *
      * @param graph dependency graph
-     * @return {@code {highFanIn: [...], highFanOut: [...], unstable: [...], fanIn: {bean: n}}}
+     * @return {@code {highFanIn: [...], highFanOut: [...], unstable: [...],
+     *         frameworkFiltered: false, fanIn: {bean: n}}}
      */
     public static Map<String, Object> toReportMap(Map<String, String[]> graph) {
+        return toReportMap(graph, INCLUDE_ALL, false);
+    }
+
+    /**
+     * Full {@code smells} report section with the ranked lists restricted to
+     * beans accepted by {@code include} (since v0.4.0).
+     * <p>
+     * Only the ranked lists ({@code highFanIn}, {@code highFanOut},
+     * {@code unstable}) are filtered — the {@code fanIn} map stays complete
+     * because the HTML report sizes <em>every</em> graph node by fan-in,
+     * framework beans included.
+     *
+     * @param graph             dependency graph
+     * @param include           predicate deciding which bean names may be ranked
+     * @param frameworkFiltered whether framework beans were excluded from the
+     *                          ranked lists (recorded in the report for honesty)
+     * @return the {@code smells} map
+     */
+    public static Map<String, Object> toReportMap(
+            Map<String, String[]> graph, Predicate<String> include, boolean frameworkFiltered) {
         Degrees degrees = computeDegrees(graph);
         Map<String, Object> smells = new LinkedHashMap<>();
-        smells.put("highFanIn",  highFanIn(graph, degrees));
-        smells.put("highFanOut", highFanOut(graph, degrees));
-        smells.put("unstable",   unstable(degrees));
-        // Full fan-in map: consumed by the HTML report to size graph nodes.
+        smells.put("highFanIn",  highFanIn(graph, degrees, include));
+        smells.put("highFanOut", highFanOut(graph, degrees, include));
+        smells.put("unstable",   unstable(degrees, include));
+        // Records whether the ranked lists above were narrowed to user beans,
+        // so a report consumer can tell "no smells" from "framework filtered out".
+        smells.put("frameworkFiltered", frameworkFiltered);
+        // Full fan-in map: consumed by the HTML report to size graph nodes —
+        // never filtered, every node keeps its true coupling weight.
         smells.put("fanIn",      new LinkedHashMap<>(degrees.fanIn));
         return smells;
     }

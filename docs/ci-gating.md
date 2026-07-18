@@ -14,7 +14,8 @@ that Spring **actually resolved** at startup.
 1. **Baseline** — you commit `wiredoctor-baseline.json` (a snapshot of beans,
    edges, and cycles) to your repo, like a lockfile for your architecture.
 2. **Diff** — on every startup with `wiredoctor.baseline` set, WireDoctor diffs
-   the live graph against the baseline and writes `wiredoctor-diff.json`.
+   the live graph against the baseline and writes `wiredoctor-diff.json` plus a
+   machine-readable verdict file `wiredoctor-gate.status` (since 0.4.0).
 3. **Gate** — with `wiredoctor.fail-on=new-cycle`, a cycle that is not in the
    baseline throws `WireDoctorRegressionException` *after* analysis completes
    (the diff file is always written first), so the JVM exits non-zero and the
@@ -128,6 +129,67 @@ When an architectural change is intentional, regenerate the baseline (Step 1)
 in the same PR and commit it. Reviewers then see the baseline diff — the
 architecture change becomes an explicit, reviewable artifact instead of silent
 drift.
+
+---
+
+## Gating without exit codes: `wiredoctor-gate.status` (since 0.4.0)
+
+Some build setups can't (or don't want to) rely on the JVM exit code — e.g. the
+app is booted by a wrapper script, runs as a `@SpringBootTest`, or the team
+wants a *soft* gate that reports without failing the build. For these,
+WireDoctor writes a machine-readable verdict file next to the reports on
+**every completed diff**, whether or not `fail-on` is configured:
+
+```
+FAIL:new-cycle
+baseline=wiredoctor-baseline.json
+newCycles=1
+resolvedCycles=0
+addedBeans=3
+removedBeans=0
+gateArmed=false
+```
+
+**The contract is line 1 only:** `PASS`, or `FAIL:<gate>` (comma-separated if
+multiple gates ever trip). The remaining `key=value` lines are informational
+and may grow in future versions — don't parse positionally.
+
+Semantics worth relying on:
+
+- **Absence means "no verdict."** The file is deleted at the start of every
+  guarded run and only written after a diff completes — a stale verdict from a
+  previous run can never leak into a run that crashed or skipped the diff
+  (missing/corrupt baseline, `baseline-write` mode).
+- **Written before the hard gate throws**, so CI can read it even after the
+  JVM died red.
+- The verdict is independent of `fail-on`: `FAIL:new-cycle` with
+  `gateArmed=false` means "a new cycle exists, but you chose not to fail the
+  app over it."
+
+A Maven/Gradle-friendly gate step becomes a one-liner:
+
+```bash
+# hard gate, no log parsing:
+grep -q '^PASS' wiredoctor-gate.status || { cat wiredoctor-diff.json; exit 1; }
+```
+
+Or as a soft gate in GitHub Actions — warn on the PR without failing it:
+
+```yaml
+      - name: Architecture check (soft)
+        run: |
+          if ! grep -q '^PASS' wiredoctor-gate.status; then
+            echo "::warning::WireDoctor: $(head -1 wiredoctor-gate.status) — see wiredoctor-diff.json"
+          fi
+```
+
+> **Keep configuration consistent between baseline-write and diff runs.** The
+> diff compares the *live* graph against the snapshot, so any config that
+> changes which beans exist will show up as added/removed beans. A common
+> example: writing the baseline with `management.endpoints.web.exposure.include=wiredoctor`
+> set but diffing without it reports `removedBeans:[wireDoctorEndpoint]` —
+> technically correct, practically noise. Write and diff under the same profile
+> and exposure settings.
 
 ---
 

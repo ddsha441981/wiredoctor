@@ -61,6 +61,14 @@ public class WireDoctorProperties {
      * bean graph is diffed against it and {@code wiredoctor-diff.json} is
      * written. A missing/unreadable file logs an info message and skips the
      * diff — it never fails the application.
+     * <p>
+     * The path may contain a {@code {profiles}} token (v0.4.0), replaced at
+     * runtime with a stable key derived from the active profiles (sorted,
+     * dash-joined, or {@code default} when none are active). For example
+     * {@code wiredoctor-baseline-{profiles}.json} diffs a {@code prod} run
+     * against {@code wiredoctor-baseline-prod.json} — so profile-specific bean
+     * graphs compare like-with-like instead of producing spurious churn. A path
+     * without the token behaves exactly as before (a single shared baseline).
      */
     private String baseline;
 
@@ -91,6 +99,19 @@ public class WireDoctorProperties {
      * unlimited (pre-v0.3.0 behavior). Use {@link #resolveMaxGraphNodes()}.
      */
     private String maxGraphNodes = String.valueOf(DEFAULT_MAX_GRAPH_NODES);
+
+    /**
+     * Whether the architecture-smell rankings ({@code highFanIn},
+     * {@code highFanOut}, {@code unstable}) include framework-owned beans.
+     * <p>
+     * Defaults to {@code false}: framework beans (Spring, Tomcat, Jackson, ...)
+     * genuinely are the coupling hotspots of any Boot app, but users cannot
+     * refactor them, so ranking them first buries the actionable user-bean
+     * signal. The full {@code fanIn} map (used for HTML node sizing) is always
+     * complete regardless of this toggle. Set to {@code true} to rank every
+     * bean, framework included.
+     */
+    private boolean includeFrameworkSmells = false;
 
     /**
      * Parses {@link #slowBeanThresholdMs} leniently.
@@ -197,6 +218,14 @@ public class WireDoctorProperties {
 
     public void setMaxGraphNodes(String maxGraphNodes) {
         this.maxGraphNodes = maxGraphNodes;
+    }
+
+    public boolean isIncludeFrameworkSmells() {
+        return includeFrameworkSmells;
+    }
+
+    public void setIncludeFrameworkSmells(boolean includeFrameworkSmells) {
+        this.includeFrameworkSmells = includeFrameworkSmells;
     }
 
     /**

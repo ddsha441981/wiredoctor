@@ -182,4 +182,102 @@ class WireDoctorRegressionGuardIntegrationTest {
         p.setFailOn(null);
         assertThat(p.isFailOnNewCycle()).isFalse();
     }
+
+    // ── v0.4.0: CI marker-file contract (wiredoctor-gate.status) ─────────────
+
+    @Test
+    void cleanDiffWritesPassMarker(@TempDir Path tempDir) throws Exception {
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline)) { }
+
+        Path status = tempDir.resolve("wiredoctor-gate.status");
+        assertThat(status).exists();
+        var lines = Files.readAllLines(status);
+        assertThat(lines.get(0)).isEqualTo("PASS");
+        assertThat(lines).anyMatch(l -> l.equals("newCycles=0"));
+        assertThat(lines).anyMatch(l -> l.equals("gateArmed=false"));
+    }
+
+    @Test
+    void newCycleWritesFailMarkerEvenWithoutArmedGate(@TempDir Path tempDir) throws Exception {
+        // Soft-gating: teams can check the marker in CI without opting into
+        // fail-on (the app must still boot successfully here).
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        try (var context = boot(CyclicApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline)) {
+            assertThat(context.isActive()).isTrue();
+        }
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(lines.get(0)).isEqualTo("FAIL:new-cycle");
+        assertThat(lines).anyMatch(l -> l.equals("newCycles=1"));
+        assertThat(lines).anyMatch(l -> l.equals("gateArmed=false"));
+    }
+
+    @Test
+    void trippedGateWritesFailMarkerBeforeThrowing(@TempDir Path tempDir) throws Exception {
+        // The marker must exist even when the hard gate kills the app — CI
+        // reads the file after the JVM is gone.
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        assertThatThrownBy(() -> boot(CyclicApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.fail-on=new-cycle"))
+                .isInstanceOf(WireDoctorRegressionException.class);
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(lines.get(0)).isEqualTo("FAIL:new-cycle");
+        assertThat(lines).anyMatch(l -> l.equals("gateArmed=true"));
+    }
+
+    @Test
+    void staleMarkerIsRemovedWhenDiffCannotRun(@TempDir Path tempDir) throws Exception {
+        // A FAIL from a previous run must never survive into a run where the
+        // diff is skipped (missing baseline) — absence means "no verdict".
+        Path status = tempDir.resolve("wiredoctor-gate.status");
+        Files.writeString(status, "FAIL:new-cycle\nstale=true\n");
+
+        try (var context = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + tempDir.resolve("does-not-exist.json"))) {
+            assertThat(context.isActive()).isTrue();
+        }
+        assertThat(status).doesNotExist();
+    }
+
+    @Test
+    void baselineWriteModeDoesNotWriteMarker(@TempDir Path tempDir) throws Exception {
+        // Write mode never diffs, so there is no verdict to report.
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+        assertThat(tempDir.resolve("wiredoctor-gate.status")).doesNotExist();
+    }
+
+    @Test
+    void noBaselineConfiguredWritesNoMarker(@TempDir Path tempDir) {
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir)) { }
+        assertThat(tempDir.resolve("wiredoctor-gate.status")).doesNotExist();
+    }
 }

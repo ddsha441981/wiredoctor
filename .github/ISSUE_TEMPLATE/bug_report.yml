@@ -1,0 +1,79 @@
+name: 🐛 Bug report
+description: Something in WireDoctor behaves incorrectly
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. WireDoctor analyzes the *resolved* Spring
+        bean graph, so the version and context details below matter a lot for
+        reproducing the issue.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you observe, and what did you expect instead?
+      placeholder: WireDoctor reported a cycle that does not exist / crashed startup / ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps. A small failing sample project or bean setup helps enormously.
+      placeholder: |
+        1. Bean A depends on B, B depends on A via @Lazy
+        2. Start the app
+        3. See ...
+    validations:
+      required: true
+
+  - type: input
+    id: wiredoctor-version
+    attributes:
+      label: WireDoctor version
+      placeholder: "0.3.0"
+    validations:
+      required: true
+
+  - type: input
+    id: spring-boot-version
+    attributes:
+      label: Spring Boot version
+      placeholder: "3.5.15"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: jdk
+    attributes:
+      label: JDK version
+      options:
+        - "17"
+        - "21"
+        - "Other (note it in 'What happened?')"
+    validations:
+      required: true
+
+  - type: input
+    id: bean-count
+    attributes:
+      label: Approximate bean count
+      description: Roughly how many beans in the context? (Shown in the console summary.)
+      placeholder: "~150"
+    validations:
+      required: false
+
+  - type: textarea
+    id: report-snippet
+    attributes:
+      label: Relevant report / log output
+      description: |
+        Paste the relevant part of the console summary or `wiredoctor-report.json`.
+        Redact bean names if they reveal anything you would rather not share.
+      render: text
+    validations:
+      required: false

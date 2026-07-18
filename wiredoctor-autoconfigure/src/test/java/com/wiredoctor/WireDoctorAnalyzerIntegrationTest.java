@@ -216,6 +216,74 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    // ── v0.4.0 Task 1b: smell-filter gap fixes ───────────────────────────────
+
+    @Test
+    void environmentBeanDoesNotAppearInFilteredSmellRankings(@TempDir Path tempDir)
+            throws Exception {
+        // Gap fix 1: "environment" is a well-known Spring infrastructure singleton
+        // registered outside beanDefinitionNames. It must NOT appear in the filtered
+        // highFanIn/highFanOut/unstable lists (it was the top highFanIn entry in the
+        // v0.4.0 real-world test on Spring Initializr).
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.include-framework-smells=false")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+
+            List<JsonNode> highFanIn = iterableToList(
+                    report.path("smells").path("highFanIn"));
+            List<JsonNode> highFanOut = iterableToList(
+                    report.path("smells").path("highFanOut"));
+            List<JsonNode> unstable = iterableToList(
+                    report.path("smells").path("unstable"));
+
+            java.util.stream.Stream.of(highFanIn, highFanOut, unstable).forEach(list ->
+                    assertThat(list.stream().map(n -> n.path("beanName").asText()))
+                            .as("well-known Spring infrastructure bean must be filtered")
+                            .doesNotContain("environment", "systemProperties",
+                                    "systemEnvironment", "messageSource"));
+        }
+    }
+
+    @Test
+    void scanPackagesAllowlistRestrictsSmellRankingsToUserPackage(@TempDir Path tempDir)
+            throws Exception {
+        // Gap fix 2: when scan-packages is set, only beans whose package starts with
+        // one of the declared prefixes appear in the smell rankings. Third-party
+        // autoconfig beans (azure, initializr, etc.) are excluded automatically.
+        // This test uses the test app's own package as the allowlist and verifies that
+        // every bean in highFanIn/highFanOut is from com.wiredoctor (the test app pkg).
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.scan-packages=com.wiredoctor")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+
+            List<JsonNode> highFanIn = iterableToList(
+                    report.path("smells").path("highFanIn"));
+            List<JsonNode> highFanOut = iterableToList(
+                    report.path("smells").path("highFanOut"));
+
+            // frameworkFiltered flag must still be set
+            assertThat(report.path("smells").path("frameworkFiltered").asBoolean())
+                    .as("frameworkFiltered must be true when scan-packages is set")
+                    .isTrue();
+
+            // All ranked beans must be in the declared scan package
+            java.util.stream.Stream.of(highFanIn, highFanOut).forEach(list ->
+                    list.forEach(entry -> {
+                        String beanName = entry.path("beanName").asText();
+                        // beans that appear in the rankings should be from the
+                        // declared scan package — spring beans must not leak through
+                        assertThat(beanName)
+                                .as("non-user bean leaked into filtered smells: " + beanName)
+                                .doesNotStartWith("org.springframework")
+                                .doesNotContain("@");
+                    }));
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);

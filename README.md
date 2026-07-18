@@ -111,6 +111,8 @@ WireDoctor is enabled by default. If you accidentally leave the dependency in yo
 wiredoctor.enabled=false
 ```
 
+For what the reports expose, how to handle them, and WireDoctor's **offline-only** network behavior (its JVM does zero network I/O), see the **[security posture guide](docs/security-posture.md)**.
+
 ---
 
 ## 🔬 Epistemic Honesty & Known Limitations
@@ -142,6 +144,16 @@ We are actively researching advanced diagnostic capabilities for the next releas
    *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. This will likely involve a lightweight, non-invasive access-tracking proxy mechanism.*
 3. 🧠 **Memory Footprint Estimation:**
    *Moving beyond measuring instantiation **time** to measuring object **space**. Exploring per-bean heap consumption metrics (potentially requiring Java Agent instrumentation for deep size-of calculations).*
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome — bug reports, docs, tests, and features. See
+**[CONTRIBUTING.md](CONTRIBUTING.md)** for build/test conventions and the
+zero-intrusion design posture, and please follow the
+**[Code of Conduct](CODE_OF_CONDUCT.md)**. New here? Look for issues labelled
+[`good first issue`](https://github.com/ddsha441981/wiredoctor/labels/good%20first%20issue).
 
 ---
 

@@ -46,12 +46,39 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
     private final WireDoctorProperties properties;
 
     /**
+     * The most recently generated report, retained in memory after startup
+     * analysis completes. {@code null} until the {@link ApplicationReadyEvent}
+     * has been processed (or if analysis failed before the report was built).
+     * <p>
+     * Exposed via {@link #getLastReport()} so an out-of-core integration (the
+     * optional {@code wiredoctor-actuator} module) can serve the report without
+     * re-reading it from disk. Written once at the end of analysis and only
+     * read afterwards; {@code volatile} guarantees visibility across the
+     * startup thread and any later reader thread (e.g. an HTTP worker).
+     */
+    private volatile Map<String, Object> lastReport;
+
+    /**
      * Creates the analyzer with its typed configuration.
      *
      * @param properties the bound {@code wiredoctor.*} configuration
      */
     public WireDoctorAnalyzer(WireDoctorProperties properties) {
         this.properties = properties;
+    }
+
+    /**
+     * Returns the most recently generated diagnostic report, or {@code null}
+     * before startup analysis has completed.
+     * <p>
+     * The returned map is the live report instance; callers should treat it as
+     * read-only. Provided for the optional {@code wiredoctor-actuator} module —
+     * the core itself never depends on Spring Boot Actuator.
+     *
+     * @return the last report map, or {@code null} if none has been produced yet
+     */
+    public Map<String, Object> getLastReport() {
+        return lastReport;
     }
 
     /**
@@ -112,6 +139,16 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         ConfigurableApplicationContext context = event.getApplicationContext();
         ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 
+        // Active profiles: recorded in the report for traceability and used to
+        // resolve a profile-keyed baseline path (v0.4.0) — the bean graph
+        // differs per profile, so each profile diffs against its own baseline.
+        String[] activeProfiles;
+        try {
+            activeProfiles = context.getEnvironment().getActiveProfiles();
+        } catch (Exception e) {
+            activeProfiles = new String[0];
+        }
+
         // ── Feature 1: Resolve output directory ──────────────────────────────
         File outputDir = new File(properties.getOutputPath());
         if (!outputDir.exists()) outputDir.mkdirs();
@@ -126,6 +163,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         Map<String, Object> report = new LinkedHashMap<>();
+        report.put("activeProfiles", Arrays.asList(activeProfiles));
 
         // ── Section 1: Startup timing + Slow bean instantiation ──────────────
         ApplicationStartup applicationStartup = context.getApplicationStartup();
@@ -195,13 +233,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         int roleInfra        = 0;
         int userDefined      = 0;
         int frameworkOwned   = 0;
-
-        // Package prefixes that indicate "framework-owned" beans
-        List<String> frameworkPkgs = List.of(
-            "org.springframework", "org.apache", "com.sun",
-            "java.", "javax.", "jakarta.", "io.netty",
-            "com.fasterxml", "io.micrometer"
-        );
+        // Beans classified framework-owned by resolved type — reused below to
+        // filter the smell rankings down to beans a user can actually refactor.
+        Set<String> frameworkBeanNames = new HashSet<>();
 
         for (String beanName : beanNames) {
             // Role classification
@@ -214,14 +248,27 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 }
             } catch (Exception ignored) {}
 
-            // User-defined vs framework (package heuristic)
+            // User-defined vs framework (package heuristic + well-known names)
             try {
-                Class<?> beanType = beanFactory.getType(beanName);
-                if (beanType != null && beanType.getPackage() != null) {
-                    String pkg = beanType.getPackage().getName();
-                    boolean isFramework = frameworkPkgs.stream().anyMatch(pkg::startsWith);
-                    if (isFramework) frameworkOwned++;
-                    else userDefined++;
+                // Well-known Spring infrastructure singletons registered outside
+                // beanDefinitionNames (e.g. "environment") are not reachable via
+                // getType() in the normal class. Pre-seed them here so the smell
+                // filter does not surface them as user beans.
+                if (WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)) {
+                    frameworkOwned++;
+                    frameworkBeanNames.add(beanName);
+                } else {
+                    Class<?> beanType = beanFactory.getType(beanName);
+                    if (beanType != null && beanType.getPackage() != null) {
+                        String pkg = beanType.getPackage().getName();
+                        boolean isFramework = WireDoctorBeanClassifier.isFrameworkPackage(pkg);
+                        if (isFramework) {
+                            frameworkOwned++;
+                            frameworkBeanNames.add(beanName);
+                        } else {
+                            userDefined++;
+                        }
+                    }
                 }
             } catch (Exception ignored) {}
         }
@@ -286,7 +333,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                 .map(String::trim)
                                 .anyMatch(pkg::startsWith);
                     } else {
-                        include = frameworkPkgs.stream().noneMatch(pkg::startsWith);
+                        include = !WireDoctorBeanClassifier.isFrameworkPackage(pkg);
                     }
                 } else {
                     include = scanPackages == null; // unknown package: include only in default mode
@@ -320,7 +367,46 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // the live resolved graph (what Spring actually wired — proxies,
         // conditionals, profiles included). Pure graph functions, no heuristics.
         // Computed BEFORE graph serialization: truncation below reuses fan-in.
-        Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(graph);
+        // By default the ranked lists (highFanIn/highFanOut/unstable) are
+        // narrowed to user beans: framework beans genuinely dominate the
+        // coupling hotspots of any Boot app, but users cannot refactor them,
+        // so ranking them first buries the actionable signal. A bean is
+        // "framework" if it was classified so by resolved type above, or if its
+        // name is itself a framework-package FQN (the synthetic
+        // ...ApplicationContext@hash fan-in entries that carry no bean type).
+        boolean includeFramework = properties.isIncludeFrameworkSmells();
+        // When scan-packages is configured, it defines what "user code" means for
+        // this app.  Restrict the smell rankings to that allowlist (consistent with
+        // the orphan-bean logic above) so that third-party autoconfig packages that
+        // are not in FRAMEWORK_PACKAGES don't surface as smells.
+        // Without scan-packages: fall back to the package-prefix heuristic + the
+        // well-known-name set pre-seeded in frameworkBeanNames above.
+        java.util.function.Predicate<String> userBean;
+        if (scanPackages != null && !scanPackages.isEmpty()) {
+            String[] pkgPrefixes = Arrays.stream(scanPackages.split(","))
+                    .map(String::trim).toArray(String[]::new);
+            userBean = name -> {
+                try {
+                    Class<?> t = beanFactory.getType(name);
+                    if (t != null && t.getPackage() != null) {
+                        String pkg = t.getPackage().getName();
+                        for (String prefix : pkgPrefixes) {
+                            if (pkg.startsWith(prefix)) return true;
+                        }
+                        return false;
+                    }
+                } catch (Exception ignored) {}
+                return false; // unknown type: not in user's declared packages
+            };
+        } else {
+            userBean = name ->
+                    !frameworkBeanNames.contains(name)
+                            && !WireDoctorBeanClassifier.isFrameworkPackage(name)
+                            && !WireDoctorBeanClassifier.isWellKnownFrameworkBean(name);
+        }
+        Map<String, Object> smells = includeFramework
+                ? WireDoctorSmellDetector.toReportMap(graph)
+                : WireDoctorSmellDetector.toReportMap(graph, userBean, true);
         report.put("smells", smells);
 
         // ── Feature (v0.3.0): Large-Context Hardening ────────────────────────
@@ -364,6 +450,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } catch (Exception ignored) {}
         report.put("criticalPath", WireDoctorCriticalPath.toReportMap(criticalPath, readinessMs));
 
+        // Retain the completed report in memory for out-of-core consumers (the
+        // optional wiredoctor-actuator endpoint). Set BEFORE the disk write so a
+        // failed write never leaves the endpoint without a report to serve.
+        this.lastReport = report;
+
         // ── Write JSON ────────────────────────────────────────────────────────
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -383,7 +474,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
         WireDoctorRegressionException trippedGate =
-                runRegressionGuard(graph, cycles, report, outputDir);
+                runRegressionGuard(graph, cycles, report, outputDir, activeProfiles);
 
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
@@ -494,18 +585,32 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      * @param cycles    the current detected cycles
      * @param report    the full current report (persisted as baseline in write mode)
      * @param outputDir directory for {@code wiredoctor-diff.json}
+     * @param activeProfiles the environment's active profiles, used to resolve a
+     *                       {@code {profiles}} token in the baseline path (v0.4.0)
      * @return the gate exception to throw, or {@code null} when no gate tripped
      */
     private WireDoctorRegressionException runRegressionGuard(Map<String, String[]> graph,
                                                              List<List<String>> cycles,
                                                              Map<String, Object> report,
-                                                             File outputDir) {
+                                                             File outputDir,
+                                                             String[] activeProfiles) {
         String baselinePath = properties.getBaseline();
         if (baselinePath == null || baselinePath.isBlank()) {
-            return null; // feature not enabled
+            return null; // feature not enabled — no marker file either
         }
+        // v0.4.0: resolve a {profiles} token to a per-profile baseline so dev/prod
+        // graphs diff like-with-like. No token → path unchanged (pre-v0.4.0 behavior).
+        baselinePath = WireDoctorBaselineResolver.resolve(baselinePath, activeProfiles);
         File baselineFile = new File(baselinePath);
         ObjectMapper mapper = new ObjectMapper();
+
+        // v0.4.0 CI contract: remove any stale marker BEFORE computing, so a
+        // crash mid-analysis can never leave a previous run's verdict behind
+        // for CI to misread. The absence of the file itself means "no verdict".
+        File gateStatusFile = new File(outputDir, "wiredoctor-gate.status");
+        try {
+            Files.deleteIfExists(gateStatusFile.toPath());
+        } catch (Exception ignored) {}
 
         if (properties.isBaselineWrite()) {
             try {
@@ -572,6 +677,15 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
         }
 
+        // ── Feature (v0.4.0): CI marker-file contract ────────────────────────
+        // A machine-readable verdict so Maven/Gradle steps can gate without
+        // parsing logs or forcing a JVM exit code. Written on EVERY completed
+        // diff — armed or not — so teams can gate softly (check the file)
+        // without opting into fail-on. Format, line 1: "PASS" or
+        // "FAIL:<gate>[,<gate>...]"; subsequent lines are informational.
+        writeGateStatus(gateStatusFile, diff, baselineFile.getName(),
+                        WireDoctorBaselineResolver.profileKey(activeProfiles));
+
         if (properties.isFailOnNewCycle() && diff.hasNewCycles()) {
             log.error(WireDoctorMessages.GATE_TRIPPED,
                       properties.getFailOn(), diff.newCycles().size());
@@ -581,5 +695,50 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     + baselineFile.getName() + ": " + diff.newCycles());
         }
         return null;
+    }
+
+    /**
+     * CI marker-file contract (v0.4.0): writes {@code wiredoctor-gate.status}
+     * with a machine-readable verdict.
+     * <p>
+     * Line 1 is the contract: {@code PASS} when no gate condition is present
+     * in the diff, or {@code FAIL:<gate>} (comma-separated list) when one is —
+     * independent of whether {@code wiredoctor.fail-on} armed the hard gate.
+     * This lets build steps gate with a one-liner
+     * ({@code grep -q '^PASS' wiredoctor-gate.status}) instead of parsing
+     * logs or relying on JVM exit codes. Remaining lines are informational
+     * key=value pairs. Write failures are logged and swallowed — the marker
+     * is an ergonomic extra, never a crash risk.
+     *
+     * @param gateStatusFile target marker file (stale copy already deleted)
+     * @param diff           the completed baseline diff
+     * @param baselineName   baseline file name, echoed for traceability
+     * @param profileKey     active-profile key the baseline was resolved for
+     */
+    private void writeGateStatus(File gateStatusFile,
+                                 WireDoctorBaselineDiff.DiffResult diff,
+                                 String baselineName,
+                                 String profileKey) {
+        StringBuilder status = new StringBuilder();
+        if (diff.hasNewCycles()) {
+            status.append("FAIL:new-cycle");
+        } else {
+            status.append("PASS");
+        }
+        status.append('\n');
+        status.append("baseline=").append(baselineName).append('\n');
+        status.append("profiles=").append(profileKey).append('\n');
+        status.append("newCycles=").append(diff.newCycles().size()).append('\n');
+        status.append("resolvedCycles=").append(diff.resolvedCycles().size()).append('\n');
+        status.append("addedBeans=").append(diff.addedBeans().size()).append('\n');
+        status.append("removedBeans=").append(diff.removedBeans().size()).append('\n');
+        status.append("gateArmed=").append(properties.isFailOnNewCycle()).append('\n');
+        try {
+            Files.writeString(gateStatusFile.toPath(), status.toString());
+            log.info(WireDoctorMessages.GATE_STATUS_WRITTEN, gateStatusFile.getAbsolutePath());
+        } catch (Exception e) {
+            log.error(WireDoctorMessages.GATE_STATUS_WRITE_FAILED,
+                      gateStatusFile.getAbsolutePath(), e.getMessage());
+        }
     }
 }
