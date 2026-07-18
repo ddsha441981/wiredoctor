@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- 🚦 **CI marker-file contract** — every completed baseline diff now writes
+  `wiredoctor-gate.status` next to the reports. Line 1 is the contract:
+  `PASS` or `FAIL:new-cycle`; following `key=value` lines are informational
+  (baseline name, cycle/bean counts, whether the hard gate was armed).
+  Written whether or not `wiredoctor.fail-on` is set, so teams can gate softly
+  (`grep -q '^PASS' wiredoctor-gate.status`) without log parsing or relying on
+  JVM exit codes. Stale markers are deleted at the start of every guarded run —
+  absence means "no verdict", so a crashed or skipped diff can never leave a
+  previous run's verdict behind.
+
 ## [0.3.0] - 2026-07-18
 
 The "from report to advice" release: WireDoctor stops just describing your

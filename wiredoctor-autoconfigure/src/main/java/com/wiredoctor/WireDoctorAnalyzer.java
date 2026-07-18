@@ -502,10 +502,18 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                                              File outputDir) {
         String baselinePath = properties.getBaseline();
         if (baselinePath == null || baselinePath.isBlank()) {
-            return null; // feature not enabled
+            return null; // feature not enabled — no marker file either
         }
         File baselineFile = new File(baselinePath);
         ObjectMapper mapper = new ObjectMapper();
+
+        // v0.4.0 CI contract: remove any stale marker BEFORE computing, so a
+        // crash mid-analysis can never leave a previous run's verdict behind
+        // for CI to misread. The absence of the file itself means "no verdict".
+        File gateStatusFile = new File(outputDir, "wiredoctor-gate.status");
+        try {
+            Files.deleteIfExists(gateStatusFile.toPath());
+        } catch (Exception ignored) {}
 
         if (properties.isBaselineWrite()) {
             try {
@@ -572,6 +580,14 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
         }
 
+        // ── Feature (v0.4.0): CI marker-file contract ────────────────────────
+        // A machine-readable verdict so Maven/Gradle steps can gate without
+        // parsing logs or forcing a JVM exit code. Written on EVERY completed
+        // diff — armed or not — so teams can gate softly (check the file)
+        // without opting into fail-on. Format, line 1: "PASS" or
+        // "FAIL:<gate>[,<gate>...]"; subsequent lines are informational.
+        writeGateStatus(gateStatusFile, diff, baselineFile.getName());
+
         if (properties.isFailOnNewCycle() && diff.hasNewCycles()) {
             log.error(WireDoctorMessages.GATE_TRIPPED,
                       properties.getFailOn(), diff.newCycles().size());
@@ -581,5 +597,47 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     + baselineFile.getName() + ": " + diff.newCycles());
         }
         return null;
+    }
+
+    /**
+     * CI marker-file contract (v0.4.0): writes {@code wiredoctor-gate.status}
+     * with a machine-readable verdict.
+     * <p>
+     * Line 1 is the contract: {@code PASS} when no gate condition is present
+     * in the diff, or {@code FAIL:<gate>} (comma-separated list) when one is —
+     * independent of whether {@code wiredoctor.fail-on} armed the hard gate.
+     * This lets build steps gate with a one-liner
+     * ({@code grep -q '^PASS' wiredoctor-gate.status}) instead of parsing
+     * logs or relying on JVM exit codes. Remaining lines are informational
+     * key=value pairs. Write failures are logged and swallowed — the marker
+     * is an ergonomic extra, never a crash risk.
+     *
+     * @param gateStatusFile target marker file (stale copy already deleted)
+     * @param diff           the completed baseline diff
+     * @param baselineName   baseline file name, echoed for traceability
+     */
+    private void writeGateStatus(File gateStatusFile,
+                                 WireDoctorBaselineDiff.DiffResult diff,
+                                 String baselineName) {
+        StringBuilder status = new StringBuilder();
+        if (diff.hasNewCycles()) {
+            status.append("FAIL:new-cycle");
+        } else {
+            status.append("PASS");
+        }
+        status.append('\n');
+        status.append("baseline=").append(baselineName).append('\n');
+        status.append("newCycles=").append(diff.newCycles().size()).append('\n');
+        status.append("resolvedCycles=").append(diff.resolvedCycles().size()).append('\n');
+        status.append("addedBeans=").append(diff.addedBeans().size()).append('\n');
+        status.append("removedBeans=").append(diff.removedBeans().size()).append('\n');
+        status.append("gateArmed=").append(properties.isFailOnNewCycle()).append('\n');
+        try {
+            Files.writeString(gateStatusFile.toPath(), status.toString());
+            log.info(WireDoctorMessages.GATE_STATUS_WRITTEN, gateStatusFile.getAbsolutePath());
+        } catch (Exception e) {
+            log.error(WireDoctorMessages.GATE_STATUS_WRITE_FAILED,
+                      gateStatusFile.getAbsolutePath(), e.getMessage());
+        }
     }
 }
