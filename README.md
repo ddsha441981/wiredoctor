@@ -147,6 +147,16 @@ We are actively researching advanced diagnostic capabilities for the next releas
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome — bug reports, docs, tests, and features. See
+**[CONTRIBUTING.md](CONTRIBUTING.md)** for build/test conventions and the
+zero-intrusion design posture, and please follow the
+**[Code of Conduct](CODE_OF_CONDUCT.md)**. New here? Look for issues labelled
+[`good first issue`](https://github.com/ddsha441981/wiredoctor/labels/good%20first%20issue).
+
+---
+
 ## 👤 Author
 
 **Deendayal Kumawat** 

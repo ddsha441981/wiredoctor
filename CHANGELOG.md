@@ -63,6 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one-line grep to verify it, plus the one honest nuance (the generated HTML's
   browser-side CDN fallback for vis-network when the bundled copy is missing).
   Linked from the README.
+- 🤝 **Community scaffolding** — `CONTRIBUTING.md` (build/test conventions, the
+  zero-intrusion posture, PR expectations, good-first-issue guidance),
+  `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), GitHub issue forms
+  (bug report + feature request, with WireDoctor-specific fields), and a pull
+  request template.
 
 ## [0.3.0] - 2026-07-18
 

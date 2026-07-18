@@ -1,0 +1,48 @@
+name: 💡 Feature request
+description: Suggest a new capability or improvement for WireDoctor
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. WireDoctor aims to surface *actionable* signal from
+        the live bean graph without ever affecting the host application — please
+        keep that posture in mind below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the pain point or gap, not just the solution you have in mind.
+      placeholder: When analyzing a large app, I can't tell which cycles are new because ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should WireDoctor do? A rough sketch of the report section, property, or console output is great.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workarounds, or other tools that do something similar (ArchUnit, Actuator, JDepend, ...).
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Design constraints
+      description: WireDoctor holds these invariants. Check any your idea is consistent with.
+      options:
+        - label: Never affects host application startup (analysis is best-effort, non-fatal)
+        - label: Core artifact stays dependency-light (no network I/O; actuator only in the optional module)
+        - label: Metrics stay honest (heuristics labelled as such; raw numbers shown, not just flags)
+    validations:
+      required: false
