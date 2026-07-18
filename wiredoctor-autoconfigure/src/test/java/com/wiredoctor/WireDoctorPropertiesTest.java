@@ -87,6 +87,47 @@ class WireDoctorPropertiesTest {
         assertThat(p.resolveSlowBeanThresholdMs()).isEqualTo(-1L);
     }
 
+    // ── max-graph-nodes parsing (lenient, v0.3.0) ────────────────────────────
+
+    @Test
+    void maxGraphNodesDefaultsTo2000() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        assertThat(p.resolveMaxGraphNodes())
+                .isEqualTo(WireDoctorProperties.DEFAULT_MAX_GRAPH_NODES);
+    }
+
+    @Test
+    void maxGraphNodesZeroMeansUnlimited() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setMaxGraphNodes("0");
+        assertThat(p.resolveMaxGraphNodes()).isZero();
+    }
+
+    @Test
+    void malformedMaxGraphNodesFallsBackToDefault() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setMaxGraphNodes("lots");
+        assertThat(p.resolveMaxGraphNodes())
+                .isEqualTo(WireDoctorProperties.DEFAULT_MAX_GRAPH_NODES);
+    }
+
+    @Test
+    void negativeMaxGraphNodesFallsBackToDefault() {
+        // Unlike the slow-bean threshold, a negative cap has no sane meaning.
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setMaxGraphNodes("-5");
+        assertThat(p.resolveMaxGraphNodes())
+                .isEqualTo(WireDoctorProperties.DEFAULT_MAX_GRAPH_NODES);
+    }
+
+    @Test
+    void nullMaxGraphNodesFallsBackToDefault() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setMaxGraphNodes(null);
+        assertThat(p.resolveMaxGraphNodes())
+                .isEqualTo(WireDoctorProperties.DEFAULT_MAX_GRAPH_NODES);
+    }
+
     // ── Context binding ──────────────────────────────────────────────────────
 
     @Test

@@ -85,6 +85,8 @@ public final class WireDoctorMessages {
     public static final String SMELL_FAN_OUT_ITEM       = "  - Wide dependency  : '{}' depends on {} beans (fan-out)";
     public static final String SMELL_UNSTABLE_ITEM      = "  - Unstable         : '{}' I={} (fan-in {}, fan-out {})";
 
+    public static final String GRAPH_TRUNCATED          = "[WireDoctor] Graph serialized with top {} of {} nodes (by fan-in; cycle members always kept). Analysis ran on the full graph. Raise wiredoctor.max-graph-nodes (0 = unlimited) to serialize everything.";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

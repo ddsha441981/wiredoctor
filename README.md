@@ -15,6 +15,7 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
     2. Make 'betaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
   ```
 - 📐 **Architecture Smell Metrics**: Classic architecture-health metrics computed on the *live, resolved* bean graph — what Spring actually wired (proxies, conditionals, profiles), not what the source declares. The `smells` report section includes top-10 **fan-in hotspots** (coupling / God Object smell), top-10 **fan-out hotspots** (Shotgun Surgery smell), and beans over Martin's **instability** threshold (`I = Ce/(Ca+Ce) ≥ 0.8`). Graph nodes in the HTML report are now sized by fan-in — the bigger the dot, the more beans depend on it.
+- 🏋️ **Large-application hardening**: Verified against a 5,000-bean synthetic context. Above `wiredoctor.max-graph-nodes` (default 2000), the serialized graph is capped to the top-N beans by fan-in (cycle members always kept), with honest `graphTruncated` metadata and an HTML warning banner. Analysis — cycles, smells, critical path, baseline diff — always runs on the full graph; only the serialized view is capped.
 
 ### New in v0.2.0
 - 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
@@ -92,6 +93,13 @@ wiredoctor.baseline=wiredoctor-baseline.json
 wiredoctor.baseline-write=true
 # CI gate: fail startup when a cycle not in the baseline appears
 wiredoctor.fail-on=new-cycle
+
+# --- Large-application graph cap (v0.3.0) ---
+# Above this many beans, the SERIALIZED graph (JSON + HTML view) is capped to the
+# top-N by fan-in (cycle members always kept) so the report stays reviewable and
+# the browser doesn't freeze. Analysis itself (cycles, smells, critical path,
+# baseline diff) ALWAYS runs on the full graph. 0 = unlimited. Default: 2000.
+wiredoctor.max-graph-nodes=2000
 ```
 
 See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.

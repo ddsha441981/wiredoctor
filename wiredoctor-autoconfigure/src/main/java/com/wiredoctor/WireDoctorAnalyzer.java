@@ -314,7 +314,32 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         dependencyInfo.put("cycles",          cycles);
         dependencyInfo.put("orphanBeansCount", orphanBeans.size());
         dependencyInfo.put("orphanBeans",     orphanBeans);
-        dependencyInfo.put("graph",           graph);
+
+        // ── Feature (v0.3.0): Architecture Smell Metrics ─────────────────────
+        // Fan-in/fan-out hotspots + Martin's instability metric, computed on
+        // the live resolved graph (what Spring actually wired — proxies,
+        // conditionals, profiles included). Pure graph functions, no heuristics.
+        // Computed BEFORE graph serialization: truncation below reuses fan-in.
+        Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(graph);
+        report.put("smells", smells);
+
+        // ── Feature (v0.3.0): Large-Context Hardening ────────────────────────
+        // Above the cap, serialize only the top-N nodes by fan-in (plus all
+        // cycle participants) so the JSON stays reviewable and the HTML
+        // visualizer does not freeze. Analysis above ran on the FULL graph —
+        // cycles, smells, critical path and diff are never capped.
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> fanInCounts = (Map<String, Integer>) smells.get("fanIn");
+        WireDoctorGraphTruncator.Result truncation = WireDoctorGraphTruncator.truncate(
+                graph, cycles, fanInCounts, properties.resolveMaxGraphNodes());
+        dependencyInfo.put("graph",          truncation.graph);
+        dependencyInfo.put("graphTruncated", truncation.truncated);
+        if (truncation.truncated) {
+            dependencyInfo.put("graphNodesTotal", truncation.originalNodeCount);
+            dependencyInfo.put("graphNodesKept",  truncation.keptNodeCount);
+            log.info(WireDoctorMessages.GRAPH_TRUNCATED,
+                     truncation.keptNodeCount, truncation.originalNodeCount);
+        }
         report.put("dependencies", dependencyInfo);
 
         // ── Feature (v0.3.0): Counterfactual @Lazy Simulator ─────────────────
@@ -324,13 +349,6 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         List<WireDoctorLazySimulator.LazySuggestion> lazySuggestions =
                 WireDoctorLazySimulator.suggestLazyPlacements(graph, cycles);
         report.put("lazySuggestions", WireDoctorLazySimulator.toReportList(lazySuggestions));
-
-        // ── Feature (v0.3.0): Architecture Smell Metrics ─────────────────────
-        // Fan-in/fan-out hotspots + Martin's instability metric, computed on
-        // the live resolved graph (what Spring actually wired — proxies,
-        // conditionals, profiles included). Pure graph functions, no heuristics.
-        Map<String, Object> smells = WireDoctorSmellDetector.toReportMap(graph);
-        report.put("smells", smells);
 
         // ── Feature (v0.2.0): Startup Critical Path ──────────────────────────
         // Longest instantiation-weighted dependency chain — what actually gated
@@ -494,7 +512,19 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 mapper.enable(SerializationFeature.INDENT_OUTPUT);
                 File parent = baselineFile.getAbsoluteFile().getParentFile();
                 if (parent != null && !parent.exists()) parent.mkdirs();
-                Files.writeString(baselineFile.toPath(), mapper.writeValueAsString(report));
+                // The baseline must always carry the FULL graph — future diffs
+                // compare against it, and a truncated baseline would report
+                // spurious bean/edge changes. Swap the (possibly truncated)
+                // serialized graph out for the write, then restore it.
+                @SuppressWarnings("unchecked")
+                Map<String, Object> deps = (Map<String, Object>) report.get("dependencies");
+                Object serializedGraph = deps.get("graph");
+                deps.put("graph", graph);
+                try {
+                    Files.writeString(baselineFile.toPath(), mapper.writeValueAsString(report));
+                } finally {
+                    deps.put("graph", serializedGraph);
+                }
                 log.info(WireDoctorMessages.BASELINE_WRITTEN, baselineFile.getAbsolutePath());
             } catch (Exception e) {
                 log.error(WireDoctorMessages.BASELINE_WRITE_FAILED,

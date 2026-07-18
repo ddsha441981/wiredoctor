@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `I = Ce/(Ca+Ce) ≥ 0.8`, fan-out ≥ 2 floor to skip trivial leaves). Console
   prints top 3 per category. HTML graph nodes are now sized by fan-in
   (sqrt-scaled) with fan-in shown in the hover tooltip.
+- 🏋️ **Large-Context Hardening** — new `wiredoctor.max-graph-nodes` property
+  (default 2000, 0 = unlimited, lenient parsing). Above the cap, the
+  serialized `graph` section is truncated to the top-N beans by fan-in with
+  cycle participants always retained; `graphTruncated` /
+  `graphNodesTotal` / `graphNodesKept` metadata is added and the HTML report
+  shows a warning banner. Analysis (cycles, smells, critical path, baseline
+  diff) always runs on the full graph, and `baseline-write` always persists
+  the full graph so future diffs stay accurate. Verified with a 5,000-bean
+  synthetic context test.
 
 ## [0.2.0] - 2026-07-17
 
