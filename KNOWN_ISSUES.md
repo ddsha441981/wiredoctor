@@ -1,5 +1,54 @@
 # Known Issues
 
+## v0.3.0 — Smell Metrics Dominated by Framework Beans
+
+**Impact:** Medium / Feature-value  
+**Affected Feature:** Architecture Smell Metrics (`smells` report section)  
+**Status:** Fix planned (framework filtering)
+
+### Description
+
+On a real application (Spring Initializr, 389 beans, Boot 4.x), the smell
+rankings are dominated by framework infrastructure, drowning out user beans:
+
+- `highFanIn` top 10: 8–9 of 10 are framework beans
+  (`WebMvcAutoConfiguration$EnableWebMvcConfiguration` fan-in 26,
+  `AnnotationConfigServletWebServerApplicationContext@459f703f` fan-in 21,
+  `environment`, `mvcConversionService`, ...). Only 1 user bean
+  (`initializrMetadataProvider`, fan-in 6) surfaces.
+- `unstable` list: 10 of 10 are framework beans (endpoint handler mappings,
+  `tomcatWebServerFactoryCustomizer`, `healthEndpoint`, ...) — all I=1.0.
+  Zero user beans; the list is pure noise for the tool's audience.
+- The v0.2.0 edge-noise bug (see below) leaks into the hotspot list: the
+  `...ApplicationContext@459f703f` entry embeds a JVM identity hash and will
+  "move" every boot.
+
+### Why it happens
+
+The metrics are honest — framework beans genuinely ARE the coupling hotspots
+of any Boot app. But users can't refactor framework wiring, so ranking it
+first buries the actionable signal.
+
+### Planned Fix (v0.4.0)
+
+Reuse the existing framework classification (the `frameworkPkgs` list /
+`wiredoctor.scan-packages`) to either:
+- default the smell rankings to user-defined beans with a
+  `includeFramework: false` toggle, OR
+- report two parallel lists (`highFanIn` / `highFanInUser`).
+
+Console summary should print user-bean smells only.
+
+### Discovered
+
+Real-world testing on Spring Initializr (389 beans) with v0.3.0 — 2026-07-18.
+Confirmed working in the same run: truncation (`max-graph-nodes=100` → top 100
+of 389 by fan-in, banner + honest metadata), empty `lazySuggestions` on a
+cycle-free app (graceful), and the v0.4.0 `wiredoctor-gate.status` marker
+(`PASS`, correct counts).
+
+---
+
 ## v0.2.0 — Edge Reference Noise in Baseline Diff
 
 **Impact:** Minor / Cosmetic  
