@@ -7,7 +7,7 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
-### New in v0.3.0 (unreleased)
+### New in v0.3.0
 - 💡 **@Lazy Suggestions to Break Cycles**: When a cycle is detected, WireDoctor doesn't just report it — it tells you how to fix it. The `lazySuggestions` report section (and a ranked console summary) lists which beans, if marked `@Lazy`, would break the cycle — ranked by cycles broken first, then smallest blast radius (fewest downstream dependents):
   ```
   [WireDoctor] @Lazy Suggestions to Break Cycles:
@@ -132,16 +132,16 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
 
 ---
-## 🔮 Roadmap (v0.2.0 & Beyond)
+## 🔮 Roadmap (v0.4.0 & Beyond)
 
-We are actively researching advanced diagnostic capabilities for the next major release:
+We are actively researching advanced diagnostic capabilities for the next releases:
 
-1. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector):**
+1. 🏢 **Enterprise Fit (v0.4.0):**
+   *CI exit-code contract, optional actuator endpoint module, and multi-profile baselines — making the regression guard first-class in real pipelines.*
+2. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector, v0.5.0):**
    *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. This will likely involve a lightweight, non-invasive access-tracking proxy mechanism.*
-2. 🧠 **Memory Footprint Estimation:**
+3. 🧠 **Memory Footprint Estimation:**
    *Moving beyond measuring instantiation **time** to measuring object **space**. Exploring per-bean heap consumption metrics (potentially requiring Java Agent instrumentation for deep size-of calculations).*
-3. 🛠️ **Smart Resolution Insights:**
-   *Providing actionable, AI-driven suggestions when structural issues are found (e.g., suggesting exactly which dependency to mark as `@Lazy` to safely break a cycle without side effects).*
 
 ---
 

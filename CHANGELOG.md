@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-07-18
+
+The "from report to advice" release: WireDoctor stops just describing your
+architecture and starts telling you what to do about it — and survives
+enterprise-scale contexts while doing so.
 
 ### Added
 - 💡 **Counterfactual @Lazy Simulator** — when cycles are detected, the report
