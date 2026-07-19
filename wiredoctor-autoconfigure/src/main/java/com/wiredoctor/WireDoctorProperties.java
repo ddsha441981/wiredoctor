@@ -114,6 +114,63 @@ public class WireDoctorProperties {
     private boolean includeFrameworkSmells = false;
 
     /**
+     * Opt-in ghost tracking (v0.6.0 Phase 2). OFF by default — the doctor's
+     * rule: no medicine without consent. When enabled, eligible user singletons
+     * are wrapped in a thin first-touch counting proxy; use in dev/staging,
+     * not prod.
+     */
+    private final GhostTracking ghostTracking = new GhostTracking();
+
+    /** Nested {@code wiredoctor.ghost-tracking.*} properties. */
+    public static class GhostTracking {
+
+        /**
+         * Master switch for first-touch tracking. {@code false} (default)
+         * keeps the artifact 100% passive: the tracking
+         * {@code BeanPostProcessor} is never registered at all.
+         */
+        private boolean enabled = false;
+
+        /**
+         * Comma-separated bean names to exclude from proxy wrapping. Excluded
+         * beans are counted and reported as untrackable ({@code excluded}),
+         * never silently hidden.
+         */
+        private String exclude;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public String getExclude() {
+            return exclude;
+        }
+
+        public void setExclude(String exclude) {
+            this.exclude = exclude;
+        }
+
+        /**
+         * @return the parsed exclude list; empty when unset
+         */
+        public java.util.Set<String> resolveExcludedBeans() {
+            if (exclude == null || exclude.isBlank()) {
+                return java.util.Set.of();
+            }
+            java.util.Set<String> names = new java.util.HashSet<>();
+            for (String name : exclude.split(",")) {
+                String trimmed = name.trim();
+                if (!trimmed.isEmpty()) names.add(trimmed);
+            }
+            return names;
+        }
+    }
+
+    /**
      * Parses {@link #slowBeanThresholdMs} leniently.
      *
      * @return the configured threshold, or {@value #DEFAULT_SLOW_BEAN_THRESHOLD_MS}
@@ -238,6 +295,10 @@ public class WireDoctorProperties {
 
     public void setIncludeFrameworkSmells(boolean includeFrameworkSmells) {
         this.includeFrameworkSmells = includeFrameworkSmells;
+    }
+
+    public GhostTracking getGhostTracking() {
+        return ghostTracking;
     }
 
     /**
