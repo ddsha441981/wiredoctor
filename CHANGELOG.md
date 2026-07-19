@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-07-19
+
+The report UI, rebuilt as a professional diagnostic console. No analysis changes —
+this release is entirely about how the existing data is presented.
+
+### Changed
+- 🖥️ **HTML report redesigned as a tabbed console** — Overview / Graph / Ghosts /
+  Smells / Timing / Conditions. Every report section now has a home in the HTML
+  (smells, critical path, conditions and ghosts were previously JSON-only):
+  - **Header** with active profile, bean/edge counts, and a live health chip
+    (green HEALTHY / red "N CYCLES").
+  - **Overview**: six KPI cards, bean-composition bar, critical-path chain with
+    per-bean timings, top coupling hotspots, ghost-candidate preview.
+  - **Graph**: search with focus-and-zoom, filter toggles (user / framework /
+    cycles-only / ghosts-only), click-to-inspect node panel (fan-in/out,
+    dependency list, status pills). Problems are colored (red cycle, purple
+    ghost, pink proxy, amber orphan); healthy beans stay neutral — calm when
+    healthy, loud when not. Truncation banner and vis-missing fallback retained.
+  - **Ghosts**: Phase 1 candidates and Phase 2 touched/untouched/untrackable
+    side by side, with an "also candidate" cross-signal badge; disclaimers
+    rendered in-page.
+  - **Conditions**: all outcomes with count pills and a live class-name filter.
+  - Deep-linking (`#ghosts` opens that tab), dark professional theme, monospace
+    data, no gradients.
+- **Template extracted to the classpath** (`/wiredoctor/report-template.html`)
+  instead of a Java text block — the UI is now editable without touching Java.
+  The reporter injects data/version/vis-network into it; a missing template
+  degrades to a logged error (JSON report unaffected).
+- **Ghost data in the HTML**: the report is written at startup with the Ghosts
+  tab in "results pending" state (ghosts are only knowable at shutdown); when
+  tracking is enabled, the shutdown writer re-renders `wiredoctor-report.html`
+  with the final ghost results injected.
+- Offline promise unchanged: vis-network still bundled and inlined; the page
+  renders fully offline.
+
+### Tests
+- 194 autoconfigure tests green (4 new: injection contract, null-ghost startup
+  render, shutdown ghost render, tab structure). Boot 2.7.18 compat re-verified.
+
 ## [0.6.0] - 2026-07-19
 
 The "Ghost Hunt" release: WireDoctor answers "which beans are wasting resources?" in two

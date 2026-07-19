@@ -40,7 +40,7 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 - 📦 **Truly self-contained HTML**: The vis-network graph library is bundled and inlined into `wiredoctor-report.html` at generation time — the report renders fully offline.
 
 ### Since v0.1.0
-- 🕸️ **Interactive HTML Visualizer**: Automatically generates `wiredoctor-report.html` (a single-file, React-free, Vis.js physics-based network graph) for immediate architectural visualization right in your browser. The report is fully self-contained — the vis-network graph library is bundled and inlined at generation time, so it renders completely offline.
+- 🕸️ **Interactive HTML Console**: Automatically generates `wiredoctor-report.html` — since v0.6.1 a tabbed diagnostic console (Overview / Graph / Ghosts / Smells / Timing / Conditions) with a health-status header, searchable & filterable dependency graph with click-to-inspect node details, and a filterable autoconfiguration-condition table. Single file, fully self-contained — the vis-network graph library is bundled and inlined at generation time, so it renders completely offline.
 - ⏱️ **Startup Timings**: Hooks into `ApplicationStartup` via `BufferingApplicationStartup` early in the lifecycle to measure and report exact bean instantiation times without reflection-heavy heuristics.
 - 🔗 **Dependency Graph Analysis**: Directly hooks `ConfigurableListableBeanFactory.getDependenciesForBean` to view the completely resolved dependency graph.
 - 🔄 **Circular Dependency Detection**: Runs a Tarjan's SCC cycle detector over the bean graph to find structural design smells, even if Spring resolves them via proxies/setters.
@@ -75,13 +75,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.6.0</version>
+    <version>0.6.1</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.6.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.6.1'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.

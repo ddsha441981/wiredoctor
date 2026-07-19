@@ -61,13 +61,28 @@ public class WireDoctorGhostReportWriter implements ApplicationListener<ContextC
             File outputDir = new File(properties.getOutputPath());
             if (!outputDir.exists()) outputDir.mkdirs();
             File reportFile = new File(outputDir, REPORT_FILE_NAME);
-            Files.writeString(reportFile.toPath(), mapper.writeValueAsString(ghostReport));
+            String ghostJson = mapper.writeValueAsString(ghostReport);
+            Files.writeString(reportFile.toPath(), ghostJson);
 
             log.info(WireDoctorMessages.GHOST_REPORT_SAVED, reportFile.getAbsolutePath());
             log.info(WireDoctorMessages.GHOST_REPORT_SUMMARY,
                      ghostReport.get("touchedCount"),
                      ghostReport.get("untouchedCount"),
                      ghostReport.get("untrackableCount"));
+
+            // v0.6.1: re-render the HTML report with the final ghost data — the
+            // Ghosts tab was written at startup in "results pending" state
+            // because ghosts are only knowable now. Best-effort: needs the
+            // startup JSON on disk.
+            try {
+                File mainReport = new File(outputDir, "wiredoctor-report.json");
+                if (mainReport.isFile()) {
+                    String mainJson = Files.readString(mainReport.toPath());
+                    WireDoctorHtmlReporter.generateHtmlReport(mainJson, ghostJson, outputDir);
+                }
+            } catch (Exception e) {
+                log.warn(WireDoctorMessages.GHOST_REPORT_WRITE_FAILED, e.getMessage());
+            }
         } catch (Throwable t) {
             // Shutdown must never be disturbed by a diagnostic write.
             log.warn(WireDoctorMessages.GHOST_REPORT_WRITE_FAILED, t.getMessage());
