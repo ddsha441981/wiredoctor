@@ -45,6 +45,41 @@ class WireDoctorGhostTrackingIntegrationTest {
         @Override public String invoke() { return "never called"; }
     }
 
+    /** Marker for the pre-proxied fixture (stands in for @Transactional/@Async). */
+    interface Advised {
+        String call();
+    }
+
+    static class AdvisedBean implements Advised {
+        @Override public String call() { return "raw"; }
+    }
+
+    /**
+     * Simulates the AOP infrastructure (@Transactional/@Async proxying): a
+     * HIGHEST_PRECEDENCE BPP that wraps {@link AdvisedBean} in an advice that
+     * rewrites the return value. If ghost tracking double-wrapped or broke this
+     * proxy, the advice would be lost and the assertion below would see "raw".
+     */
+    static class SimulatedTxPostProcessor implements BeanPostProcessor,
+            org.springframework.core.Ordered {
+        @Override
+        public int getOrder() {
+            return HIGHEST_PRECEDENCE;
+        }
+
+        @Override
+        public Object postProcessAfterInitialization(Object bean, String beanName) {
+            if (!(bean instanceof AdvisedBean)) {
+                return bean;
+            }
+            org.springframework.aop.framework.ProxyFactory factory =
+                    new org.springframework.aop.framework.ProxyFactory(bean);
+            factory.addAdvice((org.aopalliance.intercept.MethodInterceptor) invocation ->
+                    "advised:" + invocation.proceed());
+            return factory.getProxy();
+        }
+    }
+
     @SpringBootConfiguration
     @EnableAutoConfiguration
     static class TestApp {
@@ -57,6 +92,16 @@ class WireDoctorGhostTrackingIntegrationTest {
         @Bean
         GhostBean ghostBean() {
             return new GhostBean();
+        }
+
+        @Bean
+        AdvisedBean advisedBean() {
+            return new AdvisedBean();
+        }
+
+        @Bean
+        static SimulatedTxPostProcessor simulatedTxPostProcessor() {
+            return new SimulatedTxPostProcessor();
         }
     }
 
@@ -80,13 +125,14 @@ class WireDoctorGhostTrackingIntegrationTest {
             assertThat(context.getBeansOfType(WireDoctorGhostReportWriter.class)).isEmpty();
 
             // Belt and braces: no WireDoctor-originated BPP in the factory's
-            // live post-processor chain either.
+            // live post-processor chain either (the simulated TX fixture is a
+            // test-only stand-in for the AOP infrastructure, not WireDoctor's).
             DefaultListableBeanFactory beanFactory =
                     (DefaultListableBeanFactory) context.getBeanFactory();
             for (BeanPostProcessor bpp : beanFactory.getBeanPostProcessors()) {
-                assertThat(bpp.getClass().getPackageName())
+                assertThat(bpp.getClass().getSimpleName())
                         .as("no WireDoctor BeanPostProcessor may be registered by default")
-                        .isNotEqualTo("com.wiredoctor");
+                        .doesNotStartWith("WireDoctor");
             }
 
             // And user beans are untouched raw instances — no proxies.
@@ -147,6 +193,28 @@ class WireDoctorGhostTrackingIntegrationTest {
                 "wiredoctor.ghost-tracking.enabled=true")) {
             assertThat(context.isActive()).isTrue();
             assertThat(tempDir.resolve("wiredoctor-report.json").toFile()).exists();
+        }
+    }
+
+    @Test
+    void alreadyProxiedBeanKeepsItsAdviceAndIsReportedUntrackable(@TempDir Path tempDir) {
+        // The @Transactional-equivalent regression test: a bean proxied by the
+        // (simulated) AOP infrastructure must arrive at the ghost tracker
+        // already wrapped, be skipped — and keep behaving as proxied.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.ghost-tracking.enabled=true")) {
+
+            Advised advised = context.getBean("advisedBean", Advised.class);
+            // The original advice still applies — proxy not broken or replaced.
+            assertThat(advised.call()).isEqualTo("advised:raw");
+
+            WireDoctorGhostTracker tracker = context.getBean(WireDoctorGhostTracker.class);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, String> untrackable = (java.util.Map<String, String>)
+                    tracker.toReportMap().get("untrackable");
+            assertThat(untrackable).containsEntry("advisedBean",
+                    WireDoctorGhostTrackingPostProcessor.REASON_ALREADY_PROXIED);
         }
     }
 
