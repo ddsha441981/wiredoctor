@@ -12,13 +12,16 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.util.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -55,7 +58,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Deendayal Kumawat
  * @since 0.6.0
  */
-public class WireDoctorGhostTrackingPostProcessor implements BeanPostProcessor, Ordered {
+public class WireDoctorGhostTrackingPostProcessor
+        implements SmartInstantiationAwareBeanPostProcessor, Ordered {
 
     private static final Logger log =
             LoggerFactory.getLogger(WireDoctorGhostTrackingPostProcessor.class);
@@ -71,6 +75,17 @@ public class WireDoctorGhostTrackingPostProcessor implements BeanPostProcessor, 
     private final WireDoctorGhostTracker tracker;
     private final ConfigurableListableBeanFactory beanFactory;
     private final Set<String> excludedBeans;
+
+    /**
+     * Beans already wrapped via {@link #getEarlyBeanReference} (circular
+     * reference participants). Same contract as Spring's own
+     * {@code AbstractAutoProxyCreator#earlyBeanReferences}: when the raw bean
+     * later arrives at {@link #postProcessAfterInitialization}, it must be
+     * returned unchanged so the container substitutes the early proxy —
+     * wrapping twice would make the early-injected reference and the singleton
+     * diverge and fail context refresh.
+     */
+    private final Map<String, Object> earlyBeanReferences = new ConcurrentHashMap<>();
 
     /**
      * @param tracker       shared tracking state the proxies flip into
@@ -97,8 +112,36 @@ public class WireDoctorGhostTrackingPostProcessor implements BeanPostProcessor, 
         return Ordered.LOWEST_PRECEDENCE;
     }
 
+    /**
+     * Circular-reference support: when a bean under creation is needed early
+     * by another bean in the cycle, wrap it HERE so the early-injected
+     * reference and the finished singleton are the same proxy instance —
+     * exactly how Spring's own auto-proxy creator handles it. Without this,
+     * a resolvable cycle (allow-circular-references=true) would fail with
+     * "Bean named 'x' has been injected in its raw version".
+     */
+    @Override
+    public Object getEarlyBeanReference(Object bean, String beanName) {
+        try {
+            Object wrapped = wrapIfEligible(bean, beanName);
+            if (wrapped != bean) {
+                earlyBeanReferences.put(beanName, bean);
+            }
+            return wrapped;
+        } catch (Throwable t) {
+            log.warn(WireDoctorMessages.GHOST_TRACKING_WRAP_FAILED, beanName, t.getMessage());
+            tracker.markUntrackable(beanName, REASON_PROXY_FAILED + ": " + t.getMessage());
+            return bean;
+        }
+    }
+
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
+        // Already wrapped as an early reference (cycle participant): return the
+        // raw bean so the container swaps in the early proxy itself.
+        if (bean != null && earlyBeanReferences.remove(beanName) == bean) {
+            return bean;
+        }
         try {
             return wrapIfEligible(bean, beanName);
         } catch (Throwable t) {
@@ -113,18 +156,29 @@ public class WireDoctorGhostTrackingPostProcessor implements BeanPostProcessor, 
         if (bean == null) {
             return null;
         }
-        // WireDoctor's own beans: tracking the tracker is noise, skip silently.
-        if (beanName.toLowerCase().startsWith("wiredoctor")) {
-            return bean;
-        }
         Class<?> userClass = ClassUtils.getUserClass(bean.getClass());
         String packageName = userClass.getPackage() != null
                 ? userClass.getPackage().getName() : null;
+
+        // WireDoctor's own beans: tracking the tracker is noise, skip silently.
+        // Covers both name forms: property-named beans ("wireDoctorAnalyzer")
+        // and FQN-named configuration beans ("com.wiredoctor.WireDoctor...").
+        // The @Configuration check below catches the rest of our config surface.
+        if (beanName.toLowerCase().startsWith("wiredoctor")
+                || beanName.startsWith("com.wiredoctor.WireDoctor")) {
+            return bean;
+        }
 
         // Framework beans are out of scope — hundreds per Boot app, counted only.
         if (WireDoctorBeanClassifier.isFrameworkPackage(packageName)
                 || WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)) {
             tracker.countFrameworkSkipped();
+            return bean;
+        }
+        // @Configuration classes (incl. the @SpringBootApplication class) do
+        // their work at definition time — "untouched" would be pure noise.
+        if (org.springframework.core.annotation.AnnotatedElementUtils
+                .hasAnnotation(userClass, org.springframework.context.annotation.Configuration.class)) {
             return bean;
         }
         if (excludedBeans.contains(beanName)) {
