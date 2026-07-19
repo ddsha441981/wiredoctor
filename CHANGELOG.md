@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-07-19
+
+The "Ghost Hunt" release: WireDoctor answers "which beans are wasting resources?" in two
+phases with two trust postures — a passive heuristic that's always on, and real
+first-touch tracking behind an explicit opt-in. The zero-intrusion default is untouched
+and now regression-tested.
+
+### Added
+- 👻 **Ghost Candidates (Phase 1 — passive, always on)** — the new `ghostCandidates`
+  report section refines the orphan list by crossing three signals: eagerly
+  instantiated ∧ 0 incoming dependency edges ∧ no entry point detectable from
+  metadata. Entry-point detection covers `@Controller` (and meta-annotated stereotypes
+  like `@RestController`), `@Scheduled`/`@EventListener` holders (including private and
+  inherited methods), messaging listeners (`@KafkaListener`, `@RabbitListener`, ...),
+  framework-invoked interfaces (`CommandLineRunner`, `ApplicationRunner`, `Lifecycle`,
+  servlet/filter types, `HealthIndicator`, ...), and `@Configuration`/`@Aspect`
+  definition-time classes. Detection deliberately errs broad — a false entry-point
+  match only shrinks the list; classification failures exclude conservatively.
+  The section carries `confidence: LOW`, an in-payload disclaimer, and honest exclusion
+  counts (`entryPointsExcluded`, `notInstantiatedExcluded`). The raw `orphanBeans` list
+  is unchanged — candidates sit beside it, not instead of it. Console summary (top 10)
+  included.
+- 🔬 **First-Touch Ghost Tracking (Phase 2 — opt-in, dev/staging)** —
+  `wiredoctor.ghost-tracking.enabled=true` wraps eligible user singletons in a thin
+  counting proxy whose advice does exactly one thing: flip an `AtomicBoolean` on first
+  invocation. No timing, no argument capture, no hot-path logging — measured overhead
+  **~180 ns/call** after first touch (warmed JDK 21; dominated by proxy dispatch itself).
+  A `ContextClosedEvent` listener writes `wiredoctor-ghost-report.json` at shutdown:
+  touched / untouched / untrackable — never "unused"; the disclaimer is embedded in the
+  payload. `wiredoctor.ghost-tracking.exclude` skips named beans (reported as
+  `untrackable: excluded`).
+- 🛡️ **Eligibility guards (skip + report, never break)** — framework beans (counted in
+  `frameworkSkipped`), already-proxied beans (`@Transactional`/`@Async` — the tracker
+  runs at `LOWEST_PRECEDENCE` and never double-wraps; integration-tested to preserve
+  existing advice), `FactoryBean`s/`BeanPostProcessor`s/AOP infrastructure, interface-less
+  final classes, non-singletons, and the user exclude list. Any wrapping error logs a
+  warning and returns the bean **unwrapped** — a diagnostic tool must never turn a
+  working bean into a broken one.
+- 🔁 **Circular-reference safety** — the tracking post-processor implements
+  `SmartInstantiationAwareBeanPostProcessor.getEarlyBeanReference` (the same contract as
+  Spring's own auto-proxy creator), so beans in resolvable cycles
+  (`allow-circular-references=true`) track cleanly instead of failing context refresh.
+- 🌐 **Live actuator view** — `/actuator/wiredoctor/{section}` serves any top-level
+  report section; `/actuator/wiredoctor/ghosts` serves the **live** tracking state
+  (invocations up to this moment) for long-running staging runs. Without the opt-in it
+  answers an honest `DISABLED` placeholder with the enable instructions. Core remains
+  actuator-free.
+- 📖 **Docs** — new [ghost-detector guide](docs/ghost-detector.md) (two-phase model,
+  eligibility table, honest-interpretation checklist); security-posture updated
+  (ghost report files, `/ghosts` selector); README feature section + roadmap sync.
+
+### Changed
+- **Passivity is now regression-tested**: with the default configuration the test suite
+  asserts zero WireDoctor `BeanPostProcessor` in the factory chain and raw (unproxied)
+  user beans — the v0.1.1 zero-intrusion promise, made mechanical.
+- README roadmap: Ghost Detector marked shipped; *Memory Footprint Estimation*
+  documented as deliberately dropped (honest per-bean heap numbers need a Java Agent;
+  shallow size-of is a correctness trap).
+
+### Tests
+- 201 tests green (190 autoconfigure + 11 actuator; up from 156): entry-point matrix,
+  eligibility matrix, passivity regression, advice-preservation on pre-proxied beans,
+  touched-vs-ghost integration with shutdown report, exclude list, hot-path benchmark.
+- Real-world validation on the demo app recorded in
+  `plan/v0.6.0-realworld-validation.md` — including the two bugs it caught
+  (circular-reference crash, self-tracking noise), both fixed before release.
+
 ## [0.5.0] - 2026-07-18
 
 The "Upgrade Guardian" release: WireDoctor stops at describing your bean graph and

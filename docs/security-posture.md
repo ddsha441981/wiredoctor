@@ -32,6 +32,12 @@ structural map of your application's internals:
   as bean names, and it lives in the report and baseline files. The same
   recommendations below apply: gitignore the reports and baseline, and treat them as
   internal build artifacts.
+- **Ghost data** (since v0.6.0) — the `ghostCandidates` report section, and, when
+  the opt-in tracking is enabled, `wiredoctor-ghost-report.json` (bean names split
+  into touched/untouched/untrackable). Same information class as bean names; add
+  `wiredoctor-ghost-report.json` to the gitignore list below. Note the tracking
+  feature itself is off by default and intended for dev/staging only — see the
+  [Ghost Detector guide](ghost-detector.md).
 
 None of this is a secret in the cryptographic sense — there are no credentials,
 tokens, connection strings, or user data in the report. WireDoctor reads bean
@@ -52,6 +58,7 @@ wiredoctor-report.json
 wiredoctor-report.html
 wiredoctor-diff.json
 wiredoctor-gate.status
+wiredoctor-ghost-report.json
 ```
 
 The one deliberate exception is the **baseline** file
@@ -89,7 +96,9 @@ or leave it on by default and disable per environment via
 ### 3. Guard the Actuator endpoint
 
 The optional `wiredoctor-actuator` module exposes the report over
-`/actuator/wiredoctor`. Anyone who can reach that endpoint can read the same
+`/actuator/wiredoctor` (and, since v0.6.0, report sections plus the live
+ghost-tracking view under `/actuator/wiredoctor/{section}` — same endpoint,
+same exposure rules). Anyone who can reach that endpoint can read the same
 architecture blueprint over HTTP.
 
 - The endpoint is **not exposed by default** — it only becomes available when

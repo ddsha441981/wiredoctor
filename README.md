@@ -7,6 +7,13 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
+### New in v0.6.0
+- 👻 **Ghost Bean Detector**: Which beans cost you startup time and memory but never do anything? Two phases, two trust postures. **Phase 1 (passive, always on):** the `ghostCandidates` report section crosses three signals — eagerly instantiated ∧ zero incoming dependencies ∧ no detectable entry point (`@Controller`, `@Scheduled`/`@EventListener` holders, `CommandLineRunner`, messaging listeners, ...) — a strictly stronger signal than the raw orphan list, still labeled `confidence: LOW` with an honest disclaimer. **Phase 2 (opt-in, dev/staging):** `wiredoctor.ghost-tracking.enabled=true` wraps eligible user beans in a thin first-touch counting proxy (~180 ns/call after first touch — one `AtomicBoolean`, no timing, no args) and writes `wiredoctor-ghost-report.json` at shutdown: touched / untouched / untrackable. By default the tracking `BeanPostProcessor` is **never registered** — a regression test proves the passivity promise on every build. Live view via `/actuator/wiredoctor/ghosts`. Never claims "unused" — only "never invoked during this run". → **[Ghost Detector guide](docs/ghost-detector.md)**
+  ```
+  [WireDoctor] Ghost tracking summary: 38 touched, 3 untouched, 6 untrackable
+    ('untouched' means not invoked during THIS run — not 'unused')
+  ```
+
 ### New in v0.5.0
 - 🩺 **Upgrade Guard (Autoconfig Condition Diff)**: Bumped Spring Boot and a feature quietly broke because an autoconfiguration stopped applying? WireDoctor now snapshots Spring Boot's **condition evaluation report** into your baseline and diffs it across builds — so a `matched → notMatched` flip is caught automatically. Your bean diff already shows *what* vanished; the condition diff shows **why**, with the exact `@ConditionalOnBean`/`@ConditionalOnClass` message. Gate it in CI with `wiredoctor.fail-on=condition-changed` (combinable with `new-cycle`). Validated on Spring PetClinic (Boot 4.1) — excluding one autoconfig surfaced the direct flip *and* the downstream cascade it triggered. → **[Upgrade Guard guide](docs/upgrade-guard.md)**
   ```
@@ -68,13 +75,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.5.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.6.0'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
@@ -110,6 +117,13 @@ wiredoctor.fail-on=new-cycle
 # the browser doesn't freeze. Analysis itself (cycles, smells, critical path,
 # baseline diff) ALWAYS runs on the full graph. 0 = unlimited. Default: 2000.
 wiredoctor.max-graph-nodes=2000
+
+# --- Ghost tracking (v0.6.0, opt-in — dev/staging only) ---
+# Wraps eligible user beans in a thin first-touch counting proxy. OFF by default:
+# without this property the tracking BeanPostProcessor is never registered at all.
+wiredoctor.ghost-tracking.enabled=true
+# Beans to never wrap (reported as untrackable:excluded, never silently hidden)
+wiredoctor.ghost-tracking.exclude=legacySoapClient,nativeBridge
 ```
 
 See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.
@@ -132,7 +146,7 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    Currently, WireDoctor is designed for **traditional JVM mode only**. Spring Boot 3+ AOT processing fundamentally changes bean instantiation. Running this under Native Image is untested and will likely yield incomplete data.
 
 2. 👻 **Orphan Bean Heuristic (Weak Signal):**
-   The tool reports "Orphan Beans" (beans with 0 incoming dependencies). This is a **heuristic, not a guarantee** that the bean is unused. Beans accessed dynamically via `ApplicationContext.getBean()`, event listeners, or scheduled tasks will appear as "orphaned".
+   The tool reports "Orphan Beans" (beans with 0 incoming dependencies). This is a **heuristic, not a guarantee** that the bean is unused. Beans accessed dynamically via `ApplicationContext.getBean()`, event listeners, or scheduled tasks will appear as "orphaned". Since v0.6.0 the `ghostCandidates` section refines this (entry-point detection filters out controllers/listeners/runners), and opt-in ghost tracking measures actual invocation — but even a tracked "untouched" bean only means *not invoked during this run*, never "unused".
 
 3. 💥 **Structural Cycles vs. Crashing Cycles:**
    If Spring encounters an *unresolvable* cycle (e.g., constructor-to-constructor), the app crashes (`BeanCurrentlyInCreationException`) before WireDoctor can report it. WireDoctor detects *resolved* cycles (via setter injection or proxies) that succeed silently. These are reported as structural design smells.
@@ -144,16 +158,16 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
 
 ---
-## 🔮 Roadmap (v0.6.0 & Beyond)
+## 🔮 Roadmap (v0.7.0 & Beyond)
 
-Shipped: **v0.4.0** (Enterprise Fit — CI marker-file contract, actuator module, multi-profile baselines) and **v0.5.0** (Upgrade Guard — autoconfig condition diff). Next up:
+Shipped: **v0.4.0** (Enterprise Fit), **v0.5.0** (Upgrade Guard — autoconfig condition diff), and **v0.6.0** (Ghost Bean Detector — passive candidates + opt-in first-touch tracking). Next up:
 
-1. 👻 **Real Lazy-Usage Tracking ("Ghost Bean" Detector, v0.6.0):**
-   *Identifying beans that are instantiated and consume memory but are never actually invoked at runtime. Phase 1 is passive (zero new intrusion); Phase 2 is an opt-in, non-invasive access-tracking proxy.*
-2. 💰 **Cost Guardian (v0.7.0):**
+1. 💰 **Cost Guardian (v0.7.0):**
    *Startup-time and slow-bean regression gates — tie a PR that makes boot slower to a CI failure, framed around Kubernetes cold-start cost.*
-3. 🧠 **Memory Footprint Estimation:**
-   *Moving beyond measuring instantiation **time** to measuring object **space**. Exploring per-bean heap consumption metrics (potentially requiring Java Agent instrumentation for deep size-of calculations).*
+2. 🏁 **v1.0.0 — API & schema freeze + Maven Central launch:**
+   *Report schema stabilized (all sections now shipped), publish to Maven Central, launch.*
+
+Dropped (deliberately): **Memory Footprint Estimation** — honest per-bean heap numbers need a Java Agent; shallow size-of is a correctness trap. The Ghost Detector answers the same underlying question ("which beans are wasting resources?") without lying about bytes.
 
 ---
 

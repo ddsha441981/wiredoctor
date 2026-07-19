@@ -54,4 +54,31 @@ class WireDoctorActuatorAutoConfigurationTest {
                     assertThat(context).doesNotHaveBean(WireDoctorEndpoint.class);
                 });
     }
+
+    @Test
+    void endpointWiresGhostTrackerWhenTrackingEnabled() {
+        runner.withPropertyValues(
+                        "management.endpoints.web.exposure.include=wiredoctor",
+                        "wiredoctor.ghost-tracking.enabled=true")
+                .run(context -> {
+                    assertThat(context).hasSingleBean(WireDoctorEndpoint.class);
+                    assertThat(context)
+                            .hasSingleBean(com.wiredoctor.WireDoctorGhostTracker.class);
+                    // Live view served, not the DISABLED placeholder.
+                    WireDoctorEndpoint endpoint = context.getBean(WireDoctorEndpoint.class);
+                    assertThat(endpoint.section("ghosts")).containsKey("trackedCount");
+                });
+    }
+
+    @Test
+    void endpointServesDisabledGhostsWithoutOptIn() {
+        runner.withPropertyValues("management.endpoints.web.exposure.include=wiredoctor")
+                .run(context -> {
+                    assertThat(context)
+                            .doesNotHaveBean(com.wiredoctor.WireDoctorGhostTracker.class);
+                    WireDoctorEndpoint endpoint = context.getBean(WireDoctorEndpoint.class);
+                    assertThat(endpoint.section("ghosts"))
+                            .containsEntry("status", "DISABLED");
+                });
+    }
 }

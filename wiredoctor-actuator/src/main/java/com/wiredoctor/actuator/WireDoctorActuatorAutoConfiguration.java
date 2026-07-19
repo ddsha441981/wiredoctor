@@ -6,6 +6,8 @@
 package com.wiredoctor.actuator;
 
 import com.wiredoctor.WireDoctorAnalyzer;
+import com.wiredoctor.WireDoctorGhostTracker;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -36,14 +38,20 @@ import org.springframework.context.annotation.Bean;
 public class WireDoctorActuatorAutoConfiguration {
 
     /**
-     * @param analyzer the core analyzer bean supplying the report
+     * @param analyzer     the core analyzer bean supplying the report
+     * @param ghostTracker the ghost-tracking state when the user opted in via
+     *                     {@code wiredoctor.ghost-tracking.enabled=true};
+     *                     absent (null) in the default passive configuration —
+     *                     the endpoint then answers {@code /ghosts} with a
+     *                     DISABLED placeholder
      * @return the WireDoctor actuator endpoint
      */
     @Bean
     @ConditionalOnBean(WireDoctorAnalyzer.class)
     @ConditionalOnMissingBean
     @ConditionalOnAvailableEndpoint(endpoint = WireDoctorEndpoint.class)
-    public WireDoctorEndpoint wireDoctorEndpoint(WireDoctorAnalyzer analyzer) {
-        return new WireDoctorEndpoint(analyzer);
+    public WireDoctorEndpoint wireDoctorEndpoint(WireDoctorAnalyzer analyzer,
+                                                 ObjectProvider<WireDoctorGhostTracker> ghostTracker) {
+        return new WireDoctorEndpoint(analyzer, ghostTracker.getIfAvailable());
     }
 }

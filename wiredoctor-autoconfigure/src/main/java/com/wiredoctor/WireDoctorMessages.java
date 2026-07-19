@@ -96,6 +96,17 @@ public final class WireDoctorMessages {
     public static final String GATE_STATUS_WRITTEN      = "[WireDoctor] Gate status written to: {}";
     public static final String GATE_STATUS_WRITE_FAILED = "[WireDoctor] Could not write gate status to {}: {}";
 
+    public static final String GHOST_CANDIDATES_HEADER  = "\n[WireDoctor] Ghost Candidates (instantiated, no dependents, no known entry point) — confidence LOW:";
+    public static final String GHOST_CANDIDATES_NONE    = "  - None detected";
+    public static final String GHOST_CANDIDATE_ITEM     = "  - {}";
+    public static final String GHOST_CANDIDATES_NOTE    = "    (Heuristic — NOT proof of dead code; reflective and programmatic usage is invisible here)";
+
+    public static final String GHOST_TRACKING_ENABLED     = "[WireDoctor] Ghost tracking ENABLED — eligible user beans are wrapped in a thin first-touch counting proxy. Intended for dev/staging, not production.";
+    public static final String GHOST_TRACKING_WRAP_FAILED = "[WireDoctor] Could not wrap bean '{}' for ghost tracking ({}); bean returned unmodified.";
+    public static final String GHOST_REPORT_SAVED         = "[WireDoctor] Ghost report saved to: {}";
+    public static final String GHOST_REPORT_SUMMARY       = "[WireDoctor] Ghost tracking summary: {} touched, {} untouched, {} untrackable ('untouched' means not invoked during THIS run — not 'unused')";
+    public static final String GHOST_REPORT_WRITE_FAILED  = "[WireDoctor] Could not write ghost report: {}";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }

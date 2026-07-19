@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-parent</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <packaging>pom</packaging>
 
     <name>WireDoctor</name>
@@ -83,6 +83,13 @@
                              spring-boot-configuration-processor needs it to generate
                              spring-configuration-metadata.json (IDE autocomplete). -->
                         <proc>full</proc>
+                        <!-- Spring Framework 7 (Boot 4) removed bytecode-based
+                             parameter-name discovery: @Selector/@ReadOperation
+                             parameters need real names in the class file or the
+                             actuator endpoint fails context refresh ("Failed to
+                             extract parameter names"). Boot's parent sets this
+                             flag; we have our own parent, so set it ourselves. -->
+                        <parameters>true</parameters>
                     </configuration>
                 </plugin>
             </plugins>
