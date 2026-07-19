@@ -476,4 +476,203 @@ class WireDoctorRegressionGuardIntegrationTest {
         p.setFailOn(null);
         assertThat(p.isFailOnConditionChanged()).isFalse();
     }
+
+    // ── v0.7.0: timing regression gates ──────────────────────────────────────
+
+    /** App with an intentionally slow bean for timing gate tests */
+    @SpringBootConfiguration
+    @EnableAutoConfiguration
+    static class SlowBeanApp {
+        @Bean
+        String normalBean() {
+            return "fast";
+        }
+
+        @Bean
+        @ConditionalOnProperty(name = "wd.slow.enabled", havingValue = "true")
+        String slowBean() throws InterruptedException {
+            // Simulate a slow bean initialization (1 second)
+            Thread.sleep(1000);
+            return "slow";
+        }
+    }
+
+    @Test
+    void startupTimeGateTripsWhenBothThresholdsExceeded(@TempDir Path tempDir) throws Exception {
+        // Step 1: Write baseline with fast startup (~300ms typical)
+        try (var ctx = new SpringApplicationBuilder(CleanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                        "wiredoctor.baseline-write=true",
+                        "wiredoctor.output-path=" + tempDir)
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        // Step 2: Run diff with slow bean enabled (adds ~1 second)
+        // Default thresholds: 20% relative AND 500ms absolute
+        assertThatThrownBy(() -> {
+            new SpringApplicationBuilder(SlowBeanApp.class)
+                    .web(WebApplicationType.NONE)
+                    .properties(
+                            "wiredoctor.enabled=true",
+                            "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                            "wiredoctor.output-path=" + tempDir,
+                            "wiredoctor.fail-on=startup-time",
+                            "wiredoctor.startup-time-relative-threshold=0.10",
+                            "wiredoctor.startup-time-absolute-threshold=200",
+                            "wd.slow.enabled=true")
+                    .run();
+        }).isInstanceOf(WireDoctorRegressionException.class)
+                .hasMessageContaining("startup-time");
+
+        // Verify gate status file
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(lines.get(0)).startsWith("FAIL:").contains("startup-time");
+        assertThat(lines).anyMatch(l -> l.startsWith("startupTimeDeltaMs="));
+    }
+
+    @Test
+    void startupTimeGateSkippedWhenBaselineMissingTiming(@TempDir Path tempDir) throws Exception {
+        // Step 1: Write a pre-v0.7.0 style baseline (manually craft JSON without timing)
+        Path baselineFile = tempDir.resolve("wiredoctor-baseline.json");
+        String oldBaselineJson = """
+                {
+                  "dependencies": {
+                    "graph": {"standalone": []},
+                    "cycles": []
+                  }
+                }
+                """;
+        Files.writeString(baselineFile, oldBaselineJson);
+
+        // Step 2: Run with slow bean — gate should gracefully skip (no timing in baseline)
+        try (var ctx = new SpringApplicationBuilder(SlowBeanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + baselineFile,
+                        "wiredoctor.output-path=" + tempDir,
+                        "wiredoctor.fail-on=startup-time",
+                        "wd.slow.enabled=true")
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        // No startup time regression signal when baseline lacks timing
+        assertThat(lines.get(0)).isEqualTo("PASS");
+        assertThat(lines).noneMatch(l -> l.startsWith("startupTimeDeltaMs="));
+    }
+
+    @Test
+    void startupTimeGatePassesWhenOnlyRelativeThresholdExceeded(@TempDir Path tempDir) throws Exception {
+        // Write baseline
+        try (var ctx = new SpringApplicationBuilder(CleanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                        "wiredoctor.baseline-write=true",
+                        "wiredoctor.output-path=" + tempDir)
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        // Run with tight absolute threshold (10000ms) — only relative trips
+        // This should PASS because both thresholds must trip
+        try (var ctx = new SpringApplicationBuilder(SlowBeanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                        "wiredoctor.output-path=" + tempDir,
+                        "wiredoctor.fail-on=startup-time",
+                        "wiredoctor.startup-time-absolute-threshold=10000", // 10s (way too high)
+                        "wd.slow.enabled=true")
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        // The startup-time SIGNAL must not fire (absolute threshold not met — dual-threshold
+        // check). Other signals (e.g. slow-bean, unarmed) may still appear on line 1;
+        // what matters: the armed startup-time gate did not trip and the app stayed up.
+        assertThat(lines.get(0)).doesNotContain("startup-time");
+    }
+
+    @Test
+    void slowBeanGateTripsWhenNewBeanCrossesThreshold(@TempDir Path tempDir) throws Exception {
+        // Step 1: Write baseline WITHOUT slow bean
+        try (var ctx = new SpringApplicationBuilder(SlowBeanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                        "wiredoctor.baseline-write=true",
+                        "wiredoctor.output-path=" + tempDir,
+                        "wiredoctor.slow-bean-threshold-ms=800")
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        // Step 2: Enable slow bean (1000ms) — should trip gate
+        assertThatThrownBy(() -> {
+            new SpringApplicationBuilder(SlowBeanApp.class)
+                    .web(WebApplicationType.NONE)
+                    .properties(
+                            "wiredoctor.enabled=true",
+                            "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                            "wiredoctor.output-path=" + tempDir,
+                            "wiredoctor.fail-on=slow-bean",
+                            "wiredoctor.slow-bean-threshold-ms=800",
+                            "wd.slow.enabled=true")
+                    .run();
+        }).isInstanceOf(WireDoctorRegressionException.class)
+                .hasMessageContaining("slow-bean");
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        // Line 1 lists every fired signal (the slow bean also slows startup, so
+        // startup-time may appear too) — slow-bean must be among them.
+        assertThat(lines.get(0)).startsWith("FAIL:").contains("slow-bean");
+        assertThat(lines).anyMatch(l -> l.startsWith("newSlowBeansCount="));
+    }
+
+    @Test
+    void slowBeanGatePassesWhenSlowBeanAlreadyInBaseline(@TempDir Path tempDir) throws Exception {
+        // Step 1: Write baseline WITH slow bean already present
+        try (var ctx = new SpringApplicationBuilder(SlowBeanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                        "wiredoctor.baseline-write=true",
+                        "wiredoctor.output-path=" + tempDir,
+                        "wiredoctor.slow-bean-threshold-ms=800",
+                        "wd.slow.enabled=true")
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        // Step 2: Run again with same slow bean — should PASS
+        try (var ctx = new SpringApplicationBuilder(SlowBeanApp.class)
+                .web(WebApplicationType.NONE)
+                .properties(
+                        "wiredoctor.enabled=true",
+                        "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                        "wiredoctor.output-path=" + tempDir,
+                        "wiredoctor.fail-on=slow-bean",
+                        "wiredoctor.slow-bean-threshold-ms=800",
+                        "wd.slow.enabled=true")
+                .run()) {
+            assertThat(ctx.isRunning()).isTrue();
+        }
+
+        var lines = Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        // No new slow beans, should PASS
+        assertThat(lines.get(0)).isEqualTo("PASS");
+        assertThat(lines).noneMatch(l -> l.startsWith("newSlowBeansCount="));
+    }
 }

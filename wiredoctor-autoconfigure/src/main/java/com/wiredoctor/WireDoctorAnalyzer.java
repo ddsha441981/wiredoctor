@@ -5,6 +5,7 @@
  */
 package com.wiredoctor;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.aop.support.AopUtils;
@@ -139,6 +140,23 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         ConfigurableApplicationContext context = event.getApplicationContext();
         ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
 
+        // ── Feature (v0.7.0): Total startup time from ApplicationReadyEvent ──
+        // Available since Boot 2.6+; null/absent for Boot 2.5 and earlier.
+        Long totalStartupMs = null;
+        try {
+            java.time.Duration timeTaken = event.getTimeTaken();
+            if (timeTaken != null) {
+                totalStartupMs = timeTaken.toMillis();
+                log.debug("[WireDoctor] Captured total startup time: {}ms", totalStartupMs);
+            } else {
+                log.debug("[WireDoctor] ApplicationReadyEvent.getTimeTaken() returned null");
+            }
+        } catch (Exception e) {
+            // Boot 2.5 or exotic context: timeTaken() doesn't exist or throws.
+            // Gracefully absent; timing diff will skip with an info log.
+            log.debug("[WireDoctor] Failed to get startup time: {}", e.getMessage());
+        }
+
         // Active profiles: recorded in the report for traceability and used to
         // resolve a profile-keyed baseline path (v0.4.0) — the bean graph
         // differs per profile, so each profile diffs against its own baseline.
@@ -225,6 +243,13 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         report.put("startupSlowestSteps", slowSteps);
         report.put("slowBeans", slowBeans);
+        // v0.7.0: record threshold in baseline so diff knows what "slow" meant then
+        report.put("slowBeanThreshold", slowBeanThresholdMs);
+
+        // v0.7.0: record total startup time (when available) for timing regression gate
+        if (totalStartupMs != null) {
+            report.put("totalStartupMs", totalStartupMs);
+        }
 
         // ── Section 2: Feature 2 — Bean category summary ─────────────────────
         String[] beanNames = beanFactory.getBeanDefinitionNames();
@@ -503,7 +528,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
         WireDoctorRegressionException trippedGate =
-                runRegressionGuard(graph, cycles, conditionOutcomes, report, outputDir, activeProfiles);
+                runRegressionGuard(graph, cycles, conditionOutcomes, totalStartupMs,
+                                   slowBeanThresholdMs, slowBeans, report, outputDir, activeProfiles);
 
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
@@ -622,15 +648,24 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      * @param cycles    the current detected cycles
      * @param conditionOutcomes autoconfig condition outcomes (v0.5.0), or
      *                          {@code null} when the condition report was unavailable
-     * @param report    the full current report (persisted as baseline in write mode)
-     * @param outputDir directory for {@code wiredoctor-diff.json}
-     * @param activeProfiles the environment's active profiles, used to resolve a
-     *                       {@code {profiles}} token in the baseline path (v0.4.0)
+     * @param graph              bean name → dependency names
+     * @param cycles             detected cycles
+     * @param conditionOutcomes  autoconfig condition outcomes (v0.5.0), or null
+     * @param totalStartupMs     total startup time (v0.7.0), or null when unavailable
+     * @param currentThreshold   current slow-bean threshold (v0.7.0)
+     * @param currentSlowBeans   current slow beans list (v0.7.0)
+     * @param report             the full current report (persisted as baseline in write mode)
+     * @param outputDir          directory for {@code wiredoctor-diff.json}
+     * @param activeProfiles     the environment's active profiles, used to resolve a
+     *                           {@code {profiles}} token in the baseline path (v0.4.0)
      * @return the gate exception to throw, or {@code null} when no gate tripped
      */
     private WireDoctorRegressionException runRegressionGuard(Map<String, String[]> graph,
                                                              List<List<String>> cycles,
                                                              Map<String, WireDoctorConditionSnapshot.Outcome> conditionOutcomes,
+                                                             Long totalStartupMs,
+                                                             long currentThreshold,
+                                                             List<Map<String, Object>> currentSlowBeans,
                                                              Map<String, Object> report,
                                                              File outputDir,
                                                              String[] activeProfiles) {
@@ -684,8 +719,10 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         WireDoctorBaselineDiff.Snapshot baseline;
+        JsonNode baselineJsonRoot;
         try {
-            baseline = WireDoctorBaselineDiff.Snapshot.fromJson(mapper.readTree(baselineFile));
+            baselineJsonRoot = mapper.readTree(baselineFile);
+            baseline = WireDoctorBaselineDiff.Snapshot.fromJson(baselineJsonRoot);
         } catch (Exception e) {
             log.warn(WireDoctorMessages.BASELINE_UNREADABLE,
                      baselineFile.getAbsolutePath(), e.getMessage());
@@ -693,8 +730,39 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         WireDoctorBaselineDiff.Snapshot current =
-                WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles, conditionOutcomes);
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles, conditionOutcomes,
+                                                              totalStartupMs, currentThreshold);
         WireDoctorBaselineDiff.DiffResult diff = WireDoctorBaselineDiff.diff(baseline, current);
+
+        // v0.7.0: compute new slow beans by comparing current vs baseline slow bean lists
+        List<WireDoctorBaselineDiff.NewSlowBean> newSlowBeans = List.of();
+        if (baseline.slowBeanThreshold() != null && !currentSlowBeans.isEmpty()) {
+            // Extract baseline slow bean names from the baseline JSON
+            Set<String> baselineSlowBeanNames = new java.util.HashSet<>();
+            JsonNode baselineSlowBeansNode = baselineJsonRoot.path("slowBeans");
+            if (baselineSlowBeansNode.isArray()) {
+                baselineSlowBeansNode.forEach(bean -> {
+                    JsonNode nameNode = bean.path("beanName");
+                    if (!nameNode.isMissingNode()) {
+                        baselineSlowBeanNames.add(nameNode.asText());
+                    }
+                });
+            }
+            newSlowBeans = WireDoctorBaselineDiff.computeNewSlowBeans(
+                    baselineSlowBeanNames,
+                    baseline.slowBeanThreshold(),
+                    currentSlowBeans,
+                    currentThreshold);
+            // Rebuild the diff with the computed slow beans
+            diff = new WireDoctorBaselineDiff.DiffResult(
+                    diff.addedBeans(), diff.removedBeans(),
+                    diff.addedEdges(), diff.removedEdges(),
+                    diff.newCycles(), diff.resolvedCycles(),
+                    diff.conditionDiffAvailable(),
+                    diff.conditionsChanged(), diff.conditionsAdded(), diff.conditionsRemoved(),
+                    diff.startupTimeRegression(),
+                    newSlowBeans);
+        }
 
         log.info(WireDoctorMessages.DIFF_HEADER, baselineFile.getName());
         if (diff.isEmpty()) {
@@ -717,6 +785,32 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                             c.className(), c.oldOutcome(), c.newOutcome()));
         } else if (baseline.conditions() == null && conditionOutcomes != null) {
             log.info(WireDoctorMessages.CONDITION_DIFF_BASELINE_PREDATES);
+        }
+
+        // v0.7.0: timing diff summary — only when both sides carried timing data
+        if (diff.hasStartupTimeRegression()) {
+            WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
+            log.info("⏱ Startup Time: {}ms -> ms ({:+d}ms, {:.1f}% {})",
+                    regression.baselineMs(),
+                    regression.currentMs(),
+                    regression.deltaMs(),
+                    Math.abs(regression.percentChange() * 100),
+                    regression.deltaMs() >= 0 ? "slower" : "faster");
+        } else if (baseline.timing() != null && totalStartupMs != null) {
+            // Both sides have timing, but no regression (faster or within noise)
+            long baselineMs = baseline.timing().totalStartupMs();
+            long delta = totalStartupMs - baselineMs;
+            log.info("⏱ Startup Time: {}ms -> {}ms ({:+d}ms)", baselineMs, totalStartupMs, delta);
+        } else if (baseline.timing() == null && totalStartupMs != null) {
+            log.info("⏱ Startup Time: {}ms (baseline predates timing tracking, diff skipped)", totalStartupMs);
+        }
+
+        // v0.7.0: slow-bean diff summary
+        if (diff.hasNewSlowBeans()) {
+            log.info("🐌 New Slow Beans: {} bean(s) crossed the slow threshold ({}ms) vs baseline",
+                    diff.newSlowBeans().size(), currentThreshold);
+            diff.newSlowBeans().stream().limit(5).forEach(b ->
+                    log.info("   • {} ({}ms)", b.beanName(), b.instantiationMs()));
         }
 
         try {
@@ -761,6 +855,57 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                     + " -> " + c.newOutcome() + ")")
                             .collect(Collectors.toList()));
         }
+
+        // v0.7.0: startup-time gate — trips only when BOTH dual thresholds exceeded
+        log.debug("[WireDoctor] Checking startup-time gate: enabled={}, hasRegression={}",
+                properties.isFailOnStartupTime(), diff.hasStartupTimeRegression());
+        if (properties.isFailOnStartupTime() && diff.hasStartupTimeRegression()) {
+            WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
+            double relativeThreshold = properties.getStartupTimeRelativeThreshold();
+            long absoluteThreshold = properties.getStartupTimeAbsoluteThreshold();
+            // Dual-threshold check: BOTH must trip to avoid false alarms on noise
+            boolean tripsDual = regression.deltaMs() >= absoluteThreshold
+                                && regression.percentChange() >= relativeThreshold;
+            if (tripsDual) {
+                log.error("WireDoctor regression gate 'startup-time' tripped: startup time "
+                        + "increased by {}ms ({:.1f}%) vs baseline {} ({}ms -> {}ms). "
+                        + "Thresholds: >={}ms AND >={}%",
+                        regression.deltaMs(),
+                        regression.percentChange() * 100,
+                        baselineFile.getName(),
+                        regression.baselineMs(),
+                        regression.currentMs(),
+                        absoluteThreshold,
+                        (int)(relativeThreshold * 100));
+                return new WireDoctorRegressionException(
+                        String.format("WireDoctor regression gate 'startup-time' tripped: "
+                                + "startup time increased by %dms (%.1f%%) vs baseline %s "
+                                + "(%dms -> %dms)",
+                                regression.deltaMs(),
+                                regression.percentChange() * 100,
+                                baselineFile.getName(),
+                                regression.baselineMs(),
+                                regression.currentMs()));
+            }
+        }
+
+        // v0.7.0: slow-bean gate — trips when any bean became slow that wasn't before
+        if (properties.isFailOnSlowBean() && diff.hasNewSlowBeans()) {
+            List<WireDoctorBaselineDiff.NewSlowBean> slowBeanRegressions = diff.newSlowBeans();
+            log.error("WireDoctor regression gate 'slow-bean' tripped: {} bean(s) crossed "
+                    + "the slow threshold ({}ms) that were NOT slow in baseline {}",
+                    slowBeanRegressions.size(), currentThreshold, baselineFile.getName());
+            return new WireDoctorRegressionException(
+                    String.format("WireDoctor regression gate 'slow-bean' tripped: "
+                            + "%d bean(s) crossed the slow threshold (%dms) vs baseline %s: %s",
+                            slowBeanRegressions.size(),
+                            currentThreshold,
+                            baselineFile.getName(),
+                            slowBeanRegressions.stream()
+                                    .map(b -> b.beanName() + " (" + b.instantiationMs() + "ms)")
+                                    .collect(Collectors.toList())));
+        }
+
         return null;
     }
 
@@ -797,6 +942,21 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         if (diff.conditionDiffAvailable() && diff.hasConditionChanges()) {
             failedGates.add("condition-changed");
         }
+        // v0.7.0: startup-time gate signal (trips only if dual-threshold check passes)
+        if (diff.hasStartupTimeRegression()) {
+            WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
+            double relativeThreshold = properties.getStartupTimeRelativeThreshold();
+            long absoluteThreshold = properties.getStartupTimeAbsoluteThreshold();
+            boolean tripsDual = regression.deltaMs() >= absoluteThreshold
+                                && regression.percentChange() >= relativeThreshold;
+            if (tripsDual) {
+                failedGates.add("startup-time");
+            }
+        }
+        // v0.7.0: slow-bean gate signal
+        if (diff.hasNewSlowBeans()) {
+            failedGates.add("slow-bean");
+        }
         if (failedGates.isEmpty()) {
             status.append("PASS");
         } else {
@@ -816,8 +976,21 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } else {
             status.append("conditionDiff=skipped").append('\n');
         }
+        // v0.7.0: timing info
+        if (diff.hasStartupTimeRegression()) {
+            WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
+            status.append("startupTimeDeltaMs=").append(regression.deltaMs()).append('\n');
+            status.append("startupTimePercentChange=")
+                  .append(String.format("%.1f", regression.percentChange() * 100)).append('\n');
+        }
+        if (diff.hasNewSlowBeans()) {
+            status.append("newSlowBeansCount=").append(diff.newSlowBeans().size()).append('\n');
+        }
         status.append("gateArmed=")
-              .append(properties.isFailOnNewCycle() || properties.isFailOnConditionChanged())
+              .append(properties.isFailOnNewCycle()
+                      || properties.isFailOnConditionChanged()
+                      || properties.isFailOnStartupTime()
+                      || properties.isFailOnSlowBean())
               .append('\n');
         try {
             Files.writeString(gateStatusFile.toPath(), status.toString());

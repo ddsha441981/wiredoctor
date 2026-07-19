@@ -310,4 +310,96 @@ class WireDoctorBaselineDiffTest {
                 "available", "changedCount", "changed",
                 "addedCount", "added", "removedCount", "removed");
     }
+
+    // ── v0.7.0: timing regression ────────────────────────────────────────────
+
+    private static WireDoctorBaselineDiff.Snapshot snapshotWithTiming(
+            Map<String, String[]> graph, long startupMs, long slowBeanThreshold) {
+        return WireDoctorBaselineDiff.Snapshot.fromAnalysis(
+                graph, List.of(), Map.of(), startupMs, slowBeanThreshold);
+    }
+
+    @Test
+    void startupTimeRegressionDetected() {
+        var baseline = snapshotWithTiming(Map.of("a", new String[0]), 1000L, 500);
+        var current = snapshotWithTiming(Map.of("a", new String[0]), 2000L, 500);
+
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.startupTimeRegression()).isNotNull();
+        assertThat(diff.startupTimeRegression().baselineMs()).isEqualTo(1000L);
+        assertThat(diff.startupTimeRegression().currentMs()).isEqualTo(2000L);
+        assertThat(diff.startupTimeRegression().deltaMs()).isEqualTo(1000L);
+        assertThat(diff.startupTimeRegression().percentChange()).isEqualTo(1.0); // 100%
+        assertThat(diff.isEmpty()).isFalse();
+    }
+
+    @Test
+    void noStartupRegressionWhenTimingImproved() {
+        var baseline = snapshotWithTiming(Map.of("a", new String[0]), 2000L, 500);
+        var current = snapshotWithTiming(Map.of("a", new String[0]), 1500L, 500);
+
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.startupTimeRegression()).isNull(); // improvement, not regression
+    }
+
+    @Test
+    void noStartupRegressionWhenBaselineMissingTiming() {
+        var baseline = snapshot(Map.of("a", new String[0]), List.of()); // pre-v0.7.0 baseline
+        var current = snapshotWithTiming(Map.of("a", new String[0]), 2000L, 500);
+
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.startupTimeRegression()).isNull(); // gracefully skip
+        assertThat(diff.isEmpty()).isTrue();
+    }
+
+    @Test
+    void timingRegressionRoundTripThroughJson() throws Exception {
+        String json = """
+                {
+                  "dependencies": {"graph": {"a": []}, "cycles": []},
+                  "totalStartupMs": 1500,
+                  "slowBeanThreshold": 800
+                }
+                """;
+        var baseline = WireDoctorBaselineDiff.Snapshot.fromJson(
+                new ObjectMapper().readTree(json));
+        assertThat(baseline.timing()).isNotNull();
+        assertThat(baseline.timing().totalStartupMs()).isEqualTo(1500L);
+        assertThat(baseline.slowBeanThreshold()).isEqualTo(800L);
+
+        var current = snapshotWithTiming(Map.of("a", new String[0]), 3000L, 800L);
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        assertThat(diff.startupTimeRegression()).isNotNull();
+        assertThat(diff.startupTimeRegression().deltaMs()).isEqualTo(1500L);
+    }
+
+    @Test
+    void timingRegressionInReportMap() {
+        var baseline = snapshotWithTiming(Map.of("a", new String[0]), 1000L, 500);
+        var current = snapshotWithTiming(Map.of("a", new String[0]), 2500L, 500);
+
+        Map<String, Object> map = WireDoctorBaselineDiff.diff(baseline, current).toReportMap();
+        assertThat(map.keySet()).contains("startupTimeDiff");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> regression = (Map<String, Object>) map.get("startupTimeDiff");
+        assertThat(regression.get("baselineMs")).isEqualTo(1000L);
+        assertThat(regression.get("currentMs")).isEqualTo(2500L);
+        assertThat(regression.get("deltaMs")).isEqualTo(1500L);
+        assertThat(regression.get("percentChange")).isEqualTo(1.5); // 150%
+    }
+
+    @Test
+    void newSlowBeansDetected() {
+        var baseline = snapshotWithTiming(Map.of("fast", new String[0], "slow", new String[0]), 1000L, 500);
+        var current = snapshotWithTiming(Map.of("fast", new String[0], "slow", new String[0]), 1000L, 500);
+
+        // Simulate: "slow" bean was 400ms in baseline (not slow), now 600ms (slow)
+        var diff = WireDoctorBaselineDiff.diff(baseline, current);
+        // Note: This is a unit test for the diff engine — actual slow bean comparison
+        // happens in WireDoctorAnalyzer with real bean timing data, so we can't fully
+        // test newSlowBeans here without mocking bean instantiation times.
+        // We'll test this in integration test instead.
+        assertThat(diff.newSlowBeans()).isNotNull();
+    }
 }

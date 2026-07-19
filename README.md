@@ -7,6 +7,16 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
+### New in v0.7.0
+- ⏱️ **Startup Time & Performance Gates**: Beyond bean cycles, you can now gate PRs on **startup time regressions** and **new slow beans** via `wiredoctor.fail-on=startup-time,slow-bean`. The baseline snapshot now includes `totalStartupMs` and the slow-bean threshold, and WireDoctor diffs them on each run. Configure absolute + relative thresholds — both must be exceeded to trip the gate (noise-tolerant by design). Example: `wiredoctor.startup-time-absolute-threshold=500` (ms) + `wiredoctor.startup-time-relative-threshold=0.10` (10%) means the gate trips only when startup regresses by **more than 500ms AND more than 10%**. The `slow-bean` gate trips when a bean crosses your `slow-bean-threshold-ms` in the current run but was **not** slow in the baseline — catches new performance bottlenecks before they ship. Both gates write `wiredoctor-gate.status` with `PASS` or `FAIL` verdicts for CI inspection. → **[Performance Gates guide](docs/performance-gates.md)**
+  ```
+  WireDoctorRegressionException: WireDoctor regression gate 'startup-time' tripped: 
+    startup time increased by 734ms (18.2%) vs baseline (4025ms -> 4759ms)
+  
+  WireDoctorRegressionException: WireDoctor regression gate 'slow-bean' tripped: 
+    2 bean(s) crossed the slow threshold (100ms) vs baseline: [orderService (142ms), paymentProcessor (201ms)]
+  ```
+
 ### New in v0.6.0
 - 👻 **Ghost Bean Detector**: Which beans cost you startup time and memory but never do anything? Two phases, two trust postures. **Phase 1 (passive, always on):** the `ghostCandidates` report section crosses three signals — eagerly instantiated ∧ zero incoming dependencies ∧ no detectable entry point (`@Controller`, `@Scheduled`/`@EventListener` holders, `CommandLineRunner`, messaging listeners, ...) — a strictly stronger signal than the raw orphan list, still labeled `confidence: LOW` with an honest disclaimer. **Phase 2 (opt-in, dev/staging):** `wiredoctor.ghost-tracking.enabled=true` wraps eligible user beans in a thin first-touch counting proxy (~180 ns/call after first touch — one `AtomicBoolean`, no timing, no args) and writes `wiredoctor-ghost-report.json` at shutdown: touched / untouched / untrackable. By default the tracking `BeanPostProcessor` is **never registered** — a regression test proves the passivity promise on every build. Live view via `/actuator/wiredoctor/ghosts`. Never claims "unused" — only "never invoked during this run". → **[Ghost Detector guide](docs/ghost-detector.md)**
   ```
@@ -75,13 +85,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.6.1</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.6.1'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.7.0'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
