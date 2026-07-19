@@ -75,13 +75,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.5.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.6.0'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
