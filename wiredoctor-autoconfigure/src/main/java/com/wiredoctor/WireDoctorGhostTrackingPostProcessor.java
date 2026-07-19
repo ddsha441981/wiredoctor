@@ -181,6 +181,13 @@ public class WireDoctorGhostTrackingPostProcessor
                 .hasAnnotation(userClass, org.springframework.context.annotation.Configuration.class)) {
             return bean;
         }
+        // Config-class beans are registered under their own FQN as the bean
+        // name. Catch those the annotation check misses (observed on Boot 4:
+        // Azure @AutoConfiguration classes slipped through and showed up as
+        // "untouched" noise on start.spring.io).
+        if (beanName.equals(userClass.getName())) {
+            return bean;
+        }
         if (excludedBeans.contains(beanName)) {
             tracker.markUntrackable(beanName, REASON_EXCLUDED);
             return bean;
@@ -198,16 +205,22 @@ public class WireDoctorGhostTrackingPostProcessor
             tracker.markUntrackable(beanName, REASON_NON_SINGLETON);
             return bean;
         }
-        boolean hasInterfaces = bean.getClass().getInterfaces().length > 0;
-        if (!hasInterfaces && Modifier.isFinal(bean.getClass().getModifiers())) {
+        // ALWAYS a CGLIB subclass proxy, never a JDK interface proxy: a JDK
+        // proxy is not assignable to the bean's concrete class, so any
+        // injection point typed to the class (rather than an interface) fails
+        // context refresh with "could not be injected because it is a JDK
+        // dynamic proxy". Found live on start.spring.io
+        // (springCloudAzureGlobalProperties). A subclass proxy is type-
+        // compatible with every injection point. Consequence: final classes
+        // are untrackable regardless of interfaces — counted, never risked.
+        if (Modifier.isFinal(bean.getClass().getModifiers())) {
             tracker.markUntrackable(beanName, REASON_FINAL_CLASS);
             return bean;
         }
 
         AtomicBoolean touched = tracker.track(beanName);
         ProxyFactory proxyFactory = new ProxyFactory(bean);
-        // Interface-less beans need a CGLIB subclass proxy.
-        proxyFactory.setProxyTargetClass(!hasInterfaces);
+        proxyFactory.setProxyTargetClass(true);
         // The entire hot path: one volatile read, one conditional write on
         // first touch only. Nothing else — no timing, no args, no logging.
         proxyFactory.addAdvice((MethodInterceptor) invocation -> {

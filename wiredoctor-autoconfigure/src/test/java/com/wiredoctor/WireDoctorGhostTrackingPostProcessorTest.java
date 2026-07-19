@@ -72,7 +72,10 @@ class WireDoctorGhostTrackingPostProcessorTest {
         Object wrapped = processor(tracker)
                 .postProcessAfterInitialization(new GreeterImpl(), "greeter");
 
-        assertThat(AopUtils.isAopProxy(wrapped)).isTrue();
+        // Always a CGLIB subclass proxy — a JDK interface proxy would break
+        // injection points typed to the concrete class.
+        assertThat(AopUtils.isCglibProxy(wrapped)).isTrue();
+        assertThat(wrapped).isInstanceOf(GreeterImpl.class);
         assertThat(tracker.trackedCount()).isEqualTo(1);
 
         Map<String, Object> before = tracker.toReportMap();
@@ -137,14 +140,19 @@ class WireDoctorGhostTrackingPostProcessorTest {
     }
 
     @Test
-    void finalClassWithInterfaceIsWrappedViaJdkProxy() {
-        // Final classes CAN be tracked when they expose an interface.
+    void finalClassWithInterfaceIsAlsoSkipped() {
+        // Tracking is CGLIB-only (a JDK interface proxy is not assignable to
+        // the concrete class and breaks class-typed injection points — found
+        // live on start.spring.io). Final classes are untrackable, interfaces
+        // or not.
         WireDoctorGhostTracker tracker = new WireDoctorGhostTracker();
+        FinalWithInterface bean = new FinalWithInterface();
         Object result = processor(tracker)
-                .postProcessAfterInitialization(new FinalWithInterface(), "finalGreeter");
+                .postProcessAfterInitialization(bean, "finalGreeter");
 
-        assertThat(AopUtils.isJdkDynamicProxy(result)).isTrue();
-        assertThat(((Greeter) result).greet()).isEqualTo("hi");
+        assertThat(result).isSameAs(bean);
+        assertThat(untrackableReasons(tracker))
+                .containsEntry("finalGreeter", WireDoctorGhostTrackingPostProcessor.REASON_FINAL_CLASS);
     }
 
     @Test
