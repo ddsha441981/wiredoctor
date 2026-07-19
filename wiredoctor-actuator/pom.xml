@@ -6,7 +6,7 @@
     <parent>
         <groupId>io.github.ddsha441981</groupId>
         <artifactId>wiredoctor-parent</artifactId>
-        <version>0.6.0</version>
+        <version>0.6.1</version>
     </parent>
     <artifactId>wiredoctor-actuator</artifactId>
     <name>WireDoctor Actuator</name>

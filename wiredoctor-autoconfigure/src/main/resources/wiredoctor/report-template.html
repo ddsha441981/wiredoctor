@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WireDoctor — Diagnostic Report</title>
+<!-- VIS_NETWORK_INJECTION_POINT -->
+<style>
+/* ═══════════ Design tokens ═══════════ */
+:root {
+  --bg:        #0b0e14;
+  --surface:   #12161f;
+  --surface-2: #181d29;
+  --surface-3: #1f2534;
+  --border:    #232a3a;
+  --border-hi: #2e3750;
+  --text:      #e6eaf2;
+  --text-2:    #9aa4b8;
+  --text-dim:  #5c6780;
+  --accent:    #4f8ef7;
+  --accent-dim:rgba(79,142,247,0.12);
+  --ok:        #34c98e;
+  --ok-dim:    rgba(52,201,142,0.12);
+  --warn:      #e8a33d;
+  --warn-dim:  rgba(232,163,61,0.12);
+  --danger:    #e5534b;
+  --danger-dim:rgba(229,83,75,0.12);
+  --ghost:     #a78bfa;
+  --ghost-dim: rgba(167,139,250,0.12);
+  --proxy:     #d4649a;
+  --mono: "JetBrains Mono", "SF Mono", "Cascadia Code", Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--sans); font-size: 14px; line-height: 1.5;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+/* ═══════════ Header ═══════════ */
+header {
+  display: flex; align-items: center; gap: 16px;
+  padding: 0 20px; height: 52px; flex-shrink: 0;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.logo { display: flex; align-items: center; gap: 9px; }
+.logo-mark {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent), #7c5cf0);
+  display: grid; place-items: center; font-size: 13px; color: #fff; font-weight: 700;
+}
+.logo-name { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+.logo-ver { font-family: var(--mono); font-size: 11px; color: var(--text-2); background: var(--surface-3); padding: 2px 7px; border-radius: 10px; }
+.header-meta { display: flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; color: var(--text-2); }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1px solid transparent;
+}
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+.chip.ok    { color: var(--ok); background: var(--ok-dim); border-color: rgba(52,201,142,0.25); }
+.chip.ok .dot { background: var(--ok); }
+.chip.danger{ color: var(--danger); background: var(--danger-dim); border-color: rgba(229,83,75,0.25); }
+.chip.danger .dot { background: var(--danger); }
+.chip.neutral { color: var(--text-2); background: var(--surface-3); border-color: var(--border); }
+
+/* ═══════════ Layout: nav + main ═══════════ */
+.shell { display: flex; flex: 1; min-height: 0; }
+nav {
+  width: 176px; flex-shrink: 0; padding: 12px 8px;
+  background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer;
+  color: var(--text-2); font-weight: 500; font-size: 13px;
+  border: none; background: none; text-align: left; width: 100%;
+  transition: background .12s, color .12s;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--text); }
+.nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+.nav-item .icon { width: 16px; text-align: center; font-size: 14px; }
+.nav-item .count {
+  margin-left: auto; font-family: var(--mono); font-size: 10.5px;
+  background: var(--surface-3); color: var(--text-2);
+  padding: 1px 6px; border-radius: 9px; font-weight: 600;
+}
+.nav-item .count.hot { background: var(--danger-dim); color: var(--danger); }
+.nav-sep { height: 1px; background: var(--border); margin: 8px 6px; }
+.nav-footer { margin-top: auto; padding: 10px 12px; font-size: 10.5px; color: var(--text-dim); line-height: 1.6; }
+
+main { flex: 1; overflow-y: auto; min-width: 0; }
+.tab { display: none; padding: 24px; max-width: 1400px; }
+.tab.active { display: block; }
+.tab.full { padding: 0; max-width: none; height: 100%; }
+
+/* ═══════════ Common components ═══════════ */
+.page-title { font-size: 18px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.3px; }
+.page-sub { font-size: 13px; color: var(--text-2); margin: 0 0 20px; }
+.section-h {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text-2); margin: 0 0 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 18px 20px;
+}
+.grid { display: grid; gap: 16px; }
+.kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 20px; }
+.kpi { padding: 14px 16px; }
+.kpi .k-label { font-size: 11.5px; color: var(--text-2); font-weight: 600; }
+.kpi .k-value { font-size: 26px; font-weight: 700; font-family: var(--mono); letter-spacing: -1px; margin-top: 2px; }
+.kpi .k-value small { font-size: 13px; color: var(--text-2); font-weight: 500; letter-spacing: 0; }
+.kpi.accent .k-value { color: var(--accent); }
+.kpi.danger .k-value { color: var(--danger); }
+.kpi.warn .k-value { color: var(--warn); }
+.kpi.ghost .k-value { color: var(--ghost); }
+.two-col { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th {
+  text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-2); font-weight: 700; padding: 8px 12px;
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); }
+table.data td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.data tr:last-child td { border-bottom: none; }
+table.data tr:hover td { background: var(--surface-2); }
+.bean { font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
+.muted { color: var(--text-2); }
+.dim { color: var(--text-dim); }
+
+.bar-wrap { display: flex; align-items: center; gap: 10px; }
+.bar { height: 6px; border-radius: 3px; background: var(--accent); min-width: 2px; }
+.bar.warn { background: var(--warn); }
+
+.pill {
+  display: inline-block; padding: 2px 9px; border-radius: 10px;
+  font-size: 11px; font-weight: 600; font-family: var(--mono);
+}
+.pill.matched      { color: var(--ok); background: var(--ok-dim); }
+.pill.notMatched   { color: var(--text-2); background: var(--surface-3); }
+.pill.excluded     { color: var(--danger); background: var(--danger-dim); }
+.pill.unconditional{ color: var(--accent); background: var(--accent-dim); }
+.pill.low          { color: var(--warn); background: var(--warn-dim); }
+.pill.ghost        { color: var(--ghost); background: var(--ghost-dim); }
+.pill.reason       { color: var(--text-2); background: var(--surface-3); }
+
+.callout {
+  display: flex; gap: 10px; padding: 12px 14px; border-radius: 10px;
+  font-size: 12.5px; color: var(--text-2); line-height: 1.55;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.callout.warn { background: var(--warn-dim); border-color: rgba(232,163,61,0.25); color: #d9b26a; }
+.empty {
+  padding: 28px; text-align: center; color: var(--text-dim); font-size: 13px;
+}
+
+/* ═══════════ Graph tab ═══════════ */
+#graph-shell { display: flex; height: 100%; }
+#graph-area { flex: 1; position: relative; min-width: 0; }
+#graph-canvas { position: absolute; inset: 0; }
+.graph-toolbar {
+  position: absolute; top: 14px; left: 14px; z-index: 5;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; max-width: calc(100% - 28px);
+}
+.g-search {
+  background: var(--surface); border: 1px solid var(--border-hi); color: var(--text);
+  border-radius: 8px; padding: 7px 12px; font-size: 13px; width: 240px; outline: none;
+  font-family: var(--sans);
+}
+.g-search:focus { border-color: var(--accent); }
+.g-filter {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-2);
+  border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.g-filter .sw { width: 8px; height: 8px; border-radius: 50%; }
+.g-filter.on { color: var(--text); border-color: var(--border-hi); background: var(--surface-3); }
+#node-panel {
+  width: 300px; flex-shrink: 0; background: var(--surface);
+  border-left: 1px solid var(--border); padding: 20px; overflow-y: auto;
+  display: none;
+}
+#node-panel.open { display: block; }
+#node-panel h3 { margin: 0 0 2px; font-size: 14px; font-family: var(--mono); word-break: break-all; }
+.np-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12.5px; }
+.np-row .l { color: var(--text-2); }
+.np-list { margin: 6px 0 0; padding: 0; list-style: none; }
+.np-list li { font-family: var(--mono); font-size: 11.5px; color: var(--text-2); padding: 3px 0; word-break: break-all; }
+.np-close { float: right; background: none; border: none; color: var(--text-2); cursor: pointer; font-size: 16px; }
+
+/* critical path chain */
+.cp-chain { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.cp-node {
+  font-family: var(--mono); font-size: 12px; padding: 5px 10px; border-radius: 8px;
+  background: var(--surface-3); border: 1px solid var(--border-hi);
+}
+.cp-node b { color: var(--warn); font-weight: 600; }
+.cp-arrow { color: var(--text-dim); font-size: 12px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 5px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">W</div>
+    <span class="logo-name">WireDoctor</span>
+    <span class="logo-ver"><!-- VERSION_INJECTION_POINT --></span>
+  </div>
+  <div class="header-meta">
+    <span class="chip neutral" id="h-profile">profile: default</span>
+    <span class="chip neutral" id="h-beans">— beans</span>
+    <span class="chip ok" id="h-gate"><span class="dot"></span><span id="h-gate-text">HEALTHY</span></span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+const reportData = /* DATA_INJECTION_POINT */;
+const ghostReport = /* GHOST_INJECTION_POINT */;
+
+/* ───────── helpers ───────── */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n.toLocaleString('en-US');
+
+const deps = reportData.dependencies;
+const cycles = deps.cycles || [];
+const cycleBeans = new Set(cycles.flat());
+const proxyBeans = new Set([...(reportData.proxies.cglibBeans||[]), ...(reportData.proxies.jdkBeans||[])]);
+const orphans = new Set(deps.orphanBeans || []);
+const ghosts = new Set((reportData.ghostCandidates && reportData.ghostCandidates.beans) || []);
+const fanIn = (reportData.smells && reportData.smells.fanIn) || {};
+const conditions = reportData.conditions || {};
+const condEntries = Object.entries(conditions);
+const cp = reportData.criticalPath || { available: false };
+const gc = reportData.ghostCandidates || { count: 0, beans: [] };
+
+/* header */
+$('#h-profile').textContent = 'profile: ' + ((reportData.activeProfiles||[]).join(', ') || 'default');
+$('#h-beans').textContent = fmt(deps.totalBeans) + ' beans · ' + fmt(deps.totalEdges) + ' edges';
+if (cycles.length > 0) {
+  const g = $('#h-gate'); g.className = 'chip danger';
+  $('#h-gate-text').textContent = cycles.length + ' CYCLE' + (cycles.length>1?'S':'');
+}
+
+/* ───────── nav / tabs ───────── */
+const TABS = [
+  { id:'overview',  icon:'◈', label:'Overview' },
+  { id:'graph',     icon:'⬡', label:'Graph', full:true },
+  { id:'ghosts',    icon:'◍', label:'Ghosts', count: gc.count + (ghostReport ? (ghostReport.untouchedCount||0) : 0) },
+  { id:'smells',    icon:'△', label:'Smells' },
+  { id:'timing',    icon:'◷', label:'Timing' },
+  { id:'conditions',icon:'⚙', label:'Conditions', count: condEntries.length },
+];
+const nav = $('#nav'), main = $('#main');
+TABS.forEach((t,i) => {
+  const b = document.createElement('button');
+  b.className = 'nav-item' + (i===0?' active':'');
+  b.innerHTML = `<span class="icon">${t.icon}</span>${t.label}` +
+    (t.count ? `<span class="count${t.id==='ghosts'&&t.count>0?'':''}">${t.count}</span>` : '');
+  b.onclick = () => activate(t.id);
+  b.dataset.tab = t.id;
+  nav.appendChild(b);
+  const pane = document.createElement('div');
+  pane.className = 'tab' + (i===0?' active':'') + (t.full?' full':'');
+  pane.id = 'tab-' + t.id;
+  main.appendChild(pane);
+});
+nav.insertAdjacentHTML('beforeend', `<div class="nav-footer">Generated at startup ·<br>zero-intrusion snapshot.<br>Reads metadata, never state.</div>`);
+let graphBuilt = false;
+/* deep-linking: #graph, #ghosts, ... opens that tab */
+window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.some(t=>t.id===h)) activate(h); });
+if (location.hash && TABS.some(t=>t.id===location.hash.slice(1))) setTimeout(()=>activate(location.hash.slice(1)), 0);
+function activate(id) {
+  location.hash = id;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab===id));
+  document.querySelectorAll('.tab').forEach(p => p.classList.toggle('active', p.id==='tab-'+id));
+  if (id==='graph' && !graphBuilt) { graphBuilt = true; buildGraph(); }
+}
+
+/* ───────── Overview ───────── */
+$('#tab-overview').innerHTML = `
+  <h1 class="page-title">Overview</h1>
+  <p class="page-sub">Live resolved bean graph, captured at ApplicationReadyEvent.</p>
+  <div class="grid kpis">
+    <div class="card kpi"><div class="k-label">Total beans</div><div class="k-value">${fmt(deps.totalBeans)}</div></div>
+    <div class="card kpi accent"><div class="k-label">Wiring edges</div><div class="k-value">${fmt(deps.totalEdges)}</div></div>
+    <div class="card kpi ${cycles.length?'danger':''}"><div class="k-label">Dependency cycles</div><div class="k-value">${cycles.length}</div></div>
+    <div class="card kpi"><div class="k-label">Proxies (CGLIB/JDK)</div><div class="k-value">${reportData.proxies.cglibCount}<small> / ${reportData.proxies.jdkCount}</small></div></div>
+    <div class="card kpi ghost"><div class="k-label">Ghost candidates</div><div class="k-value">${gc.count}</div></div>
+    <div class="card kpi ${cp.available?'warn':''}"><div class="k-label">Critical path</div><div class="k-value">${cp.available ? fmt(cp.totalMs)+'<small>ms</small>' : '—'}</div></div>
+  </div>
+  <div class="grid two-col">
+    <div class="card">
+      <div class="section-h">Bean composition</div>
+      ${compositionBar()}
+    </div>
+    <div class="card">
+      <div class="section-h">Startup critical path ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
+      ${cp.available && cp.path && cp.path.length ? `<div class="cp-chain">${
+        cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')
+      }</div><p class="dim" style="font-size:11.5px;margin:10px 0 0">${esc(cp.disclaimer||'')}</p>` : `<div class="empty">No timing data (startup was not buffering).</div>`}
+    </div>
+  </div>
+  <div class="grid two-col" style="margin-top:16px">
+    <div class="card">
+      <div class="section-h">Top coupling hotspots (fan-in)</div>
+      ${hotspotRows()}
+    </div>
+    <div class="card">
+      <div class="section-h">Ghost candidates <span class="pill low">confidence LOW</span></div>
+      ${gc.count ? `<table class="data">${gc.beans.slice(0,8).map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>
+      <p class="dim" style="font-size:11.5px;margin:10px 0 0">Instantiated, no dependents, no known entry point — not proof of dead code.</p>`
+      : '<div class="empty">No ghost candidates.</div>'}
+    </div>
+  </div>`;
+
+function compositionBar() {
+  const bc = reportData.beanCategories || {};
+  const total = bc.totalBeans || 1;
+  const segs = [
+    ['User-defined', bc.userDefined||0, 'var(--accent)'],
+    ['Framework', bc.frameworkOwned||0, 'var(--surface-3)'],
+  ];
+  return `<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0 14px">${
+    segs.map(([l,v,c])=>`<div style="width:${(v/total*100).toFixed(1)}%;background:${c}"></div>`).join('')
+  }</div>` + segs.map(([l,v,c])=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px">
+      <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:${c}"></span>${l}</span>
+      <span class="bean muted">${fmt(v)} · ${(v/total*100).toFixed(0)}%</span>
+    </div>`).join('')
+  + `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:6px">
+      <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span></div>`;
+}
+function hotspotRows() {
+  const list = (reportData.smells && reportData.smells.highFanIn) || [];
+  if (!list.length) return '<div class="empty">No user-bean hotspots.</div>';
+  const max = list[0].inDegree || 1;
+  return `<table class="data">${list.slice(0,8).map(e=>`
+    <tr><td class="bean">${esc(e.beanName)}</td>
+    <td style="width:45%"><div class="bar-wrap"><div class="bar" style="width:${(e.inDegree/max*100).toFixed(0)}%"></div>
+    <span class="bean muted">${e.inDegree}</span></div></td></tr>`).join('')}</table>`;
+}
+
+/* ───────── Ghosts tab ───────── */
+$('#tab-ghosts').innerHTML = `
+  <h1 class="page-title">Ghost Beans</h1>
+  <p class="page-sub">Beans that cost startup time and memory but show no sign of use. Two independent signals — neither ever claims "unused".</p>
+  <div class="grid two-col">
+    <div class="card">
+      <div class="section-h">Phase 1 · Passive candidates <span class="pill low">confidence LOW</span></div>
+      ${gc.count ? `<table class="data"><thead><tr><th>Bean</th></tr></thead>${gc.beans.map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>` : '<div class="empty">No candidates.</div>'}
+      <div class="callout" style="margin-top:14px">◍&nbsp; ${esc(gc.disclaimer||'')}</div>
+      <div style="display:flex;gap:14px;margin-top:12px;font-size:12px" class="muted">
+        <span>Entry points excluded: <b class="bean">${gc.entryPointsExcluded ?? 0}</b></span>
+        <span>Not instantiated: <b class="bean">${gc.notInstantiatedExcluded ?? 0}</b></span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-h">Phase 2 · First-touch tracking ${ghostReport?'<span class="pill ghost">enabled this run</span>':'<span class="pill reason">not enabled</span>'}</div>
+      ${ghostReport ? `
+        <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+          <div class="kpi"><div class="k-label">Touched</div><div class="k-value" style="color:var(--ok);font-size:22px">${ghostReport.touchedCount}</div></div>
+          <div class="kpi"><div class="k-label">Untouched</div><div class="k-value" style="color:var(--ghost);font-size:22px">${ghostReport.untouchedCount}</div></div>
+          <div class="kpi"><div class="k-label">Untrackable</div><div class="k-value" style="font-size:22px">${ghostReport.untrackableCount}</div></div>
+        </div>
+        <div class="section-h" style="margin-top:4px">Untouched this run</div>
+        <table class="data">${(ghostReport.untouched||[]).map(b=>`<tr><td class="bean">${esc(b)}</td>${ghosts.has(b)?'<td style="width:1%"><span class="pill ghost">also candidate</span></td>':'<td></td>'}</tr>`).join('')}</table>
+        <div class="section-h" style="margin-top:18px">Untrackable (reason)</div>
+        <table class="data">${Object.entries(ghostReport.untrackable||{}).map(([b,r])=>`<tr><td class="bean">${esc(b)}</td><td style="width:1%"><span class="pill reason">${esc(r)}</span></td></tr>`).join('')}</table>
+        <p class="dim" style="font-size:11.5px;margin:12px 0 0">${esc(ghostReport.disclaimer||'')}</p>`
+      : `<div class="empty">Not enabled this run, or results pending: ghosts are only knowable at shutdown.<br><br>Enable with <span class="bean">wiredoctor.ghost-tracking.enabled=true</span> (dev/staging only — wraps beans in a thin counting proxy).<br>Results: <span class="bean">wiredoctor-ghost-report.json</span> at shutdown, or live via <span class="bean">/actuator/wiredoctor/ghosts</span>.</div>`}
+    </div>
+  </div>`;
+
+/* ───────── Smells tab ───────── */
+const sm = reportData.smells || {};
+function smellTable(list, valKey, valLabel) {
+  if (!list || !list.length) return '<div class="empty">None detected.</div>';
+  const max = Math.max(...list.map(e=>e[valKey])) || 1;
+  return `<table class="data"><thead><tr><th>Bean</th><th class="num">${valLabel}</th></tr></thead>${
+    list.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td>
+    <td class="num" style="width:40%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar warn" style="width:${(e[valKey]/max*80).toFixed(0)}%"></div>${e[valKey]}</div></td></tr>`).join('')}</table>`;
+}
+$('#tab-smells').innerHTML = `
+  <h1 class="page-title">Architecture Smells</h1>
+  <p class="page-sub">Computed on the live resolved graph — what Spring actually wired. ${sm.frameworkFiltered?'Framework beans filtered out (rankings show beans you can refactor).':''}</p>
+  <div class="grid two-col">
+    <div class="card"><div class="section-h">High fan-in · coupling hotspots</div>${smellTable(sm.highFanIn,'inDegree','dependents')}</div>
+    <div class="card"><div class="section-h">High fan-out · shotgun surgery risk</div>${smellTable(sm.highFanOut,'outDegree','dependencies')}</div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="section-h">Unstable beans · I = Ce / (Ca + Ce) ≥ 0.8</div>
+    ${(sm.unstable&&sm.unstable.length) ? `<table class="data"><thead><tr><th>Bean</th><th class="num">Instability</th><th class="num">Fan-in</th><th class="num">Fan-out</th></tr></thead>${
+      sm.unstable.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty">None over threshold.</div>'}
+  </div>`;
+
+/* ───────── Timing tab ───────── */
+const steps = reportData.startupSlowestSteps || [];
+const slowBeans = reportData.slowBeans || [];
+function timingTable(rows, nameKey, msKey) {
+  if (!rows.length) return '<div class="empty">No data.</div>';
+  const max = rows[0][msKey] || 1;
+  return `<table class="data">${rows.slice(0,12).map(r=>`
+    <tr><td class="bean">${esc(r[nameKey])}</td>
+    <td style="width:40%"><div class="bar-wrap"><div class="bar" style="width:${(r[msKey]/max*100).toFixed(0)}%"></div>
+    <span class="bean muted">${fmt(r[msKey])}ms</span></div></td></tr>`).join('')}</table>`;
+}
+$('#tab-timing').innerHTML = `
+  <h1 class="page-title">Startup Timing</h1>
+  <p class="page-sub">From BufferingApplicationStartup — real measured instantiation, no reflection heuristics.</p>
+  <div class="grid two-col">
+    <div class="card"><div class="section-h">Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
+    <div class="card"><div class="section-h">Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
+  </div>
+  ${cp.available && cp.path ? `<div class="card" style="margin-top:16px">
+    <div class="section-h">Critical path — the chain your readiness sits on</div>
+    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
+  </div>`:''}`;
+
+/* ───────── Conditions tab ───────── */
+const outcomeCounts = {};
+condEntries.forEach(([,v]) => outcomeCounts[v.outcome] = (outcomeCounts[v.outcome]||0)+1);
+$('#tab-conditions').innerHTML = `
+  <h1 class="page-title">Autoconfiguration Conditions</h1>
+  <p class="page-sub">The condition evaluation report Boot already keeps — snapshotted so upgrades can be diffed. ${fmt(condEntries.length)} classes.</p>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    ${Object.entries(outcomeCounts).map(([o,c])=>`<span class="pill ${o}">${o} · ${c}</span>`).join('')}
+    <input class="g-search" id="cond-search" placeholder="Filter by class name…" style="margin-left:auto">
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="max-height:calc(100vh - 260px);overflow-y:auto">
+    <table class="data" id="cond-table"><thead><tr><th>Autoconfiguration class</th><th style="width:1%">Outcome</th></tr></thead>
+    <tbody>${condEntries.map(([k,v])=>`<tr data-k="${esc(k.toLowerCase())}"><td class="bean" title="${esc(v.reason||'')}">${esc(k)}</td><td><span class="pill ${v.outcome}">${v.outcome}</span></td></tr>`).join('')}</tbody>
+    </table></div>
+  </div>`;
+if (condEntries.length === 0) {
+  $('#tab-conditions .card').innerHTML = '<div class="empty">No condition data captured this run.</div>';
+}
+$('#cond-search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('#cond-table tbody tr').forEach(tr =>
+    tr.style.display = tr.dataset.k.includes(q) ? '' : 'none');
+});
+
+/* ───────── Graph tab ───────── */
+$('#tab-graph').innerHTML = `
+  <div id="graph-shell">
+    <div id="graph-area">
+      <div class="graph-toolbar">
+        <input class="g-search" id="g-search" placeholder="Search bean… (Enter to focus)">
+        <button class="g-filter on" data-f="user"><span class="sw" style="background:var(--accent)"></span>User beans</button>
+        <button class="g-filter on" data-f="fw"><span class="sw" style="background:var(--text-dim)"></span>Framework</button>
+        <button class="g-filter" data-f="cycles"><span class="sw" style="background:var(--danger)"></span>Cycles only</button>
+        <button class="g-filter" data-f="ghosts"><span class="sw" style="background:var(--ghost)"></span>Ghosts only</button>
+      </div>
+      <div id="graph-canvas"></div>
+    </div>
+    <div id="node-panel"></div>
+  </div>`;
+
+let network, allNodes, allEdges;
+function nodeColor(bean) {
+  if (cycleBeans.has(bean)) return { bg:'#e5534b', glow:true };
+  if (ghosts.has(bean))     return { bg:'#a78bfa', glow:false };
+  if (proxyBeans.has(bean)) return { bg:'#d4649a', glow:false };
+  if (orphans.has(bean))    return { bg:'#e8a33d', glow:false };
+  return { bg:'#3d4a63', glow:false };
+}
+const FRAMEWORK_PREFIX = /^(org\.springframework|org\.apache|com\.sun|java\.|javax\.|jakarta\.|io\.netty|com\.fasterxml|io\.micrometer)/;
+const isFw = b => FRAMEWORK_PREFIX.test(b);
+
+function buildGraph() {
+  if (typeof vis === 'undefined') {
+    // Only reachable via the CDN fallback (bundled resource missing) while offline.
+    $('#graph-canvas').innerHTML = '<div class="empty" style="display:flex;height:100%;align-items:center;justify-content:center;line-height:1.8">' +
+      '<div><b style="color:var(--text)">Graph library could not be loaded</b><br>' +
+      'This report was generated without the bundled vis-network library<br>' +
+      'and the CDN fallback (unpkg.com) is unreachable.<br>All other tabs are unaffected.</div></div>';
+    return;
+  }
+  if (deps.graphTruncated) {
+    const b = document.createElement('div');
+    b.className = 'callout warn';
+    b.style.cssText = 'position:absolute;bottom:14px;left:14px;z-index:5;max-width:520px';
+    b.textContent = 'Graph shows top ' + deps.graphNodesKept + ' of ' + deps.graphNodesTotal +
+      ' beans (by fan-in; cycle members always shown). Analysis used the full graph. Raise wiredoctor.max-graph-nodes to see everything.';
+    $('#graph-area').appendChild(b);
+  }
+  const graphMap = deps.graph || {};
+  const nodeSet = new Set();
+  const edges = [];
+  for (const [bean, ds] of Object.entries(graphMap)) {
+    nodeSet.add(bean);
+    (ds||[]).forEach(d => { nodeSet.add(d);
+      const inCycle = cycleBeans.has(bean) && cycleBeans.has(d);
+      edges.push({ from: bean, to: d, arrows: {to:{enabled:true,scaleFactor:0.5}},
+        color: { color: inCycle ? 'rgba(229,83,75,0.7)' : 'rgba(154,164,184,0.14)', highlight:'#4f8ef7' },
+        width: inCycle ? 2 : 1 });
+    });
+  }
+  const nodes = [...nodeSet].map(bean => {
+    const c = nodeColor(bean);
+    const fi = fanIn[bean] || 0;
+    return {
+      id: bean, label: bean.length > 24 ? bean.slice(0,21)+'…' : bean,
+      size: Math.max(8, 8 + Math.sqrt(fi)*3.5),
+      color: { background: c.bg, border: 'rgba(255,255,255,0.12)', highlight: { background:'#4f8ef7', border:'#fff' } },
+      shadow: c.glow ? { enabled:true, color:'#e5534b', size:18, x:0, y:0 } : false,
+      shape: 'dot', font: { color:'#9aa4b8', size: 11, strokeWidth: 3, strokeColor: '#0b0e14' },
+    };
+  });
+  allNodes = new vis.DataSet(nodes);
+  allEdges = new vis.DataSet(edges);
+  network = new vis.Network($('#graph-canvas'), { nodes: allNodes, edges: allEdges }, {
+    physics: { barnesHut: { gravitationalConstant: -2600, springLength: 110, centralGravity: 0.25 }, minVelocity: 0.9, stabilization: { iterations: 120 } },
+    interaction: { hover: true, tooltipDelay: 120 },
+  });
+  network.on('click', p => {
+    if (p.nodes.length) showNode(p.nodes[0]); else $('#node-panel').classList.remove('open');
+  });
+  /* filters */
+  const state = { user:true, fw:true, cycles:false, ghosts:false };
+  document.querySelectorAll('.g-filter').forEach(btn => btn.onclick = () => {
+    const f = btn.dataset.f;
+    state[f] = !state[f]; btn.classList.toggle('on', state[f]);
+    if (f==='cycles' && state.cycles) { state.ghosts=false; document.querySelector('[data-f=ghosts]').classList.remove('on'); }
+    if (f==='ghosts' && state.ghosts) { state.cycles=false; document.querySelector('[data-f=cycles]').classList.remove('on'); }
+    applyFilter();
+  });
+  function applyFilter() {
+    const upd = [];
+    allNodes.forEach(n => {
+      let show = isFw(n.id) ? state.fw : state.user;
+      if (state.cycles) show = cycleBeans.has(n.id);
+      if (state.ghosts) show = ghosts.has(n.id) || (ghostReport && (ghostReport.untouched||[]).includes(n.id));
+      upd.push({ id: n.id, hidden: !show });
+    });
+    allNodes.update(upd);
+  }
+  /* search */
+  $('#g-search').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const q = e.target.value.toLowerCase(); if (!q) return;
+    const hit = allNodes.get({ filter: n => n.id.toLowerCase().includes(q) })[0];
+    if (hit) { network.focus(hit.id, { scale: 1.2, animation: true }); network.selectNodes([hit.id]); showNode(hit.id); }
+  });
+}
+function showNode(bean) {
+  const panel = $('#node-panel');
+  const depsOut = (deps.graph && deps.graph[bean]) || [];
+  const fi = fanIn[bean] || 0;
+  const tags = [];
+  if (cycleBeans.has(bean)) tags.push('<span class="pill excluded">in cycle</span>');
+  if (proxyBeans.has(bean)) tags.push('<span class="pill reason">proxied</span>');
+  if (ghosts.has(bean)) tags.push('<span class="pill ghost">ghost candidate</span>');
+  if (orphans.has(bean)) tags.push('<span class="pill low">orphan</span>');
+  panel.innerHTML = `
+    <button class="np-close" onclick="this.parentElement.classList.remove('open')">×</button>
+    <h3>${esc(bean)}</h3>
+    <div style="margin:8px 0 14px;display:flex;gap:6px;flex-wrap:wrap">${tags.join('')||'<span class="pill matched">healthy</span>'}</div>
+    <div class="np-row"><span class="l">Dependents (fan-in)</span><span class="bean">${fi}</span></div>
+    <div class="np-row"><span class="l">Dependencies (fan-out)</span><span class="bean">${depsOut.length}</span></div>
+    <div class="section-h" style="margin-top:16px">Depends on</div>
+    <ul class="np-list">${depsOut.length ? depsOut.slice(0,30).map(d=>`<li>→ ${esc(d)}</li>`).join('') : '<li class="dim">nothing</li>'}</ul>`;
+  panel.classList.add('open');
+}
+</script>
+</body>
+</html>
