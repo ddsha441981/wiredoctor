@@ -362,6 +362,17 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         dependencyInfo.put("orphanBeansCount", orphanBeans.size());
         dependencyInfo.put("orphanBeans",     orphanBeans);
 
+        // ── Feature (v0.6.0): Ghost candidates (Phase 1 — passive) ───────────
+        // Refines the orphan list with two extra signals: the bean was eagerly
+        // instantiated (it cost startup time and memory) AND no entry point is
+        // detectable from its metadata (@Controller, @Scheduled holder,
+        // CommandLineRunner, ...). Sits BESIDE the orphan list — orphans stay
+        // the raw graph fact, this is the refined advice. 100% passive:
+        // read-only singleton-cache checks, nothing is instantiated or wrapped.
+        WireDoctorGhostCandidates.Result ghostCandidates =
+                WireDoctorGhostCandidates.detect(beanFactory, orphanBeans);
+        report.put("ghostCandidates", WireDoctorGhostCandidates.toReportMap(ghostCandidates));
+
         // ── Feature (v0.3.0): Architecture Smell Metrics ─────────────────────
         // Fan-in/fan-out hotspots + Martin's instability metric, computed on
         // the live resolved graph (what Spring actually wired — proxies,
@@ -518,6 +529,14 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         // Feature (v0.3.0): architecture smell console output (top 3 per direction)
         logSmellSummary(smells);
+
+        // Feature (v0.6.0): ghost candidates console output (top 10)
+        if (!ghostCandidates.candidates.isEmpty()) {
+            log.info(WireDoctorMessages.GHOST_CANDIDATES_HEADER);
+            ghostCandidates.candidates.stream().limit(10).forEach(b ->
+                    log.info(WireDoctorMessages.GHOST_CANDIDATE_ITEM, b));
+            log.info(WireDoctorMessages.GHOST_CANDIDATES_NOTE);
+        }
 
         log.info(WireDoctorMessages.PROXY_HEADER);
         log.info(WireDoctorMessages.PROXY_CGLIB_ITEM, cglibProxies.size());

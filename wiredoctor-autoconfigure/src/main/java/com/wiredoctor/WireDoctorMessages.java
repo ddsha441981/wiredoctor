@@ -96,6 +96,11 @@ public final class WireDoctorMessages {
     public static final String GATE_STATUS_WRITTEN      = "[WireDoctor] Gate status written to: {}";
     public static final String GATE_STATUS_WRITE_FAILED = "[WireDoctor] Could not write gate status to {}: {}";
 
+    public static final String GHOST_CANDIDATES_HEADER  = "\n[WireDoctor] Ghost Candidates (instantiated, no dependents, no known entry point) — confidence LOW:";
+    public static final String GHOST_CANDIDATES_NONE    = "  - None detected";
+    public static final String GHOST_CANDIDATE_ITEM     = "  - {}";
+    public static final String GHOST_CANDIDATES_NOTE    = "    (Heuristic — NOT proof of dead code; reflective and programmatic usage is invisible here)";
+
     private WireDoctorMessages() {
         // Prevent instantiation
     }
