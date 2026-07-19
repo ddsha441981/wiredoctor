@@ -6,8 +6,10 @@
 package com.wiredoctor.actuator;
 
 import com.wiredoctor.WireDoctorAnalyzer;
+import com.wiredoctor.WireDoctorGhostTracker;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
+import org.springframework.boot.actuate.endpoint.annotation.Selector;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,6 +24,13 @@ import java.util.Map;
  * touches the {@code BeanFactory}, consistent with WireDoctor's zero-intrusion
  * guarantees.
  * <p>
+ * Since v0.6.0, {@code /actuator/wiredoctor/ghosts} additionally serves the
+ * <em>live</em> ghost-tracking state (touched / untouched / untrackable) when
+ * the user has opted into {@code wiredoctor.ghost-tracking.enabled=true} —
+ * the on-demand view for long-running staging environments, where waiting for
+ * the shutdown report is impractical. Reading the state is a pure snapshot of
+ * already-collected flags; it triggers nothing.
+ * <p>
  * Lives in the separate {@code wiredoctor-actuator} module so the core artifact
  * stays actuator-free (the v0.1.1 classpath-neutrality guarantee).
  *
@@ -33,11 +42,17 @@ public class WireDoctorEndpoint {
 
     private final WireDoctorAnalyzer analyzer;
 
+    /** Live ghost-tracking state, or {@code null} when tracking is not enabled. */
+    private final WireDoctorGhostTracker ghostTracker;
+
     /**
-     * @param analyzer the core analyzer whose last report this endpoint serves
+     * @param analyzer     the core analyzer whose last report this endpoint serves
+     * @param ghostTracker the live ghost-tracking state, or {@code null} when
+     *                     {@code wiredoctor.ghost-tracking.enabled} is off
      */
-    public WireDoctorEndpoint(WireDoctorAnalyzer analyzer) {
+    public WireDoctorEndpoint(WireDoctorAnalyzer analyzer, WireDoctorGhostTracker ghostTracker) {
         this.analyzer = analyzer;
+        this.ghostTracker = ghostTracker;
     }
 
     /**
@@ -58,5 +73,49 @@ public class WireDoctorEndpoint {
             return pending;
         }
         return report;
+    }
+
+    /**
+     * Serves a section of the report by name — {@code ghosts} is special-cased
+     * to the LIVE ghost-tracking state (v0.6.0); any other selector returns the
+     * matching top-level section of the retained startup report.
+     *
+     * @param section {@code ghosts} for live tracking state, or a report
+     *                section name ({@code smells}, {@code dependencies}, ...)
+     * @return the requested data, or a descriptive placeholder when unavailable
+     */
+    @ReadOperation
+    public Map<String, Object> section(@Selector String section) {
+        if ("ghosts".equals(section)) {
+            return ghosts();
+        }
+        Map<String, Object> report = analyzer.getLastReport();
+        Object value = report != null ? report.get(section) : null;
+        if (value instanceof Map<?, ?> mapValue) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> typed = (Map<String, Object>) mapValue;
+            return typed;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (value != null) {
+            result.put(section, value);
+        } else {
+            result.put("status", "NOT_FOUND");
+            result.put("message", "No report section named '" + section + "'.");
+        }
+        return result;
+    }
+
+    private Map<String, Object> ghosts() {
+        if (ghostTracker == null) {
+            Map<String, Object> disabled = new LinkedHashMap<>();
+            disabled.put("status", "DISABLED");
+            disabled.put("message",
+                    "Ghost tracking is not enabled. Set wiredoctor.ghost-tracking.enabled=true "
+                    + "(dev/staging only — wraps eligible beans in a thin counting proxy).");
+            return disabled;
+        }
+        // Live snapshot: reflects invocations up to this moment.
+        return ghostTracker.toReportMap();
     }
 }
