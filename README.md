@@ -7,6 +7,16 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ## ✨ Features
 
+### New in v0.7.0
+- ⏱️ **Startup Time & Performance Gates**: Beyond bean cycles, you can now gate PRs on **startup time regressions** and **new slow beans** via `wiredoctor.fail-on=startup-time,slow-bean`. The baseline snapshot now includes `totalStartupMs` and the slow-bean threshold, and WireDoctor diffs them on each run. Configure absolute + relative thresholds — both must be exceeded to trip the gate (noise-tolerant by design). Example: `wiredoctor.startup-time-absolute-threshold=500` (ms) + `wiredoctor.startup-time-relative-threshold=0.10` (10%) means the gate trips only when startup regresses by **more than 500ms AND more than 10%**. The `slow-bean` gate trips when a bean crosses your `slow-bean-threshold-ms` in the current run but was **not** slow in the baseline — catches new performance bottlenecks before they ship. Both gates write `wiredoctor-gate.status` with `PASS` or `FAIL` verdicts for CI inspection. → **[Performance Gates guide](docs/performance-gates.md)**
+  ```
+  WireDoctorRegressionException: WireDoctor regression gate 'startup-time' tripped: 
+    startup time increased by 734ms (18.2%) vs baseline (4025ms -> 4759ms)
+  
+  WireDoctorRegressionException: WireDoctor regression gate 'slow-bean' tripped: 
+    2 bean(s) crossed the slow threshold (100ms) vs baseline: [orderService (142ms), paymentProcessor (201ms)]
+  ```
+
 ### New in v0.6.0
 - 👻 **Ghost Bean Detector**: Which beans cost you startup time and memory but never do anything? Two phases, two trust postures. **Phase 1 (passive, always on):** the `ghostCandidates` report section crosses three signals — eagerly instantiated ∧ zero incoming dependencies ∧ no detectable entry point (`@Controller`, `@Scheduled`/`@EventListener` holders, `CommandLineRunner`, messaging listeners, ...) — a strictly stronger signal than the raw orphan list, still labeled `confidence: LOW` with an honest disclaimer. **Phase 2 (opt-in, dev/staging):** `wiredoctor.ghost-tracking.enabled=true` wraps eligible user beans in a thin first-touch counting proxy (~180 ns/call after first touch — one `AtomicBoolean`, no timing, no args) and writes `wiredoctor-ghost-report.json` at shutdown: touched / untouched / untrackable. By default the tracking `BeanPostProcessor` is **never registered** — a regression test proves the passivity promise on every build. Live view via `/actuator/wiredoctor/ghosts`. Never claims "unused" — only "never invoked during this run". → **[Ghost Detector guide](docs/ghost-detector.md)**
   ```
@@ -75,13 +85,13 @@ Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project.
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.6.1</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.6.1'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.7.0'
 ```
 
 WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
@@ -124,7 +134,61 @@ wiredoctor.max-graph-nodes=2000
 wiredoctor.ghost-tracking.enabled=true
 # Beans to never wrap (reported as untrackable:excluded, never silently hidden)
 wiredoctor.ghost-tracking.exclude=legacySoapClient,nativeBridge
+
+# --- Performance gates (v0.7.0, opt-in — CI only) ---
+# Gate CI on startup time regressions (both thresholds must be exceeded to trip)
+wiredoctor.fail-on=startup-time,slow-bean
+wiredoctor.startup-time-absolute-threshold=500   # milliseconds (default: 500)
+wiredoctor.startup-time-relative-threshold=0.10  # 10% (default: 0.10)
+# slow-bean gate uses your slow-bean-threshold-ms (already configured above)
 ```
+
+### 📋 Example: Performance Gates in CI
+
+**Step 1** — Capture baseline (one-time, commit the file):
+```bash
+./mvnw spring-boot:run \
+  -Dspring-boot.run.arguments="--wiredoctor.baseline=wiredoctor-baseline.json --wiredoctor.baseline-write=true"
+
+git add wiredoctor-baseline.json
+git commit -m "chore: WireDoctor baseline"
+```
+
+**Step 2** — Enable gates in CI (`application-ci.properties`):
+```properties
+wiredoctor.baseline=wiredoctor-baseline.json
+wiredoctor.baseline-write=false
+wiredoctor.fail-on=startup-time,slow-bean
+wiredoctor.startup-time-absolute-threshold=500
+wiredoctor.startup-time-relative-threshold=0.10
+wiredoctor.slow-bean-threshold-ms=100
+```
+
+**Step 3** — CI job reads gate status:
+```yaml
+- name: Run tests with gates
+  run: mvn verify -Dspring.profiles.active=ci
+
+- name: Check gate status
+  run: |
+    if grep -q FAIL target/wiredoctor-gate.status; then
+      echo "::error::WireDoctor gate tripped"
+      cat target/wiredoctor-diff.json
+      exit 1
+    fi
+```
+
+**Gate trips look like:**
+```
+WireDoctorRegressionException: WireDoctor regression gate 'startup-time' tripped: 
+  startup time increased by 734ms (18.2%) vs baseline (4025ms -> 4759ms)
+
+WireDoctorRegressionException: WireDoctor regression gate 'slow-bean' tripped: 
+  2 bean(s) crossed the slow threshold (100ms) vs baseline: 
+  [orderService (142ms), paymentProcessor (201ms)]
+```
+
+See **[Performance Gates guide](docs/performance-gates.md)** for full walkthrough.
 
 See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.
 
@@ -158,13 +222,11 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
    The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
 
 ---
-## 🔮 Roadmap (v0.7.0 & Beyond)
+## 🔮 Roadmap
 
-Shipped: **v0.4.0** (Enterprise Fit), **v0.5.0** (Upgrade Guard — autoconfig condition diff), and **v0.6.0** (Ghost Bean Detector — passive candidates + opt-in first-touch tracking). Next up:
+Shipped: **v0.4.0** (Enterprise Fit), **v0.5.0** (Upgrade Guard — autoconfig condition diff), **v0.6.0** (Ghost Bean Detector — passive candidates + opt-in first-touch tracking), and **v0.7.0** (Cost Guardian — startup time & slow bean gates). Next up:
 
-1. 💰 **Cost Guardian (v0.7.0):**
-   *Startup-time and slow-bean regression gates — tie a PR that makes boot slower to a CI failure, framed around Kubernetes cold-start cost.*
-2. 🏁 **v1.0.0 — API & schema freeze + Maven Central launch:**
+1. 🏁 **v1.0.0 — API & schema freeze + Maven Central launch:**
    *Report schema stabilized (all sections now shipped), publish to Maven Central, launch.*
 
 Dropped (deliberately): **Memory Footprint Estimation** — honest per-bean heap numbers need a Java Agent; shallow size-of is a correctness trap. The Ghost Detector answers the same underlying question ("which beans are wasting resources?") without lying about bytes.

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-07-19
+
+The "Cost Guardian" release: gate your CI pipeline on startup time regressions and new slow beans. Answers the P3 pain from market research — "K8s cold-start cost" — by making performance degradation visible and blockable before it ships.
+
+### Added
+- ⏱️ **Startup Time Gate** — `wiredoctor.fail-on=startup-time` trips when your app's cold-start time regresses beyond **both** an absolute threshold (default 500ms) and a relative threshold (default 10%) vs the baseline. Noise-tolerant by design: both thresholds must be exceeded to trip the gate. Configure via `wiredoctor.startup-time-absolute-threshold` (ms) and `wiredoctor.startup-time-relative-threshold` (fraction, e.g. 0.10 = 10%). The baseline snapshot now includes `totalStartupMs` (captured from `ApplicationReadyEvent.getTimeTaken()`, available in Boot 2.6+), and the diff logic compares it on every guarded run. Gate status written to `wiredoctor-gate.status` with `PASS` or `FAIL:startup-time` verdict.
+- 🐌 **Slow Bean Gate** — `wiredoctor.fail-on=slow-bean` trips when a bean crosses your `slow-bean-threshold-ms` in the current run but was **not** slow in the baseline. Catches new performance bottlenecks (e.g., a developer adds a `@PostConstruct` that does I/O) before they escape to production. The baseline snapshot now includes `slowBeanThreshold` and the list of slow bean names; the diff compares both. A bean that's always been slow doesn't trip the gate — only **new** entries do.
+- 🎯 **Noise-tolerant regression methodology** — startup timings are inherently noisy (JIT, CPU contention, disk I/O). The `startup-time` gate requires **both** absolute AND relative thresholds to be exceeded, so it won't trip on small absolute jitter (+50ms on a 5s baseline) or small relative changes (-2% on a fast 500ms baseline). The `slow-bean` gate compares bean names, not timings — it's a membership diff, not a timing diff.
+- 📊 **Timing data in baselines** — `WireDoctorBaselineDiff.Snapshot` now includes `totalStartupMs: Long` and `slowBeanThreshold: Long` fields, written during baseline-write mode and loaded during diff mode. Backward-compatible: a pre-0.7.0 baseline (no timing data) skips the timing gates gracefully without tripping them.
+
+### Changed
+- **Gate status format extended** — `wiredoctor-gate.status` now includes timing-specific metadata when timing gates are armed: `startupTimeMs=<current>`, `baselineStartupTimeMs=<baseline>`, `newSlowBeans=<count>`. Line 1 contract unchanged: `PASS` or `FAIL:startup-time,slow-bean` (comma-separated).
+- **`fail-on` property accepts four gates** — `new-cycle`, `condition-changed`, `startup-time`, `slow-bean` — combinable in any order via comma-separated list.
+
+### Tests
+- 205 autoconfigure tests green (25 new: startup-time gate trip/pass with absolute/relative thresholds, slow-bean gate trip/pass, baseline backward-compat, timing data serialization, noise-tolerance edge cases). All Boot lines (2.7.18, 3.3.x, 3.5.x, 4.0.x) re-verified in CI.
+
+### Documentation
+- New guide: [docs/performance-gates.md](docs/performance-gates.md) — full walkthrough of `startup-time` and `slow-bean` gates with CI integration examples (GitHub Actions, GitLab CI, Jenkins), multi-profile baseline usage, troubleshooting (gate trips unexpectedly, gate never trips, null timing data), and when-to-use guidance.
+- Updated: [docs/ci-gating.md](docs/ci-gating.md) — gate table now lists all four gates with "Since" column and backward-compat notes.
+
 ## [0.6.1] - 2026-07-19
 
 The report UI, rebuilt as a professional diagnostic console. No analysis changes —

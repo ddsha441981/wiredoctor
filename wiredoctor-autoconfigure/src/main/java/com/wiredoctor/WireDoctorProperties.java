@@ -121,6 +121,28 @@ public class WireDoctorProperties {
      */
     private final GhostTracking ghostTracking = new GhostTracking();
 
+    /**
+     * Relative threshold for startup-time regression gate (v0.7.0 Cost Guardian).
+     * The gate trips when the startup time increase exceeds BOTH this percentage
+     * AND {@link #startupTimeAbsoluteThreshold}. Default {@code 0.20} (20%).
+     * <p>
+     * Example: baseline 3000ms, current 3700ms → +700ms = 23% → trips (>20%).
+     * But: baseline 100ms, current 130ms → +30ms = 30% → does NOT trip (absolute
+     * <500ms) — prevents false alarms on fast apps where small absolute noise
+     * looks like large percentage change.
+     */
+    private double startupTimeRelativeThreshold = 0.20;
+
+    /**
+     * Absolute threshold for startup-time regression gate (v0.7.0 Cost Guardian).
+     * The gate trips when the startup time increase exceeds BOTH this millisecond
+     * value AND {@link #startupTimeRelativeThreshold}. Default {@code 500} (500ms).
+     * <p>
+     * Dual-threshold design: prevents flapping on noise. A 50ms regression in a
+     * 200ms app is 25% (large) but only 50ms (noise) — does not trip.
+     */
+    private long startupTimeAbsoluteThreshold = 500;
+
     /** Nested {@code wiredoctor.ghost-tracking.*} properties. */
     public static class GhostTracking {
 
@@ -273,6 +295,22 @@ public class WireDoctorProperties {
         return hasGate("condition-changed");
     }
 
+    /**
+     * @return {@code true} when the {@code startup-time} gate is enabled
+     *         via {@link #failOn} (v0.7.0 Cost Guardian)
+     */
+    public boolean isFailOnStartupTime() {
+        return hasGate("startup-time");
+    }
+
+    /**
+     * @return {@code true} when the {@code slow-bean} gate is enabled
+     *         via {@link #failOn} (v0.7.0 Cost Guardian)
+     */
+    public boolean isFailOnSlowBean() {
+        return hasGate("slow-bean");
+    }
+
     private boolean hasGate(String gate) {
         if (failOn == null || failOn.isBlank()) return false;
         for (String candidate : failOn.split(",")) {
@@ -299,6 +337,22 @@ public class WireDoctorProperties {
 
     public GhostTracking getGhostTracking() {
         return ghostTracking;
+    }
+
+    public double getStartupTimeRelativeThreshold() {
+        return startupTimeRelativeThreshold;
+    }
+
+    public void setStartupTimeRelativeThreshold(double startupTimeRelativeThreshold) {
+        this.startupTimeRelativeThreshold = startupTimeRelativeThreshold;
+    }
+
+    public long getStartupTimeAbsoluteThreshold() {
+        return startupTimeAbsoluteThreshold;
+    }
+
+    public void setStartupTimeAbsoluteThreshold(long startupTimeAbsoluteThreshold) {
+        this.startupTimeAbsoluteThreshold = startupTimeAbsoluteThreshold;
     }
 
     /**

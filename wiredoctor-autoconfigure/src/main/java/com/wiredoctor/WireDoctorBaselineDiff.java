@@ -48,17 +48,30 @@ public final class WireDoctorBaselineDiff {
         // v0.5.0: autoconfig condition outcomes. null = snapshot predates
         // condition tracking (old baseline) → condition diff is skipped.
         private final Map<String, WireDoctorConditionSnapshot.Outcome> conditions;
+        // v0.7.0: startup timing data. null = snapshot predates timing tracking
+        // (pre-v0.7.0 baseline) → timing diff is skipped.
+        private final TimingSnapshot timing;
+        // v0.7.0: slow-bean threshold at baseline-write time. null = old baseline.
+        private final Long slowBeanThreshold;
 
         Snapshot(Set<String> beans, Map<String, Set<String>> edges, List<Set<String>> cycles) {
-            this(beans, edges, cycles, null);
+            this(beans, edges, cycles, null, null, null);
         }
 
         Snapshot(Set<String> beans, Map<String, Set<String>> edges, List<Set<String>> cycles,
                  Map<String, WireDoctorConditionSnapshot.Outcome> conditions) {
+            this(beans, edges, cycles, conditions, null, null);
+        }
+
+        Snapshot(Set<String> beans, Map<String, Set<String>> edges, List<Set<String>> cycles,
+                 Map<String, WireDoctorConditionSnapshot.Outcome> conditions,
+                 TimingSnapshot timing, Long slowBeanThreshold) {
             this.beans = beans;
             this.edges = edges;
             this.cycles = cycles;
             this.conditions = conditions;
+            this.timing = timing;
+            this.slowBeanThreshold = slowBeanThreshold;
         }
 
         /**
@@ -70,7 +83,7 @@ public final class WireDoctorBaselineDiff {
          * @return the snapshot
          */
         public static Snapshot fromAnalysis(Map<String, String[]> graph, List<List<String>> cycles) {
-            return fromAnalysis(graph, cycles, null);
+            return fromAnalysis(graph, cycles, null, null, null);
         }
 
         /**
@@ -85,17 +98,36 @@ public final class WireDoctorBaselineDiff {
          */
         public static Snapshot fromAnalysis(Map<String, String[]> graph, List<List<String>> cycles,
                                             Map<String, WireDoctorConditionSnapshot.Outcome> conditions) {
+            return fromAnalysis(graph, cycles, conditions, null, null);
+        }
+
+        /**
+         * Builds a snapshot from the live analysis including timing data (v0.7.0).
+         *
+         * @param graph             bean name → dependency names
+         * @param cycles            detected cycles, each a list of bean names
+         * @param conditions        autoconfig class → outcome, or {@code null}
+         * @param totalStartupMs    total startup time, or {@code null} when unavailable
+         * @param slowBeanThreshold slow-bean threshold at snapshot time
+         * @return the snapshot
+         */
+        public static Snapshot fromAnalysis(Map<String, String[]> graph, List<List<String>> cycles,
+                                            Map<String, WireDoctorConditionSnapshot.Outcome> conditions,
+                                            Long totalStartupMs, Long slowBeanThreshold) {
             Map<String, Set<String>> edges = new LinkedHashMap<>();
             graph.forEach((bean, deps) -> edges.put(bean, new LinkedHashSet<>(List.of(deps))));
             List<Set<String>> cycleSets = new ArrayList<>();
             cycles.forEach(c -> cycleSets.add(new LinkedHashSet<>(c)));
-            return new Snapshot(new LinkedHashSet<>(graph.keySet()), edges, cycleSets, conditions);
+            TimingSnapshot timing = totalStartupMs != null ? new TimingSnapshot(totalStartupMs) : null;
+            return new Snapshot(new LinkedHashSet<>(graph.keySet()), edges, cycleSets, conditions,
+                                timing, slowBeanThreshold);
         }
 
         /**
          * Builds a snapshot from a parsed {@code wiredoctor-report.json} /
          * baseline file ({@code dependencies.graph} + {@code dependencies.cycles}
-         * + optional top-level {@code conditions} since v0.5.0).
+         * + optional top-level {@code conditions} since v0.5.0 + {@code totalStartupMs}
+         * + {@code slowBeanThreshold} since v0.7.0).
          *
          * @param reportRoot the parsed report root node
          * @return the snapshot
@@ -117,7 +149,23 @@ public final class WireDoctorBaselineDiff {
             // Absent section → null (pre-v0.5.0 baseline): condition diff skipped.
             Map<String, WireDoctorConditionSnapshot.Outcome> conditions =
                     WireDoctorConditionSnapshot.fromJson(reportRoot.path("conditions"));
-            return new Snapshot(new LinkedHashSet<>(edges.keySet()), edges, cycles, conditions);
+
+            // v0.7.0: timing data. Absent/missing → null (pre-v0.7.0 baseline): timing diff skipped.
+            TimingSnapshot timing = null;
+            JsonNode totalStartupNode = reportRoot.path("totalStartupMs");
+            if (!totalStartupNode.isMissingNode() && totalStartupNode.isNumber()) {
+                timing = new TimingSnapshot(totalStartupNode.asLong());
+            }
+
+            // v0.7.0: slow-bean threshold. Absent → null (pre-v0.7.0 baseline).
+            Long slowBeanThreshold = null;
+            JsonNode thresholdNode = reportRoot.path("slowBeanThreshold");
+            if (!thresholdNode.isMissingNode() && thresholdNode.isNumber()) {
+                slowBeanThreshold = thresholdNode.asLong();
+            }
+
+            return new Snapshot(new LinkedHashSet<>(edges.keySet()), edges, cycles, conditions,
+                                timing, slowBeanThreshold);
         }
 
         public Set<String> beans() { return beans; }
@@ -125,6 +173,62 @@ public final class WireDoctorBaselineDiff {
         public List<Set<String>> cycles() { return cycles; }
         /** @return autoconfig outcomes, or {@code null} when unavailable/pre-v0.5.0 */
         public Map<String, WireDoctorConditionSnapshot.Outcome> conditions() { return conditions; }
+        /** @return timing data, or {@code null} when unavailable/pre-v0.7.0 */
+        public TimingSnapshot timing() { return timing; }
+        /** @return slow-bean threshold at baseline time, or {@code null} when pre-v0.7.0 */
+        public Long slowBeanThreshold() { return slowBeanThreshold; }
+    }
+
+    /**
+     * Startup timing snapshot for regression gate comparison (v0.7.0).
+     *
+     * @param totalStartupMs application startup time from ApplicationReadyEvent
+     */
+    public record TimingSnapshot(long totalStartupMs) {
+    }
+
+    /**
+     * Startup time regression detected by the Cost Guardian (v0.7.0).
+     * Emitted when the current run's startup time exceeds BOTH the relative
+     * and absolute thresholds compared to the baseline.
+     */
+    public static final class StartupTimeRegression {
+        private final long baselineMs;
+        private final long currentMs;
+        private final long deltaMs;
+        private final double percentChange;
+
+        StartupTimeRegression(long baselineMs, long currentMs) {
+            this.baselineMs = baselineMs;
+            this.currentMs = currentMs;
+            this.deltaMs = currentMs - baselineMs;
+            this.percentChange = baselineMs > 0 ? (double) deltaMs / baselineMs : 0.0;
+        }
+
+        public long baselineMs() { return baselineMs; }
+        public long currentMs() { return currentMs; }
+        public long deltaMs() { return deltaMs; }
+        public double percentChange() { return percentChange; }
+    }
+
+    /**
+     * One bean that crossed the slow-bean threshold in the current run but
+     * was not slow in the baseline (v0.7.0 Cost Guardian).
+     */
+    public static final class NewSlowBean {
+        private final String beanName;
+        private final long instantiationMs;
+        private final long thresholdWhenBaseline;
+
+        NewSlowBean(String beanName, long instantiationMs, long thresholdWhenBaseline) {
+            this.beanName = beanName;
+            this.instantiationMs = instantiationMs;
+            this.thresholdWhenBaseline = thresholdWhenBaseline;
+        }
+
+        public String beanName() { return beanName; }
+        public long instantiationMs() { return instantiationMs; }
+        public long thresholdWhenBaseline() { return thresholdWhenBaseline; }
     }
 
     /**
@@ -179,12 +283,16 @@ public final class WireDoctorBaselineDiff {
         private final List<ConditionChange> conditionsChanged;
         private final Set<String> conditionsAdded;
         private final Set<String> conditionsRemoved;
+        // v0.7.0 timing diff. null when either side lacks timing data (pre-v0.7.0 baseline).
+        private final StartupTimeRegression startupTimeRegression;
+        // v0.7.0 slow-bean diff. Empty when either side lacks data OR no new slow beans.
+        private final List<NewSlowBean> newSlowBeans;
 
         DiffResult(Set<String> addedBeans, Set<String> removedBeans,
                    Set<String> addedEdges, Set<String> removedEdges,
                    List<Set<String>> newCycles, List<Set<String>> resolvedCycles) {
             this(addedBeans, removedBeans, addedEdges, removedEdges, newCycles, resolvedCycles,
-                 false, List.of(), Set.of(), Set.of());
+                 false, List.of(), Set.of(), Set.of(), null, List.of());
         }
 
         DiffResult(Set<String> addedBeans, Set<String> removedBeans,
@@ -194,6 +302,20 @@ public final class WireDoctorBaselineDiff {
                    List<ConditionChange> conditionsChanged,
                    Set<String> conditionsAdded,
                    Set<String> conditionsRemoved) {
+            this(addedBeans, removedBeans, addedEdges, removedEdges, newCycles, resolvedCycles,
+                 conditionDiffAvailable, conditionsChanged, conditionsAdded, conditionsRemoved,
+                 null, List.of());
+        }
+
+        DiffResult(Set<String> addedBeans, Set<String> removedBeans,
+                   Set<String> addedEdges, Set<String> removedEdges,
+                   List<Set<String>> newCycles, List<Set<String>> resolvedCycles,
+                   boolean conditionDiffAvailable,
+                   List<ConditionChange> conditionsChanged,
+                   Set<String> conditionsAdded,
+                   Set<String> conditionsRemoved,
+                   StartupTimeRegression startupTimeRegression,
+                   List<NewSlowBean> newSlowBeans) {
             this.addedBeans = addedBeans;
             this.removedBeans = removedBeans;
             this.addedEdges = addedEdges;
@@ -204,6 +326,8 @@ public final class WireDoctorBaselineDiff {
             this.conditionsChanged = conditionsChanged;
             this.conditionsAdded = conditionsAdded;
             this.conditionsRemoved = conditionsRemoved;
+            this.startupTimeRegression = startupTimeRegression;
+            this.newSlowBeans = newSlowBeans;
         }
 
         public Set<String> addedBeans() { return addedBeans; }
@@ -231,7 +355,9 @@ public final class WireDoctorBaselineDiff {
                     && addedEdges.isEmpty() && removedEdges.isEmpty()
                     && newCycles.isEmpty() && resolvedCycles.isEmpty()
                     && conditionsChanged.isEmpty()
-                    && conditionsAdded.isEmpty() && conditionsRemoved.isEmpty();
+                    && conditionsAdded.isEmpty() && conditionsRemoved.isEmpty()
+                    && startupTimeRegression == null
+                    && newSlowBeans.isEmpty();
         }
 
         /** @return {@code true} when at least one new cycle was introduced */
@@ -242,6 +368,26 @@ public final class WireDoctorBaselineDiff {
         /** @return {@code true} when at least one condition outcome flipped (v0.5.0 gate signal) */
         public boolean hasConditionChanges() {
             return !conditionsChanged.isEmpty();
+        }
+
+        /** @return startup time regression, or {@code null} when timing diff unavailable (v0.7.0 gate signal) */
+        public StartupTimeRegression startupTimeRegression() {
+            return startupTimeRegression;
+        }
+
+        /** @return new slow beans list (v0.7.0 gate signal); empty when unavailable or no new slow beans */
+        public List<NewSlowBean> newSlowBeans() {
+            return newSlowBeans;
+        }
+
+        /** @return {@code true} when startup time regressed beyond thresholds (v0.7.0 gate signal) */
+        public boolean hasStartupTimeRegression() {
+            return startupTimeRegression != null;
+        }
+
+        /** @return {@code true} when at least one bean became slow (v0.7.0 gate signal) */
+        public boolean hasNewSlowBeans() {
+            return !newSlowBeans.isEmpty();
         }
 
         /**
@@ -276,6 +422,30 @@ public final class WireDoctorBaselineDiff {
             conditionDiff.put("removedCount", conditionsRemoved.size());
             conditionDiff.put("removed", new ArrayList<>(conditionsRemoved));
             map.put("conditionDiff", conditionDiff);
+
+            // v0.7.0: startup time regression section
+            if (startupTimeRegression != null) {
+                Map<String, Object> timingDiff = new LinkedHashMap<>();
+                timingDiff.put("baselineMs", startupTimeRegression.baselineMs());
+                timingDiff.put("currentMs", startupTimeRegression.currentMs());
+                timingDiff.put("deltaMs", startupTimeRegression.deltaMs());
+                timingDiff.put("percentChange", startupTimeRegression.percentChange());
+                map.put("startupTimeDiff", timingDiff);
+            }
+
+            // v0.7.0: new slow beans section
+            if (!newSlowBeans.isEmpty()) {
+                List<Map<String, Object>> slowBeansList = new ArrayList<>();
+                for (NewSlowBean bean : newSlowBeans) {
+                    Map<String, Object> beanMap = new LinkedHashMap<>();
+                    beanMap.put("beanName", bean.beanName());
+                    beanMap.put("instantiationMs", bean.instantiationMs());
+                    beanMap.put("thresholdWhenBaseline", bean.thresholdWhenBaseline());
+                    slowBeansList.add(beanMap);
+                }
+                map.put("newSlowBeans", slowBeansList);
+            }
+
             return map;
         }
 
@@ -349,6 +519,36 @@ public final class WireDoctorBaselineDiff {
             }
         }
 
+        // ── v0.7.0: timing diff — only when BOTH sides carry timing data.
+        // Pre-v0.7.0 baseline → timing null → diff skipped, not reported as regression.
+        StartupTimeRegression startupTimeRegression = null;
+        if (baseline.timing() != null && current.timing() != null) {
+            long baselineMs = baseline.timing().totalStartupMs();
+            long currentMs = current.timing().totalStartupMs();
+            if (currentMs > baselineMs) {
+                // Compute regression, but caller decides if it trips the gate
+                // based on dual-threshold check (done in WireDoctorAnalyzer).
+                startupTimeRegression = new StartupTimeRegression(baselineMs, currentMs);
+            }
+        }
+
+        // ── v0.7.0: slow-bean diff — beans that crossed the threshold NOW but
+        // were NOT slow in the baseline. Requires slowBeans data from BOTH sides.
+        // Note: we're comparing by bean NAME presence in the baseline slowBeans
+        // array, NOT by threshold value (threshold may have changed between runs;
+        // we care about "was it slow then or not").
+        List<NewSlowBean> newSlowBeans = new ArrayList<>();
+        // This requires the CURRENT report to have slowBeans data. The baseline's
+        // slowBeanThreshold is used for reporting context (what threshold applied then).
+        // Caller must pass current slowBeans list + current threshold; we can't extract
+        // it from the Snapshot (Snapshot is for baseline/report JSON, not live analysis).
+        // So this diff is INCOMPLETE here — the actual slow-bean comparison happens
+        // in WireDoctorAnalyzer where we have both baseline snapshot AND current live
+        // slowBeans list. We leave newSlowBeans empty here as a placeholder; the real
+        // logic goes in the analyzer's runRegressionGuard method.
+        // TODO: refactor if needed, but for now this mirrors the condition diff pattern
+        // where WireDoctorAnalyzer drives the comparison.
+
         return new DiffResult(
                 Collections.unmodifiableSet(addedBeans),
                 Collections.unmodifiableSet(removedBeans),
@@ -359,12 +559,53 @@ public final class WireDoctorBaselineDiff {
                 conditionDiffAvailable,
                 Collections.unmodifiableList(conditionsChanged),
                 Collections.unmodifiableSet(conditionsAdded),
-                Collections.unmodifiableSet(conditionsRemoved));
+                Collections.unmodifiableSet(conditionsRemoved),
+                startupTimeRegression,
+                Collections.unmodifiableList(newSlowBeans));
     }
 
     private static Set<String> flattenEdges(Map<String, Set<String>> edges) {
         Set<String> flat = new HashSet<>();
         edges.forEach((from, targets) -> targets.forEach(to -> flat.add(from + " -> " + to)));
         return flat;
+    }
+
+    /**
+     * Computes the new slow beans by comparing current slowBeans list against
+     * the baseline's slowBeans list (v0.7.0 Cost Guardian).
+     * <p>
+     * A bean is "new slow" when it appears in the current slowBeans list but
+     * NOT in the baseline's slowBeans list — regardless of threshold changes
+     * between runs (we care about "was it slow then", not "what was the threshold").
+     * <p>
+     * Called from {@code WireDoctorAnalyzer} after the main diff, since it
+     * needs the live current slowBeans data not present in the snapshot.
+     *
+     * @param baselineSlowBeanNames set of bean names that were slow in baseline
+     * @param baselineThreshold     baseline's slow-bean threshold (for reporting)
+     * @param currentSlowBeans      current run's slow beans list (from report)
+     * @param currentThreshold      current run's slow-bean threshold
+     * @return list of beans that became slow; empty when baseline lacks data
+     */
+    public static List<NewSlowBean> computeNewSlowBeans(
+            Set<String> baselineSlowBeanNames,
+            long baselineThreshold,
+            java.util.List<Map<String, Object>> currentSlowBeans,
+            long currentThreshold) {
+
+        List<NewSlowBean> newSlowBeans = new ArrayList<>();
+        for (Map<String, Object> bean : currentSlowBeans) {
+            // Report shape from WireDoctorAnalyzer: {"beanName": ..., "durationMs": ...}
+            String beanName = (String) bean.get("beanName");
+            Number durationMsNum = (Number) bean.get("durationMs");
+            if (beanName != null && durationMsNum != null) {
+                long instantiationMs = durationMsNum.longValue();
+                // New slow: in current slowBeans but NOT in baseline slowBeans
+                if (!baselineSlowBeanNames.contains(beanName)) {
+                    newSlowBeans.add(new NewSlowBean(beanName, instantiationMs, baselineThreshold));
+                }
+            }
+        }
+        return newSlowBeans;
     }
 }

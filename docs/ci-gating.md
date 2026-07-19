@@ -199,10 +199,13 @@ Or as a soft gate in GitHub Actions — warn on the PR without failing it:
 |----------------------|-------------|-------|
 | `new-cycle`          | a cycle appears that is not in the baseline (exact bean-set identity) | 0.2.0 |
 | `condition-changed`  | an autoconfiguration condition outcome flips vs the baseline (e.g. `matched → notMatched`) — the Upgrade Guard, see [upgrade-guard.md](upgrade-guard.md) | 0.5.0 |
+| `startup-time`       | startup time regresses beyond **both** absolute + relative thresholds vs baseline — see [performance-gates.md](performance-gates.md) | 0.7.0 |
+| `slow-bean`          | a bean crosses `slow-bean-threshold-ms` that was **not** slow in the baseline — see [performance-gates.md](performance-gates.md) | 0.7.0 |
 
-Gates combine via a comma-separated list — `wiredoctor.fail-on=new-cycle,condition-changed`
-arms both, and the `FAIL:` line lists every gate that fired (e.g.
-`FAIL:new-cycle,condition-changed`). The `condition-changed` gate never trips against a
+Gates combine via a comma-separated list — `wiredoctor.fail-on=new-cycle,condition-changed,startup-time,slow-bean`
+arms all four, and the `FAIL:` line lists every gate that fired (e.g.
+`FAIL:new-cycle,startup-time`). The `condition-changed` gate never trips against a
 pre-0.5.0 baseline that has no condition data — the marker shows `conditionDiff=skipped`
-and the verdict stays `PASS`. More gates (startup-time regression, god-bean growth) are
-planned; the property stays forward-compatible.
+and the verdict stays `PASS`. Similarly, `startup-time` and `slow-bean` gates gracefully skip
+when the baseline has no timing data (e.g., Boot < 2.6 where `ApplicationReadyEvent.getTimeTaken()`
+is unavailable). The property stays forward-compatible as new gates are added.
