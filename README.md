@@ -57,13 +57,13 @@ Add the dependency — that's it. WireDoctor runs at startup, writes `wiredoctor
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.8.0</version>
+    <version>0.9.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.8.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.9.0'
 ```
 
 Want CI gates? Capture a baseline once, commit it, arm the gates:
