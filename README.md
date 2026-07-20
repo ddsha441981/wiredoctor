@@ -229,8 +229,8 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
 4. 🙈 **Early-Reference Cycle Blindspot (`allow-circular-references=true`):**
    Cycle detection uses `getDependenciesForBean()` which may not capture cycles resolved via Spring's early-reference mechanism (the 3-level cache earlySingletonObjects pathway). Only explicit `@DependsOn` and fully-registered constructor/setter dependencies are detected. Some silently resolved cycles might go unreported.
 
-5. 🔭 **Tested Bean Scopes:**
-   The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
+5. 🔭 **Bean Scopes (pinned by tests since v0.8.0):**
+   `Prototype` and `@Lazy` bean *definitions* appear as graph nodes, but they are **never instantiated** by the analysis (zero-intrusion promise — a regression test proves it). Their proxy status can't be known without instantiating them, so they are skipped by the proxy scan and honestly counted in `proxies.notInstantiatedSkipped`. `FactoryBean`s appear under the factory's bean name; a consumer of the *product* gets its dependency edge recorded against the factory's name (Spring's own bookkeeping). Runtime-only facts about these scopes — how often a prototype is created, whether a lazy bean is ever touched — are outside a startup snapshot's reach.
 
 ---
 ## 🔮 Roadmap
