@@ -250,13 +250,25 @@ const conditions = reportData.conditions || {};
 const condEntries = Object.entries(conditions);
 const cp = reportData.criticalPath || { available: false };
 const gc = reportData.ghostCandidates || { count: 0, beans: [] };
+const gates = reportData.gates || { mode: 'off', armed: [], config: {} };
+const gatesFailed = gates.failed || [];
 
 /* header */
 $('#h-profile').textContent = 'profile: ' + ((reportData.activeProfiles||[]).join(', ') || 'default');
 $('#h-beans').textContent = fmt(deps.totalBeans) + ' beans · ' + fmt(deps.totalEdges) + ' edges';
-if (cycles.length > 0) {
+/* v0.7.1 verdict precedence: gate fail → cycles → gates pass (diff ran) → healthy */
+if (gatesFailed.length > 0) {
+  const g = $('#h-gate'); g.className = 'chip danger';
+  let txt = 'GATE FAIL: ' + gatesFailed.join(', ');
+  if (gatesFailed.includes('startup-time') && gates.startupTime) {
+    txt += ' (+' + fmt(gates.startupTime.deltaMs) + 'ms)';
+  }
+  $('#h-gate-text').textContent = txt;
+} else if (cycles.length > 0) {
   const g = $('#h-gate'); g.className = 'chip danger';
   $('#h-gate-text').textContent = cycles.length + ' CYCLE' + (cycles.length>1?'S':'');
+} else if (gates.mode === 'diff') {
+  $('#h-gate-text').textContent = 'GATES PASS';
 }
 
 /* ───────── nav / tabs ───────── */
@@ -429,10 +441,54 @@ $('#tab-timing').innerHTML = `
     <div class="card"><div class="section-h">Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
     <div class="card"><div class="section-h">Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
   </div>
+  <div class="card" style="margin-top:16px">
+    <div class="section-h">Performance gates ${gates.mode==='diff' ? `<span class="pill reason">vs ${esc(gates.baseline||'baseline')}</span>` : ''}</div>
+    ${gatesCard()}
+  </div>
   ${cp.available && cp.path ? `<div class="card" style="margin-top:16px">
     <div class="section-h">Critical path — the chain your readiness sits on</div>
     <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
   </div>`:''}`;
+
+/* v0.7.1: gates card — verdict per gate, config always visible */
+function gatesCard() {
+  const cfg = gates.config || {};
+  const armed = gates.armed || [];
+  const diffRan = gates.mode === 'diff';
+  const verdict = g => !diffRan
+    ? '<span class="chip neutral">NOT RUN</span>'
+    : gatesFailed.includes(g)
+      ? '<span class="chip danger"><span class="dot"></span>FAIL</span>'
+      : '<span class="chip ok"><span class="dot"></span>PASS</span>';
+  const armedTag = g => armed.includes(g) ? '' : ' <span class="pill reason">not armed</span>';
+  const st = gates.startupTime;
+  const stActual = st
+    ? `${fmt(st.baselineMs)}ms → ${fmt(st.currentMs)}ms (${st.deltaMs>=0?'+':''}${fmt(st.deltaMs)}ms, ${st.percentChange>=0?'+':''}${st.percentChange.toFixed(1)}%)`
+    : (diffRan ? '<span class="dim">no timing data on both sides</span>' : '<span class="dim">—</span>');
+  const nsb = gates.newSlowBeans || [];
+  const sbActual = diffRan
+    ? (nsb.length ? `${nsb.length} new slow bean${nsb.length>1?'s':''}: ` +
+        nsb.slice(0,5).map(b=>`<span class="bean">${esc(b.beanName)} (${fmt(b.instantiationMs)}ms)</span>`).join(', ')
+      : '<span class="dim">none crossed the threshold</span>')
+    : '<span class="dim">—</span>';
+  const rows = [
+    ['startup-time', `≥${fmt(cfg.startupTimeAbsoluteThresholdMs ?? 500)}ms AND ≥${(cfg.startupTimeRelativePercent ?? 20).toFixed(0)}%`, stActual],
+    ['slow-bean',    `>${fmt(cfg.slowBeanThresholdMs ?? 100)}ms, new vs baseline`, sbActual],
+    ['new-cycle',    'any new dependency cycle', diffRan ? (gatesFailed.includes('new-cycle') ? 'new cycle(s) introduced' : '<span class="dim">no new cycles</span>') : '<span class="dim">—</span>'],
+    ['condition-changed', 'any autoconfig outcome change', diffRan ? (gatesFailed.includes('condition-changed') ? 'condition outcome(s) changed' : '<span class="dim">no changes</span>') : '<span class="dim">—</span>'],
+  ];
+  let html = `<table class="data"><thead><tr><th>Gate</th><th>Threshold / config</th><th>Actual</th><th style="width:1%">Verdict</th></tr></thead>${
+    rows.map(([g, cfgTxt, actual]) => `<tr>
+      <td class="bean">${g}${armedTag(g)}</td>
+      <td class="muted">${cfgTxt}</td>
+      <td>${actual}</td>
+      <td style="white-space:nowrap">${verdict(g)}</td></tr>`).join('')}</table>`;
+  if (!diffRan) {
+    html += `<div class="callout" style="margin-top:14px">◷&nbsp; Gates ${gates.mode==='write'?'skipped — this run wrote the baseline':'did not run — no baseline diffed'} (mode: <span class="bean">${esc(gates.mode)}</span>).
+      Set <span class="bean">wiredoctor.baseline</span> + <span class="bean">wiredoctor.fail-on=startup-time,slow-bean</span> to enforce these gates in CI.</div>`;
+  }
+  return html;
+}
 
 /* ───────── Conditions tab ───────── */
 const outcomeCounts = {};
