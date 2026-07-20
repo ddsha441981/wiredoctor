@@ -1,0 +1,2223 @@
+{
+  "activeProfiles" : [ ],
+  "startupSlowestSteps" : [ {
+    "name" : "spring.context.refresh",
+    "durationMs" : 4619,
+    "tags" : { }
+  }, {
+    "name" : "spring.context.beans.post-process",
+    "durationMs" : 1767,
+    "tags" : { }
+  }, {
+    "name" : "spring.context.beandef-registry.post-process",
+    "durationMs" : 1308,
+    "tags" : {
+      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@59fbb34"
+    }
+  }, {
+    "name" : "spring.context.config-classes.parse",
+    "durationMs" : 1287,
+    "tags" : {
+      "classCount" : "136"
+    }
+  }, {
+    "name" : "spring.boot.webserver.create",
+    "durationMs" : 636,
+    "tags" : {
+      "factory" : "class org.springframework.boot.tomcat.servlet.TomcatServletWebServerFactory"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 315,
+    "tags" : {
+      "beanName" : "bomRangesInfoContributor"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 313,
+    "tags" : {
+      "beanName" : "initializrMetadataProvider",
+      "beanType" : "interface io.spring.initializr.metadata.InitializrMetadataProvider"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 303,
+    "tags" : {
+      "beanName" : "commandLineMetadataController"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 301,
+    "tags" : {
+      "beanName" : "initializrMetadataUpdateStrategy"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 301,
+    "tags" : {
+      "beanName" : "templateRenderer",
+      "beanType" : "interface io.spring.initializr.generator.io.template.TemplateRenderer"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 300,
+    "tags" : {
+      "beanName" : "cacheManager",
+      "beanType" : "interface org.springframework.cache.CacheManager"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 294,
+    "tags" : {
+      "beanName" : "jCacheCacheManager",
+      "beanType" : "interface javax.cache.CacheManager"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 285,
+    "tags" : {
+      "beanName" : "initializr-io.spring.initializr.metadata.InitializrProperties",
+      "beanType" : "class io.spring.initializr.metadata.InitializrProperties"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 259,
+    "tags" : {
+      "beanName" : "springCloudAzureDefaultCredential"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 244,
+    "tags" : {
+      "beanName" : "tomcatServletWebServerFactory",
+      "beanType" : "interface org.springframework.boot.web.server.servlet.ServletWebServerFactory"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 173,
+    "tags" : {
+      "beanName" : "builderFactoryBeanPostProcessor",
+      "beanType" : "interface org.springframework.beans.factory.config.BeanPostProcessor"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 169,
+    "tags" : {
+      "beanName" : "restTemplateBuilder",
+      "beanType" : "class org.springframework.boot.restclient.RestTemplateBuilder"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 169,
+    "tags" : {
+      "beanName" : "org.springframework.cache.config.internalCacheAdvisor",
+      "beanType" : "interface org.springframework.aop.Advisor"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 165,
+    "tags" : {
+      "beanName" : "restTemplateBuilderConfigurer",
+      "beanType" : "class org.springframework.boot.restclient.autoconfigure.RestTemplateBuilderConfigurer"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 141,
+    "tags" : {
+      "beanName" : "azureCredentialBuilderFactory",
+      "beanType" : "class com.azure.spring.cloud.core.implementation.factory.credential.DefaultAzureCredentialBuilderFactory"
+    }
+  } ],
+  "slowBeans" : [ {
+    "beanName" : "bomRangesInfoContributor",
+    "durationMs" : 315
+  }, {
+    "beanName" : "initializrMetadataProvider",
+    "durationMs" : 313
+  }, {
+    "beanName" : "commandLineMetadataController",
+    "durationMs" : 303
+  }, {
+    "beanName" : "initializrMetadataUpdateStrategy",
+    "durationMs" : 301
+  }, {
+    "beanName" : "templateRenderer",
+    "durationMs" : 301
+  }, {
+    "beanName" : "cacheManager",
+    "durationMs" : 300
+  }, {
+    "beanName" : "jCacheCacheManager",
+    "durationMs" : 294
+  }, {
+    "beanName" : "initializr-io.spring.initializr.metadata.InitializrProperties",
+    "durationMs" : 285
+  }, {
+    "beanName" : "springCloudAzureDefaultCredential",
+    "durationMs" : 259
+  }, {
+    "beanName" : "tomcatServletWebServerFactory",
+    "durationMs" : 244
+  }, {
+    "beanName" : "builderFactoryBeanPostProcessor",
+    "durationMs" : 173
+  }, {
+    "beanName" : "org.springframework.cache.config.internalCacheAdvisor",
+    "durationMs" : 169
+  }, {
+    "beanName" : "restTemplateBuilder",
+    "durationMs" : 169
+  }, {
+    "beanName" : "restTemplateBuilderConfigurer",
+    "durationMs" : 165
+  }, {
+    "beanName" : "azureCredentialBuilderFactory",
+    "durationMs" : 141
+  }, {
+    "beanName" : "jacksonJsonHttpMessageConvertersCustomizer",
+    "durationMs" : 134
+  }, {
+    "beanName" : "jacksonJsonMapper",
+    "durationMs" : 133
+  }, {
+    "beanName" : "mavenVersionResolver",
+    "durationMs" : 125
+  }, {
+    "beanName" : "cacheInterceptor",
+    "durationMs" : 123
+  }, {
+    "beanName" : "jsonMapperBuilder",
+    "durationMs" : 119
+  }, {
+    "beanName" : "standardJsonMapperBuilderCustomizer",
+    "durationMs" : 108
+  }, {
+    "beanName" : "requestMappingHandlerAdapter",
+    "durationMs" : 101
+  } ],
+  "slowBeanThreshold" : 100,
+  "totalStartupMs" : 5608,
+  "beanCategories" : {
+    "totalBeans" : 390,
+    "roleApplication" : 366,
+    "roleSupport" : 0,
+    "roleInfrastructure" : 24,
+    "userDefined" : 55,
+    "frameworkOwned" : 335
+  },
+  "proxies" : {
+    "cglibCount" : 3,
+    "jdkCount" : 0,
+    "cglibBeans" : [ "mavenVersionResolver", "initializrMetadataProvider", "dependencyMetadataProvider" ],
+    "jdkBeans" : [ ],
+    "notInstantiatedSkipped" : 6
+  },
+  "ghostCandidates" : {
+    "confidence" : "LOW",
+    "disclaimer" : "Heuristic: bean was eagerly instantiated, has no incoming dependencies, and no known entry point was detected from its metadata. NOT proof of dead code — reflective access, programmatic getBean() lookups and framework-collected usages are invisible to this analysis.",
+    "count" : 19,
+    "beans" : [ "javaVersionProjectDescriptionCustomizer", "springCloudResilience4JProjectDescriptionCustomizer", "vaadinVersionProjectDescriptionCustomizer", "jooqVersionProjectDescriptionCustomizer", "timefoldVersionProjectDescriptionCustomizer", "initializrMetadataUpdateStrategy", "mavenVersionResolver", "dockerServiceResolver", "com.azure.spring.cloud.autoconfigure.implementation.context.AzureGlobalPropertiesAutoConfiguration", "builderFactoryBeanPostProcessor", "springCloudAzureDefaultCredential", "azureStorageProperties", "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobPropertiesConfiguration", "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.AzureStorageBlobResourceAutoConfiguration", "com.wiredoctor.actuator.WireDoctorActuatorAutoConfiguration", "initializrCacheManagerCustomizer", "InitializrJacksonModule", "projectDirectoryFactory", "indentingWriterFactory" ],
+    "entryPointsExcluded" : 8,
+    "notInstantiatedExcluded" : 0
+  },
+  "smells" : {
+    "highFanIn" : [ {
+      "beanName" : "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration",
+      "inDegree" : 8,
+      "dependents" : [ "azureCredentialBuilderFactory", "azureTokenCredentialResolver", "clientCertificateCredentialBuilderFactory", "clientSecretCredentialBuilderFactory", "managedIdentityCredentialBuilderFactory", "springCloudAzureCredentialTaskExecutor", "springCloudAzureDefaultCredential", "usernamePasswordCredentialBuilderFactory" ]
+    }, {
+      "beanName" : "initializrMetadataProvider",
+      "inDegree" : 6,
+      "dependents" : [ "bomRangesInfoContributor", "cliDistributionController", "commandLineMetadataController", "dependencyRangesInfoContributor", "projectGenerationController", "projectMetadataController" ]
+    }, {
+      "beanName" : "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration",
+      "inDegree" : 6,
+      "dependents" : [ "InitializrJacksonModule", "cliDistributionController", "commandLineMetadataController", "initializrWebConfig", "projectGenerationController", "projectMetadataController" ]
+    }, {
+      "beanName" : "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration",
+      "inDegree" : 5,
+      "dependents" : [ "dependencyMetadataProvider", "indentingWriterFactory", "initializrMetadataProvider", "projectDirectoryFactory", "templateRenderer" ]
+    }, {
+      "beanName" : "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration",
+      "inDegree" : 5,
+      "dependents" : [ "javaVersionProjectDescriptionCustomizer", "jooqVersionProjectDescriptionCustomizer", "springCloudResilience4JProjectDescriptionCustomizer", "timefoldVersionProjectDescriptionCustomizer", "vaadinVersionProjectDescriptionCustomizer" ]
+    }, {
+      "beanName" : "startApplication",
+      "inDegree" : 4,
+      "dependents" : [ "dockerServiceResolver", "homeController", "initializrMetadataUpdateStrategy", "mavenVersionResolver" ]
+    }, {
+      "beanName" : "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration",
+      "inDegree" : 2,
+      "dependents" : [ "bomRangesInfoContributor", "dependencyRangesInfoContributor" ]
+    }, {
+      "beanName" : "jacksonJsonMapper",
+      "inDegree" : 2,
+      "dependents" : [ "initializrMetadataUpdateStrategy", "jacksonJsonHttpMessageConvertersCustomizer" ]
+    }, {
+      "beanName" : "springCloudAzureGlobalProperties",
+      "inDegree" : 2,
+      "dependents" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "com.azure.spring.cloud.autoconfigure.implementation.storage.AzureStorageConfiguration" ]
+    }, {
+      "beanName" : "application-io.spring.start.site.StartConfigurationProperties",
+      "inDegree" : 1,
+      "dependents" : [ "mavenVersionResolver" ]
+    } ],
+    "highFanOut" : [ {
+      "beanName" : "azureTokenCredentialResolver",
+      "outDegree" : 5,
+      "dependencies" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "clientSecretCredentialBuilderFactory", "clientCertificateCredentialBuilderFactory", "usernamePasswordCredentialBuilderFactory", "managedIdentityCredentialBuilderFactory" ]
+    }, {
+      "beanName" : "commandLineMetadataController",
+      "outDegree" : 3,
+      "dependencies" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider", "templateRenderer" ]
+    }, {
+      "beanName" : "initializrMetadataUpdateStrategy",
+      "outDegree" : 3,
+      "dependencies" : [ "startApplication", "restTemplateBuilder", "jacksonJsonMapper" ]
+    }, {
+      "beanName" : "jsonMapperBuilder",
+      "outDegree" : 3,
+      "dependencies" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration", "problemDetailJsonMapperBuilderCustomizer", "standardJsonMapperBuilderCustomizer" ]
+    }, {
+      "beanName" : "projectGenerationController",
+      "outDegree" : 3,
+      "dependencies" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ]
+    }, {
+      "beanName" : "projectMetadataController",
+      "outDegree" : 3,
+      "dependencies" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider", "dependencyMetadataProvider" ]
+    }, {
+      "beanName" : "springCloudAzureDefaultCredential",
+      "outDegree" : 3,
+      "dependencies" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "azureCredentialBuilderFactory", "azureTokenCredentialResolver" ]
+    }, {
+      "beanName" : "azureCredentialBuilderFactory",
+      "outDegree" : 2,
+      "dependencies" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "springCloudAzureCredentialTaskExecutor" ]
+    }, {
+      "beanName" : "bomRangesInfoContributor",
+      "outDegree" : 2,
+      "dependencies" : [ "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration", "initializrMetadataProvider" ]
+    }, {
+      "beanName" : "cliDistributionController",
+      "outDegree" : 2,
+      "dependencies" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider" ]
+    } ],
+    "unstable" : [ {
+      "beanName" : "commandLineMetadataController",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 3
+    }, {
+      "beanName" : "initializrMetadataUpdateStrategy",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 3
+    }, {
+      "beanName" : "projectGenerationController",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 3
+    }, {
+      "beanName" : "projectMetadataController",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 3
+    }, {
+      "beanName" : "springCloudAzureDefaultCredential",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 3
+    }, {
+      "beanName" : "bomRangesInfoContributor",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 2
+    }, {
+      "beanName" : "cliDistributionController",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 2
+    }, {
+      "beanName" : "dependencyRangesInfoContributor",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 2
+    }, {
+      "beanName" : "mavenVersionResolver",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 2
+    }, {
+      "beanName" : "wireDoctorAnalyzer",
+      "instability" : 1.0,
+      "fanIn" : 0,
+      "fanOut" : 2
+    } ],
+    "frameworkFiltered" : true,
+    "fanIn" : {
+      "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletEndpointManagementContextConfiguration" : 1,
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration" : 1,
+      "initializrMetadataProvider" : 6,
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperConfiguration" : 1,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleMetricsExportAutoConfiguration" : 2,
+      "healthEndpointGroups" : 3,
+      "webEndpointDiscoverer" : 3,
+      "org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthContributorAutoConfiguration" : 1,
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration" : 3,
+      "management.info-org.springframework.boot.actuate.autoconfigure.info.InfoContributorProperties" : 1,
+      "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" : 8,
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration" : 1,
+      "azureTokenCredentialResolver" : 1,
+      "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration$MeterFilterConfiguration" : 1,
+      "management.endpoints.web.cors-org.springframework.boot.actuate.autoconfigure.endpoint.web.CorsEndpointProperties" : 2,
+      "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration" : 8,
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$ParameterNamesModuleConfiguration" : 1,
+      "cacheInterceptor" : 1,
+      "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration" : 2,
+      "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration" : 2,
+      "spring.servlet.encoding-org.springframework.boot.servlet.autoconfigure.ServletEncodingProperties" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletRegistrationConfiguration" : 1,
+      "buildProperties" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" : 26,
+      "jCacheOperationSource" : 2,
+      "spring.http.clients-org.springframework.boot.http.client.autoconfigure.HttpClientsProperties" : 1,
+      "endpointMediaTypes" : 2,
+      "jacksonMixinModuleEntries" : 1,
+      "jCacheInterceptor" : 1,
+      "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration" : 2,
+      "jCacheCacheMeterBinderProvider" : 1,
+      "endpointJsonMapper" : 1,
+      "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" : 1,
+      "jsonMapperBuilder" : 1,
+      "spring.http.converters-org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersProperties" : 1,
+      "org.springframework.scheduling.annotation.ProxyAsyncConfiguration" : 1,
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointWebExtensionConfiguration" : 1,
+      "startApplication" : 4,
+      "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration" : 3,
+      "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.actuate.endpoint.web.WebMvcHealthEndpointExtensionAutoConfiguration" : 1,
+      "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration$HttpMessageConvertersConfiguration" : 1,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration" : 5,
+      "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration" : 3,
+      "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletManagementContextAutoConfiguration" : 1,
+      "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration" : 3,
+      "spring.servlet.multipart-org.springframework.boot.servlet.autoconfigure.MultipartProperties" : 1,
+      "management.health.diskspace-org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthIndicatorProperties" : 1,
+      "initializrWebConfig" : 1,
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration" : 3,
+      "simpleMeterRegistry" : 4,
+      "org.springframework.boot.http.client.autoconfigure.HttpClientAutoConfiguration" : 1,
+      "springCloudAzureCredentialTaskExecutor" : 3,
+      "application-io.spring.start.site.StartConfigurationProperties" : 1,
+      "org.springframework.beans.factory.support.DefaultListableBeanFactory@7343922c" : 5,
+      "org.springframework.boot.restclient.autoconfigure.RestClientObservationAutoConfiguration" : 1,
+      "springCloudAzureGlobalProperties" : 2,
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter" : 3,
+      "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$JCacheCacheMeterBinderProviderConfiguration" : 1,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" : 7,
+      "managedIdentityCredentialBuilderFactory" : 1,
+      "org.springframework.boot.mustache.autoconfigure.MustacheServletWebConfiguration" : 1,
+      "initializr-io.spring.initializr.metadata.InitializrProperties" : 1,
+      "dependencyMetadataProvider" : 1,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.startup.StartupTimeMetricsListenerAutoConfiguration" : 1,
+      "com.azure.spring.cloud.autoconfigure.implementation.storage.AzureStorageConfiguration" : 1,
+      "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : 2,
+      "org.springframework.cache.annotation.ProxyCachingConfiguration" : 3,
+      "restTemplateBuilder" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration" : 1,
+      "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration$WebEndpointServletConfiguration" : 1,
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration" : 6,
+      "org.springframework.boot.servlet.autoconfigure.HttpEncodingAutoConfiguration" : 1,
+      "requestMappingHandlerAdapter" : 1,
+      "wiredoctor-com.wiredoctor.WireDoctorProperties" : 1,
+      "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration" : 2,
+      "server.tomcat-org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties" : 3,
+      "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration" : 1,
+      "org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration" : 1,
+      "management.simple.metrics.export-org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleProperties" : 1,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.ssl.SslMetricsAutoConfiguration" : 1,
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonMixinConfiguration" : 1,
+      "spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties" : 1,
+      "org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration" : 2,
+      "endpointOperationParameterMapper" : 1,
+      "sslBundleRegistry" : 3,
+      "jCacheCacheManager" : 1,
+      "org.springframework.boot.actuate.autoconfigure.info.InfoEndpointAutoConfiguration" : 1,
+      "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" : 21,
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration" : 1,
+      "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConverterConfiguration" : 1,
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration" : 1,
+      "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : 3,
+      "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" : 1,
+      "fileWatcher" : 1,
+      "mvcContentNegotiationManager" : 5,
+      "org.springframework.boot.restclient.autoconfigure.RestTemplateObservationAutoConfiguration" : 1,
+      "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration" : 2,
+      "standardJsonMapperBuilderCustomizer" : 1,
+      "environment" : 11,
+      "errorAttributes" : 1,
+      "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration" : 2,
+      "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : 2,
+      "mustacheCompiler" : 1,
+      "mustacheTemplateLoader" : 1,
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration" : 1,
+      "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration" : 2,
+      "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" : 1,
+      "org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientAutoConfiguration" : 1,
+      "spring.http.clients.imperative-org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientsProperties" : 1,
+      "azureCredentialBuilderFactory" : 1,
+      "healthContributorRegistry" : 3,
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration" : 1,
+      "jackson2EndpointJsonMapper" : 1,
+      "micrometerClock" : 2,
+      "problemDetailJsonMapperBuilderCustomizer" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletConfiguration" : 1,
+      "jacksonJsonMapper" : 2,
+      "endpointJsonMapperWebMvcConfigurer" : 1,
+      "org.springframework.cache.jcache.config.ProxyJCacheConfiguration" : 3,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration" : 4,
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperBuilderConfiguration" : 1,
+      "spring.http.clients.reactive-org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientsProperties" : 1,
+      "livenessStateHealthIndicator" : 1,
+      "restTemplateBuilderConfigurer" : 1,
+      "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration" : 1,
+      "servletEndpointDiscoverer" : 3,
+      "mvcValidator" : 1,
+      "applicationAvailability" : 2,
+      "mvcResourceUrlProvider" : 7,
+      "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" : 2,
+      "org.springframework.boot.cache.autoconfigure.metrics.CacheMetricsRegistrarConfiguration" : 1,
+      "jackson2JsonMixinModuleEntries" : 1,
+      "sslInfo" : 1,
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : 1,
+      "dispatcherServlet" : 1,
+      "gitProperties" : 1,
+      "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" : 6,
+      "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration" : 3,
+      "spring.jackson-org.springframework.boot.jackson.autoconfigure.JacksonProperties" : 1,
+      "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" : 6,
+      "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration" : 2,
+      "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties" : 6,
+      "org.springframework.boot.http.client.autoconfigure.metrics.HttpClientMetricsAutoConfiguration" : 1,
+      "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration" : 2,
+      "org.springframework.boot.micrometer.metrics.autoconfigure.logging.logback.LogbackMetricsAutoConfiguration" : 1,
+      "threadPoolTaskExecutorBuilder" : 1,
+      "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration" : 1,
+      "org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration" : 1,
+      "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration$TomcatWebSocketConfiguration" : 1,
+      "usernamePasswordCredentialBuilderFactory" : 1,
+      "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.Jackson2EndpointAutoConfiguration" : 1,
+      "propertiesEndpointAccessResolver" : 3,
+      "mvcConversionService" : 9,
+      "endpointJackson2ObjectMapperWebMvcConfigurer" : 1,
+      "controllerEndpointDiscoverer" : 3,
+      "diskSpaceHealthIndicator" : 1,
+      "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration" : 3,
+      "cacheOperationSource" : 2,
+      "spring.jackson2-org.springframework.boot.jackson2.autoconfigure.Jackson2Properties" : 1,
+      "server-org.springframework.boot.web.server.autoconfigure.ServerProperties" : 2,
+      "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrCacheConfiguration" : 1,
+      "pingHealthContributor" : 1,
+      "spring.cache-org.springframework.boot.cache.autoconfigure.CacheProperties" : 2,
+      "dispatcherServletRegistration" : 2,
+      "standardJackson2ObjectMapperBuilderCustomizer" : 1,
+      "sslHealthIndicator" : 1,
+      "clientCertificateCredentialBuilderFactory" : 1,
+      "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" : 5,
+      "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties" : 6,
+      "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$DefaultErrorViewResolverConfiguration" : 1,
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration" : 1,
+      "com.wiredoctor.WireDoctorAutoConfiguration" : 1,
+      "groupsHealthContributorNameValidator" : 2,
+      "spring.mustache-org.springframework.boot.mustache.autoconfigure.MustacheProperties" : 2,
+      "mvcApiVersionStrategy" : 2,
+      "spring.web-org.springframework.boot.autoconfigure.web.WebProperties" : 5,
+      "spring.mvc-org.springframework.boot.webmvc.autoconfigure.WebMvcProperties" : 4,
+      "org.springframework.boot.micrometer.observation.autoconfigure.ScheduledTasksObservationAutoConfiguration" : 1,
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonMixinConfiguration" : 1,
+      "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration" : 1,
+      "simpleConfig" : 1,
+      "clientSecretCredentialBuilderFactory" : 1,
+      "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration$ReactiveHealthContributorRegistryConfiguration" : 1,
+      "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration" : 1,
+      "org.springframework.boot.web.server.autoconfigure.servlet.ServletWebServerConfiguration" : 1,
+      "org.springframework.boot.http.client.autoconfigure.service.HttpServiceClientPropertiesAutoConfiguration" : 1,
+      "observationRegistry" : 4,
+      "management.health.ssl-org.springframework.boot.health.autoconfigure.application.SslHealthIndicatorProperties" : 1,
+      "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration" : 6,
+      "org.springframework.boot.cache.autoconfigure.JCacheCacheConfiguration" : 2,
+      "cacheManagerCustomizers" : 1,
+      "readinessStateHealthIndicator" : 1,
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration" : 1,
+      "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration" : 5,
+      "jackson2ObjectMapperBuilder" : 1,
+      "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration" : 1,
+      "templateRenderer" : 1
+    }
+  },
+  "dependencies" : {
+    "totalBeans" : 390,
+    "totalEdges" : 432,
+    "cyclesCount" : 0,
+    "cycles" : [ ],
+    "orphanBeansCount" : 27,
+    "orphanBeans" : [ "javaVersionProjectDescriptionCustomizer", "springCloudResilience4JProjectDescriptionCustomizer", "vaadinVersionProjectDescriptionCustomizer", "jooqVersionProjectDescriptionCustomizer", "timefoldVersionProjectDescriptionCustomizer", "homeController", "initializrMetadataUpdateStrategy", "mavenVersionResolver", "dockerServiceResolver", "com.azure.spring.cloud.autoconfigure.implementation.context.AzureGlobalPropertiesAutoConfiguration", "com.azure.spring.cloud.autoconfigure.implementation.context.AzureServiceClientBuilderFactoryConfiguration", "builderFactoryBeanPostProcessor", "springCloudAzureDefaultCredential", "azureStorageProperties", "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobPropertiesConfiguration", "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.AzureStorageBlobResourceAutoConfiguration", "com.wiredoctor.actuator.WireDoctorActuatorAutoConfiguration", "bomRangesInfoContributor", "dependencyRangesInfoContributor", "initializrCacheManagerCustomizer", "projectGenerationController", "projectMetadataController", "commandLineMetadataController", "cliDistributionController", "InitializrJacksonModule", "projectDirectoryFactory", "indentingWriterFactory" ],
+    "graph" : {
+      "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletEndpointManagementContextConfiguration" : [ ],
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration" : [ ],
+      "applicationTaskExecutor" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration", "threadPoolTaskExecutorBuilder" ],
+      "forceAutoProxyCreatorToUseClassProxying" : [ ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleMetricsExportAutoConfiguration" : [ ],
+      "healthEndpointGroups" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" ],
+      "org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthContributorAutoConfiguration" : [ ],
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration" : [ ],
+      "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties" ],
+      "webEndpointPathMapper" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" ],
+      "InitializrJacksonModule" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration" ],
+      "org.springframework.context.annotation.internalConfigurationAnnotationProcessor" : [ "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" ],
+      "indentingWriterFactory" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration" ],
+      "org.springframework.boot.http.converter.autoconfigure.Jackson2HttpMessageConvertersConfiguration" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration" : [ ],
+      "beanNameViewResolver" : [ "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration" ],
+      "viewResolver" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter", "org.springframework.beans.factory.support.DefaultListableBeanFactory@7343922c" ],
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration$MeterFilterConfiguration" : [ ],
+      "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration" : [ ],
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$ParameterNamesModuleConfiguration" : [ ],
+      "tomcatServletWebServerFactoryCustomizer" : [ "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration", "server.tomcat-org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties" ],
+      "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration" : [ ],
+      "spring.servlet.encoding-org.springframework.boot.servlet.autoconfigure.ServletEncodingProperties" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletRegistrationConfiguration" : [ ],
+      "jCacheOperationSource" : [ "org.springframework.cache.jcache.config.ProxyJCacheConfiguration" ],
+      "applicationTaskExecutorAsyncConfigurer" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration", "org.springframework.beans.factory.support.DefaultListableBeanFactory@7343922c" ],
+      "meterRegistryPostProcessor" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "endpointMediaTypes" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" ],
+      "jacksonMixinModuleEntries" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "jvmCompilationMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "jackson2ParameterNamesModule" : [ "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$ParameterNamesModuleConfiguration" ],
+      "cacheMetricsRegistrar" : [ "org.springframework.boot.cache.autoconfigure.metrics.CacheMetricsRegistrarConfiguration" ],
+      "httpServiceClientProperties" : [ "org.springframework.boot.http.client.autoconfigure.service.HttpServiceClientPropertiesAutoConfiguration", "environment" ],
+      "jCacheCacheMeterBinderProvider" : [ "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$JCacheCacheMeterBinderProviderConfiguration" ],
+      "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" : [ ],
+      "spring.http.converters-org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersProperties" : [ ],
+      "org.springframework.scheduling.annotation.ProxyAsyncConfiguration" : [ ],
+      "org.springframework.boot.context.internalConfigurationPropertiesBinder" : [ ],
+      "startApplication" : [ ],
+      "webServerFactoryCustomizerBeanPostProcessor" : [ ],
+      "metricsHttpClientUriTagFilter" : [ "org.springframework.boot.http.client.autoconfigure.metrics.HttpClientMetricsAutoConfiguration", "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties", "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" ],
+      "controllerEndpointHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration", "controllerEndpointDiscoverer", "management.endpoints.web.cors-org.springframework.boot.actuate.autoconfigure.endpoint.web.CorsEndpointProperties", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties", "propertiesEndpointAccessResolver" ],
+      "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration" : [ ],
+      "observabilitySchedulingConfigurer" : [ "org.springframework.boot.micrometer.observation.autoconfigure.ScheduledTasksObservationAutoConfiguration", "observationRegistry" ],
+      "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration" : [ ],
+      "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration" : [ ],
+      "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletManagementContextAutoConfiguration" : [ ],
+      "management.health.diskspace-org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthIndicatorProperties" : [ ],
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration" : [ ],
+      "conventionErrorViewResolver" : [ "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$DefaultErrorViewResolverConfiguration" ],
+      "jackson2ObjectMapper" : [ "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperConfiguration", "jackson2ObjectMapperBuilder" ],
+      "org.springframework.boot.restclient.autoconfigure.RestClientObservationAutoConfiguration" : [ ],
+      "org.springframework.context.event.internalEventListenerProcessor" : [ ],
+      "springCloudAzureGlobalProperties" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter" : [ "spring.web-org.springframework.boot.autoconfigure.web.WebProperties", "spring.mvc-org.springframework.boot.webmvc.autoconfigure.WebMvcProperties", "org.springframework.beans.factory.support.DefaultListableBeanFactory@7343922c" ],
+      "formContentFilter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration" ],
+      "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$JCacheCacheMeterBinderProviderConfiguration" : [ ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" : [ ],
+      "managedIdentityCredentialBuilderFactory" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration" ],
+      "defaultViewResolver" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter" ],
+      "org.springframework.boot.mustache.autoconfigure.MustacheServletWebConfiguration" : [ ],
+      "routerFunctionMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcConversionService", "mvcResourceUrlProvider", "mvcApiVersionStrategy" ],
+      "dependencyMetadataProvider" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration" ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.startup.StartupTimeMetricsListenerAutoConfiguration" : [ ],
+      "cacheManager" : [ "org.springframework.boot.cache.autoconfigure.JCacheCacheConfiguration", "cacheManagerCustomizers", "jCacheCacheManager" ],
+      "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : [ ],
+      "org.springframework.cache.annotation.ProxyCachingConfiguration" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration" : [ ],
+      "healthEndpointWebExtension" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointWebExtensionConfiguration", "healthContributorRegistry", "healthEndpointGroups", "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" ],
+      "multipartResolver" : [ "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration" ],
+      "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration$WebEndpointServletConfiguration" : [ ],
+      "requestMappingHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcContentNegotiationManager", "mvcApiVersionStrategy", "mvcConversionService", "mvcResourceUrlProvider" ],
+      "webExposeExcludePropertyEndpointFilter" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" ],
+      "lifecycleProcessor" : [ "org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration", "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" ],
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration" : [ ],
+      "org.springframework.aop.config.internalAutoProxyCreator" : [ ],
+      "requestMappingHandlerAdapter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcContentNegotiationManager", "mvcConversionService", "mvcValidator" ],
+      "org.springframework.boot.servlet.autoconfigure.HttpEncodingAutoConfiguration" : [ ],
+      "tomcatMetricsBinder" : [ "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration", "simpleMeterRegistry" ],
+      "wiredoctor-com.wiredoctor.WireDoctorProperties" : [ ],
+      "com.wiredoctor.actuator.WireDoctorActuatorAutoConfiguration" : [ ],
+      "server.tomcat-org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties" : [ ],
+      "mvcHandlerMappingIntrospector" : [ ],
+      "org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration" : [ ],
+      "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration" : [ ],
+      "management.simple.metrics.export-org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleProperties" : [ ],
+      "sslMeterBinder" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.ssl.SslMetricsAutoConfiguration", "sslBundleRegistry" ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.ssl.SslMetricsAutoConfiguration" : [ ],
+      "spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties" : [ ],
+      "org.springframework.context.annotation.internalAutowiredAnnotationProcessor" : [ ],
+      "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.AzureStorageBlobResourceAutoConfiguration" : [ ],
+      "infoEndpoint" : [ "org.springframework.boot.actuate.autoconfigure.info.InfoEndpointAutoConfiguration" ],
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$BootstrapExecutorConfiguration" : [ ],
+      "jCacheCacheManager" : [ "org.springframework.boot.cache.autoconfigure.JCacheCacheConfiguration", "spring.cache-org.springframework.boot.cache.autoconfigure.CacheProperties" ],
+      "classLoaderMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "observationRestTemplateCustomizer" : [ "org.springframework.boot.restclient.autoconfigure.RestTemplateObservationAutoConfiguration", "observationRegistry", "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties" ],
+      "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration" : [ ],
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration" : [ ],
+      "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" ],
+      "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" : [ ],
+      "fileWatcher" : [ "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" ],
+      "mustacheViewResolver" : [ "org.springframework.boot.mustache.autoconfigure.MustacheServletWebConfiguration", "mustacheCompiler", "spring.mustache-org.springframework.boot.mustache.autoconfigure.MustacheProperties" ],
+      "org.springframework.boot.restclient.autoconfigure.RestTemplateObservationAutoConfiguration" : [ ],
+      "stringHttpMessageConvertersCustomizer" : [ "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration", "spring.http.converters-org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersProperties" ],
+      "bomRangesInfoContributor" : [ "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration", "initializrMetadataProvider" ],
+      "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration" : [ "spring.servlet.multipart-org.springframework.boot.servlet.autoconfigure.MultipartProperties" ],
+      "standardJsonMapperBuilderCustomizer" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration", "spring.jackson-org.springframework.boot.jackson.autoconfigure.JacksonProperties" ],
+      "errorAttributes" : [ "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration" ],
+      "beanNameHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcConversionService", "mvcResourceUrlProvider" ],
+      "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : [ "spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties" ],
+      "mustacheCompiler" : [ "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration", "mustacheTemplateLoader" ],
+      "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration" : [ "spring.mustache-org.springframework.boot.mustache.autoconfigure.MustacheProperties", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "org.springframework.boot.context.properties.EnableConfigurationPropertiesRegistrar.methodValidationExcludeFilter" : [ ],
+      "commandLineMetadataController" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider", "templateRenderer" ],
+      "gitInfoContributor" : [ "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration", "gitProperties", "management.info-org.springframework.boot.actuate.autoconfigure.info.InfoContributorProperties" ],
+      "spring.http.clients.imperative-org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientsProperties" : [ ],
+      "azureCredentialBuilderFactory" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "springCloudAzureCredentialTaskExecutor" ],
+      "flashMapManager" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.task.TaskExecutorMetricsAutoConfiguration" : [ "simpleMeterRegistry" ],
+      "jackson2EndpointJsonMapper" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.Jackson2EndpointAutoConfiguration" ],
+      "healthHttpCodeStatusMapper" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration", "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" ],
+      "uptimeMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration" ],
+      "controllerExposeExcludePropertyEndpointFilter" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" ],
+      "pathMappedEndpoints" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration", "servletEndpointDiscoverer", "webEndpointDiscoverer", "controllerEndpointDiscoverer" ],
+      "jvmThreadMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "org.springframework.cache.jcache.config.ProxyJCacheConfiguration" : [ ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration" : [ ],
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperBuilderConfiguration" : [ ],
+      "managementServletContext" : [ "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletManagementContextAutoConfiguration", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties" ],
+      "fileDescriptorMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration" ],
+      "livenessStateHealthIndicator" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration", "applicationAvailability" ],
+      "clientHttpRequestFactory" : [ ],
+      "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration" : [ ],
+      "restClientBuilderConfigurer" : [ "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "mvcValidator" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "org.springframework.boot.health.autoconfigure.application.AvailabilityHealthContributorAutoConfiguration" : [ ],
+      "applicationAvailability" : [ "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration" ],
+      "mvcResourceUrlProvider" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$SameManagementContextConfiguration$EnableSameManagementContextConfiguration" : [ ],
+      "javaVersionProjectDescriptionCustomizer" : [ "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" ],
+      "org.springframework.boot.cache.autoconfigure.metrics.CacheMetricsRegistrarConfiguration" : [ "simpleMeterRegistry", "jCacheCacheMeterBinderProvider", "org.springframework.beans.factory.support.DefaultListableBeanFactory@7343922c" ],
+      "sslInfo" : [ "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration", "sslBundleRegistry" ],
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : [ "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" ],
+      "servletEndpointRegistrar" : [ "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties", "servletEndpointDiscoverer", "dispatcherServletRegistration", "propertiesEndpointAccessResolver" ],
+      "org.springframework.boot.autoconfigure.AutoConfigurationPackages" : [ ],
+      "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration" : [ "spring.web-org.springframework.boot.autoconfigure.web.WebProperties" ],
+      "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" : [ ],
+      "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties" : [ ],
+      "com.azure.spring.cloud.autoconfigure.implementation.context.AzureServiceClientBuilderFactoryConfiguration" : [ ],
+      "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration" : [ "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" ],
+      "org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration" : [ ],
+      "org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration" : [ ],
+      "propertiesEndpointAccessResolver" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration", "environment" ],
+      "errorPageRegistrarBeanPostProcessor" : [ ],
+      "mavenVersionResolver" : [ "startApplication", "application-io.spring.start.site.StartConfigurationProperties" ],
+      "mvcConversionService" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "endpointJackson2ObjectMapperWebMvcConfigurer" : [ "jackson2EndpointJsonMapper" ],
+      "controllerEndpointDiscoverer" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" ],
+      "org.springframework.boot.context.properties.BoundConfigurationProperties" : [ ],
+      "diskSpaceHealthIndicator" : [ "org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthContributorAutoConfiguration", "management.health.diskspace-org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthIndicatorProperties" ],
+      "jvmMemoryMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "restClientSsl" : [ "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "sslBundleRegistry" ],
+      "cacheOperationSource" : [ "org.springframework.cache.annotation.ProxyCachingConfiguration" ],
+      "com.azure.spring.cloud.autoconfigure.implementation.context.AzureGlobalPropertiesAutoConfiguration" : [ ],
+      "mvcPathMatcher" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "handlerExceptionResolver" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcContentNegotiationManager" ],
+      "spring.jackson2-org.springframework.boot.jackson2.autoconfigure.Jackson2Properties" : [ ],
+      "basicErrorController" : [ "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration", "errorAttributes" ],
+      "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrCacheConfiguration" : [ ],
+      "pingHealthContributor" : [ "org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration" ],
+      "standardJackson2ObjectMapperBuilderCustomizer" : [ "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration", "spring.jackson2-org.springframework.boot.jackson2.autoconfigure.Jackson2Properties" ],
+      "sslHealthIndicator" : [ "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration", "sslInfo", "management.health.ssl-org.springframework.boot.health.autoconfigure.application.SslHealthIndicatorProperties" ],
+      "healthEndpointGroupMembershipValidator" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration", "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties", "healthContributorRegistry" ],
+      "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$DefaultErrorViewResolverConfiguration" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "spring.web-org.springframework.boot.autoconfigure.web.WebProperties" ],
+      "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration" : [ ],
+      "groupsHealthContributorNameValidator" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration" ],
+      "spring.mustache-org.springframework.boot.mustache.autoconfigure.MustacheProperties" : [ ],
+      "builderFactoryBeanPostProcessor" : [ ],
+      "org.springframework.boot.cache.autoconfigure.metrics.CacheMetricsAutoConfiguration" : [ ],
+      "simpleAsyncTaskExecutorBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" ],
+      "spring.web-org.springframework.boot.autoconfigure.web.WebProperties" : [ ],
+      "clientHttpRequestFactoryBuilder" : [ "org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientAutoConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "spring.http.clients.imperative-org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientsProperties" ],
+      "spelValueExpressionResolver" : [ "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration" ],
+      "org.springframework.scheduling.config.internalAsyncAnnotationProcessor" : [ "org.springframework.scheduling.annotation.ProxyAsyncConfiguration" ],
+      "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration" : [ "environment" ],
+      "mvcViewResolver" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcContentNegotiationManager" ],
+      "simpleConfig" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleMetricsExportAutoConfiguration", "management.simple.metrics.export-org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleProperties" ],
+      "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration$HealthConfiguration" : [ ],
+      "clientSecretCredentialBuilderFactory" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "springCloudAzureCredentialTaskExecutor" ],
+      "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration$ReactiveHealthContributorRegistryConfiguration" : [ ],
+      "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration" : [ ],
+      "org.springframework.boot.http.client.autoconfigure.service.HttpServiceClientPropertiesAutoConfiguration" : [ ],
+      "observationRegistry" : [ "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration" ],
+      "mvcUriComponentsContributor" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcConversionService", "requestMappingHandlerAdapter" ],
+      "management.health.ssl-org.springframework.boot.health.autoconfigure.application.SslHealthIndicatorProperties" : [ ],
+      "webAccessPropertiesOperationFilter" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration", "propertiesEndpointAccessResolver" ],
+      "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration" : [ ],
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonJsonMapperBuilderCustomizerConfiguration" : [ ],
+      "readinessStateHealthIndicator" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration", "applicationAvailability" ],
+      "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$ClassProxyingConfiguration" : [ ],
+      "httpMessageConvertersRestClientCustomizer" : [ "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration$HttpMessageConvertersConfiguration" ],
+      "jackson2ObjectMapperBuilder" : [ "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperBuilderConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "standardJackson2ObjectMapperBuilderCustomizer" ],
+      "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration" : [ ],
+      "templateRenderer" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration", "environment" ],
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointAutoConfiguration" : [ ],
+      "endpointCachingOperationInvokerAdvisor" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration", "environment" ],
+      "defaultServletHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "springCloudResilience4JProjectDescriptionCustomizer" : [ "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" ],
+      "initializrMetadataProvider" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration", "initializr-io.spring.initializr.metadata.InitializrProperties" ],
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperConfiguration" : [ ],
+      "observationRegistryPostProcessor" : [ ],
+      "characterEncodingFilter" : [ "org.springframework.boot.servlet.autoconfigure.HttpEncodingAutoConfiguration", "spring.servlet.encoding-org.springframework.boot.servlet.autoconfigure.ServletEncodingProperties" ],
+      "webEndpointDiscoverer" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration", "endpointOperationParameterMapper", "endpointMediaTypes" ],
+      "projectMetadataController" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider", "dependencyMetadataProvider" ],
+      "jooqVersionProjectDescriptionCustomizer" : [ "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" ],
+      "preserveErrorControllerTargetClassPostProcessor" : [ ],
+      "logbackMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.logging.logback.LogbackMetricsAutoConfiguration" ],
+      "management.info-org.springframework.boot.actuate.autoconfigure.info.InfoContributorProperties" : [ ],
+      "propertySourcesPlaceholderConfigurer" : [ ],
+      "org.springframework.boot.http.converter.autoconfigure.GsonHttpMessageConvertersConfiguration" : [ ],
+      "buildInfoContributor" : [ "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration", "buildProperties" ],
+      "azureTokenCredentialResolver" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "clientSecretCredentialBuilderFactory", "clientCertificateCredentialBuilderFactory", "usernamePasswordCredentialBuilderFactory", "managedIdentityCredentialBuilderFactory" ],
+      "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration" : [ ],
+      "management.endpoints.web.cors-org.springframework.boot.actuate.autoconfigure.endpoint.web.CorsEndpointProperties" : [ ],
+      "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "springCloudAzureGlobalProperties" ],
+      "initializrMetadataUpdateStrategy" : [ "startApplication", "restTemplateBuilder", "jacksonJsonMapper" ],
+      "springCloudAzureDefaultCredential" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "azureCredentialBuilderFactory", "azureTokenCredentialResolver" ],
+      "cacheInterceptor" : [ "org.springframework.cache.annotation.ProxyCachingConfiguration", "cacheOperationSource" ],
+      "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration" : [ ],
+      "jsonComponentModule" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration" ],
+      "org.springframework.cache.config.internalJCacheAdvisor" : [ "org.springframework.cache.jcache.config.ProxyJCacheConfiguration", "jCacheOperationSource", "jCacheInterceptor" ],
+      "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" : [ "spring.mvc-org.springframework.boot.webmvc.autoconfigure.WebMvcProperties", "spring.web-org.springframework.boot.autoconfigure.web.WebProperties", "org.springframework.beans.factory.support.DefaultListableBeanFactory@7343922c", "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter", "initializrWebConfig", "endpointJsonMapperWebMvcConfigurer", "endpointJackson2ObjectMapperWebMvcConfigurer" ],
+      "buildProperties" : [ "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" ],
+      "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobPropertiesConfiguration" : [ ],
+      "org.springframework.context.event.internalEventListenerFactory" : [ ],
+      "webSocketWebServerCustomizer" : [ "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration$TomcatWebSocketConfiguration" ],
+      "clientConvertersCustomizer" : [ "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration" ],
+      "spring.http.clients-org.springframework.boot.http.client.autoconfigure.HttpClientsProperties" : [ ],
+      "jCacheInterceptor" : [ "org.springframework.cache.jcache.config.ProxyJCacheConfiguration", "jCacheOperationSource" ],
+      "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration" : [ "server.tomcat-org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties" ],
+      "healthStatusAggregator" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration", "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" ],
+      "initializrCacheManagerCustomizer" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrCacheConfiguration" ],
+      "endpointJsonMapper" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration" ],
+      "mvcUrlPathHelper" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "jsonMapperBuilder" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration", "problemDetailJsonMapperBuilderCustomizer", "standardJsonMapperBuilderCustomizer" ],
+      "servletWebServerFactoryCustomizer" : [ "org.springframework.boot.web.server.autoconfigure.servlet.ServletWebServerConfiguration", "server-org.springframework.boot.web.server.autoconfigure.ServerProperties" ],
+      "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointWebExtensionConfiguration" : [ ],
+      "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration" : [ ],
+      "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.actuate.endpoint.web.WebMvcHealthEndpointExtensionAutoConfiguration" : [ ],
+      "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration$HttpMessageConvertersConfiguration" : [ ],
+      "reactiveHealthContributorRegistry" : [ "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration$ReactiveHealthContributorRegistryConfiguration", "groupsHealthContributorNameValidator" ],
+      "jackson2JsonMixinModule" : [ "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonMixinConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "jackson2JsonMixinModuleEntries" ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration" : [ ],
+      "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration" : [ ],
+      "metricsObservationHandlerGroup" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration" ],
+      "org.springframework.cache.config.internalCacheAdvisor" : [ "org.springframework.cache.annotation.ProxyCachingConfiguration", "cacheOperationSource", "cacheInterceptor" ],
+      "spring.servlet.multipart-org.springframework.boot.servlet.autoconfigure.MultipartProperties" : [ ],
+      "jackson2JsonComponentModule" : [ "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration" ],
+      "initializrWebConfig" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration" ],
+      "simpleMeterRegistry" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleMetricsExportAutoConfiguration", "simpleConfig", "micrometerClock" ],
+      "projectDirectoryFactory" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration" ],
+      "bootstrapExecutorAliasPostProcessor" : [ ],
+      "springCloudAzureCredentialTaskExecutor" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration" ],
+      "org.springframework.boot.http.client.autoconfigure.HttpClientAutoConfiguration" : [ ],
+      "application-io.spring.start.site.StartConfigurationProperties" : [ ],
+      "startupTimeMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.startup.StartupTimeMetricsListenerAutoConfiguration", "simpleMeterRegistry" ],
+      "multipartConfigElement" : [ "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration" ],
+      "requestContextFilter" : [ ],
+      "initializr-io.spring.initializr.metadata.InitializrProperties" : [ ],
+      "com.azure.spring.cloud.autoconfigure.implementation.storage.AzureStorageConfiguration" : [ "springCloudAzureGlobalProperties" ],
+      "restTemplateBuilder" : [ "org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration", "restTemplateBuilderConfigurer" ],
+      "availabilityProbesHealthEndpointGroupsPostProcessor" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration", "environment" ],
+      "localeResolver" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "handlerFunctionAdapter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$SameManagementContextConfiguration" : [ "environment" ],
+      "observationRestClientCustomizer" : [ "org.springframework.boot.restclient.autoconfigure.RestClientObservationAutoConfiguration", "observationRegistry", "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties" ],
+      "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration" : [ ],
+      "jvmHeapPressureMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "welcomePageNotAcceptableHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "mvcConversionService", "mvcResourceUrlProvider" ],
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonMixinConfiguration" : [ ],
+      "org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration" : [ ],
+      "endpointOperationParameterMapper" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration" ],
+      "sslBundleRegistry" : [ "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" ],
+      "org.springframework.boot.actuate.autoconfigure.info.InfoEndpointAutoConfiguration" : [ ],
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration" : [ ],
+      "wireDoctorAnalyzer" : [ "com.wiredoctor.WireDoctorAutoConfiguration", "wiredoctor-com.wiredoctor.WireDoctorProperties" ],
+      "cacheAutoConfigurationValidator" : [ "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration", "spring.cache-org.springframework.boot.cache.autoconfigure.CacheProperties" ],
+      "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConverterConfiguration" : [ ],
+      "meterRegistryCloser" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" ],
+      "mvcContentNegotiationManager" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration" : [ ],
+      "httpRequestHandlerAdapter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "org.springframework.aop.framework.autoproxy.defaultProxyConfig" : [ ],
+      "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration" : [ ],
+      "sslPropertiesSslBundleRegistrar" : [ "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration", "fileWatcher" ],
+      "org.springframework.context.annotation.internalCommonAnnotationProcessor" : [ ],
+      "mustacheTemplateLoader" : [ "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration" ],
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration" : [ ],
+      "defaultMeterObservationHandler" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration", "micrometerClock", "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.CompositeMeterRegistryAutoConfiguration" : [ ],
+      "resourceHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcContentNegotiationManager", "mvcConversionService", "mvcResourceUrlProvider" ],
+      "simpleControllerHandlerAdapter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "simpleAsyncTaskSchedulerBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration" ],
+      "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" : [ ],
+      "org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientAutoConfiguration" : [ "environment" ],
+      "httpClientSettings" : [ "org.springframework.boot.http.client.autoconfigure.HttpClientAutoConfiguration", "spring.http.clients-org.springframework.boot.http.client.autoconfigure.HttpClientsProperties" ],
+      "projectGenerationController" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "healthContributorRegistry" : [ "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration", "livenessStateHealthIndicator", "readinessStateHealthIndicator", "diskSpaceHealthIndicator", "sslHealthIndicator", "pingHealthContributor", "groupsHealthContributorNameValidator" ],
+      "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration" : [ ],
+      "propertiesObservationFilter" : [ "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration", "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties" ],
+      "micrometerClock" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration" ],
+      "propertiesMeterFilter" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration", "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" ],
+      "problemDetailJsonMapperBuilderCustomizer" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration" ],
+      "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletConfiguration" : [ ],
+      "jacksonJsonMapper" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration", "jsonMapperBuilder" ],
+      "endpointJsonMapperWebMvcConfigurer" : [ "endpointJsonMapper" ],
+      "azureStorageProperties" : [ "com.azure.spring.cloud.autoconfigure.implementation.storage.AzureStorageConfiguration" ],
+      "diskSpaceMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration", "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" ],
+      "spring.http.clients.reactive-org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientsProperties" : [ ],
+      "homeController" : [ "startApplication" ],
+      "restTemplateBuilderConfigurer" : [ "org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration" ],
+      "servletEndpointDiscoverer" : [ "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration$WebEndpointServletConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "metricsHttpServerUriTagFilter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration$MeterFilterConfiguration", "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties", "management.metrics-org.springframework.boot.micrometer.metrics.autoconfigure.MetricsProperties" ],
+      "eagerTaskExecutorMetrics" : [ ],
+      "jacksonMixinModule" : [ "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JacksonMixinConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "jacksonMixinModuleEntries" ],
+      "healthEndpoint" : [ "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration", "healthContributorRegistry", "healthEndpointGroups", "management.endpoint.health-org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointProperties" ],
+      "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" : [ ],
+      "viewControllerHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "mvcConversionService", "mvcResourceUrlProvider" ],
+      "jackson2JsonMixinModuleEntries" : [ "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0" ],
+      "mvcPatternParser" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "dispatcherServlet" : [ "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletConfiguration", "spring.mvc-org.springframework.boot.webmvc.autoconfigure.WebMvcProperties" ],
+      "timefoldVersionProjectDescriptionCustomizer" : [ "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" ],
+      "restClientBuilder" : [ ],
+      "jvmInfoMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "cliDistributionController" : [ "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration", "initializrMetadataProvider" ],
+      "gitProperties" : [ "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" ],
+      "spring.jackson-org.springframework.boot.jackson.autoconfigure.JacksonProperties" : [ ],
+      "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration" : [ ],
+      "webEndpointServletHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration", "webEndpointDiscoverer", "servletEndpointDiscoverer", "controllerEndpointDiscoverer", "endpointMediaTypes", "management.endpoints.web.cors-org.springframework.boot.actuate.autoconfigure.endpoint.web.CorsEndpointProperties", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties", "environment" ],
+      "org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor" : [ ],
+      "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration" : [ ],
+      "org.springframework.boot.http.client.autoconfigure.metrics.HttpClientMetricsAutoConfiguration" : [ ],
+      "threadPoolTaskExecutorBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration", "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" ],
+      "org.springframework.boot.micrometer.metrics.autoconfigure.logging.logback.LogbackMetricsAutoConfiguration" : [ ],
+      "processorMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration" ],
+      "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration" : [ ],
+      "clientHttpConnectorBuilder" : [ "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "spring.http.clients.reactive-org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientsProperties" ],
+      "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration$TomcatWebSocketConfiguration" : [ ],
+      "usernamePasswordCredentialBuilderFactory" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration" ],
+      "serverConvertersCustomizer" : [ "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration" ],
+      "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.Jackson2EndpointAutoConfiguration" : [ ],
+      "errorPageCustomizer" : [ "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration", "dispatcherServletRegistration" ],
+      "tomcatWebServerFactoryCustomizer" : [ "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration", "environment", "server-org.springframework.boot.web.server.autoconfigure.ServerProperties", "server.tomcat-org.springframework.boot.tomcat.autoconfigure.TomcatServerProperties", "spring.web-org.springframework.boot.autoconfigure.web.WebProperties" ],
+      "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration" : [ ],
+      "dependencyRangesInfoContributor" : [ "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration", "initializrMetadataProvider" ],
+      "threadPoolTaskSchedulerBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration", "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" ],
+      "viewNameTranslator" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "server-org.springframework.boot.web.server.autoconfigure.ServerProperties" : [ ],
+      "spring.cache-org.springframework.boot.cache.autoconfigure.CacheProperties" : [ ],
+      "dispatcherServletRegistration" : [ "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletRegistrationConfiguration", "dispatcherServlet", "spring.mvc-org.springframework.boot.webmvc.autoconfigure.WebMvcProperties" ],
+      "clientCertificateCredentialBuilderFactory" : [ "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration", "springCloudAzureCredentialTaskExecutor" ],
+      "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties" : [ ],
+      "healthEndpointGroupsBeanPostProcessor" : [ ],
+      "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration" : [ ],
+      "com.wiredoctor.WireDoctorAutoConfiguration" : [ ],
+      "tomcatServletWebServerFactory" : [ "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration" ],
+      "mvcApiVersionStrategy" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration" ],
+      "dockerServiceResolver" : [ "startApplication" ],
+      "error" : [ "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration" ],
+      "spring.mvc-org.springframework.boot.webmvc.autoconfigure.WebMvcProperties" : [ ],
+      "jvmGcMetrics" : [ "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" ],
+      "org.springframework.boot.micrometer.observation.autoconfigure.ScheduledTasksObservationAutoConfiguration" : [ ],
+      "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonMixinConfiguration" : [ ],
+      "jacksonJsonHttpMessageConvertersCustomizer" : [ "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConverterConfiguration", "jacksonJsonMapper" ],
+      "healthEndpointWebMvcHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.actuate.endpoint.web.WebMvcHealthEndpointExtensionAutoConfiguration", "webEndpointDiscoverer", "healthEndpointGroups" ],
+      "welcomePageHandlerMapping" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration", "org.springframework.boot.web.server.servlet.context.AnnotationConfigServletWebServerApplicationContext@16727bf0", "mvcConversionService", "mvcResourceUrlProvider" ],
+      "servletExposeExcludePropertyEndpointFilter" : [ "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletEndpointManagementContextConfiguration", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties" ],
+      "org.springframework.boot.web.server.autoconfigure.servlet.ServletWebServerConfiguration" : [ ],
+      "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration" : [ ],
+      "clientHttpConnector" : [ ],
+      "org.springframework.boot.cache.autoconfigure.JCacheCacheConfiguration" : [ ],
+      "cacheManagerCustomizers" : [ "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration" ],
+      "webMvcObservationFilter" : [ "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration", "observationRegistry", "management.observations-org.springframework.boot.micrometer.observation.autoconfigure.ObservationProperties" ],
+      "envInfoContributor" : [ "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration", "environment" ],
+      "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration" : [ ],
+      "vaadinVersionProjectDescriptionCustomizer" : [ "io.spring.start.site.project.ProjectDescriptionCustomizerConfiguration" ]
+    },
+    "graphTruncated" : false
+  },
+  "lazySuggestions" : [ ],
+  "criticalPath" : {
+    "available" : true,
+    "totalMs" : 913,
+    "percentOfReadiness" : 16.3,
+    "path" : [ {
+      "beanName" : "initializr-io.spring.initializr.metadata.InitializrProperties",
+      "ownMs" : 285,
+      "cumulativeMs" : 285
+    }, {
+      "beanName" : "initializrMetadataProvider",
+      "ownMs" : 313,
+      "cumulativeMs" : 598
+    }, {
+      "beanName" : "bomRangesInfoContributor",
+      "ownMs" : 315,
+      "cumulativeMs" : 913
+    } ],
+    "disclaimer" : "Instantiation-weighted approximation; parallel init and background threads are not modeled."
+  },
+  "conditions" : {
+    "com.azure.spring.cloud.autoconfigure.implementation.aad.configuration.AadAuthenticationFilterAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnExpression (#{${spring.cloud.azure.active-directory.enabled:false}}) resulted in false"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.aad.configuration.AadAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnProperty (spring.cloud.azure.active-directory.enabled=true) did not find property 'spring.cloud.azure.active-directory.enabled'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.aadb2c.configuration.AadB2cAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnProperty (spring.cloud.azure.active-directory.b2c.enabled=true) did not find property 'spring.cloud.azure.active-directory.b2c.enabled'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.aadb2c.configuration.AadB2cResourceServerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.appconfiguration.AzureAppConfigurationAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.data.appconfiguration.ConfigurationClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.compatibility.AzureCompatibilityVerifierAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnProperty (spring.cloud.azure.compatibility-verifier.enabled) did not find property 'spring.cloud.azure.compatibility-verifier.enabled'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureGlobalPropertiesAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#azureCredentialBuilderFactory" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#azureTokenCredentialResolver" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#clientCertificateCredentialBuilderFactory" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#clientSecretCredentialBuilderFactory" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#credentialTaskExecutor" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#managedIdentityCredentialBuilderFactory" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#tokenCredential" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.context.AzureTokenCredentialAutoConfiguration#usernamePasswordCredentialBuilderFactory" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.cosmos.AzureCosmosAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.cosmos.CosmosClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.data.cosmos.CosmosDataAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.data.cosmos.config.AbstractCosmosConfiguration'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.data.cosmos.CosmosReactiveRepositoriesAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.data.cosmos.repository.ReactiveCosmosRepository'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.data.cosmos.CosmosRepositoriesAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.data.cosmos.repository.CosmosRepository'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.data.redis.AzureLettucePasswordlessAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'org.springframework.data.redis.connection.lettuce.LettuceConnection', 'io.lettuce.core.RedisCredentials'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.eventgrid.AzureEventGridAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.messaging.eventgrid.EventGridPublisherClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.eventhubs.AzureEventHubsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.messaging.eventhubs.EventHubClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.eventhubs.AzureEventHubsMessagingAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.messaging.eventhubs.core.EventHubsTemplate'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.eventhubs.kafka.AzureEventHubsKafkaAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.kafka.core.KafkaTemplate'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.jdbc.AzureJdbcAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.identity.extensions.implementation.template.AzureAuthenticationTemplate'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.jms.ServiceBusJmsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'jakarta.jms.ConnectionFactory', 'org.apache.qpid.jms.JmsConnectionFactory', 'org.springframework.jms.core.JmsTemplate'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.kafka.AzureEventHubsKafkaBinderOAuth2AutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.cloud.stream.binder.kafka.config.KafkaBinderConfiguration'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.kafka.AzureEventHubsKafkaOAuth2AutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.kafka.core.KafkaTemplate'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.keyvault.certificates.AzureKeyVaultCertificateAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.security.keyvault.certificates.CertificateClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.keyvault.jca.AzureKeyVaultJcaAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.security.keyvault.jca.KeyVaultJcaProvider'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.keyvault.secrets.AzureKeyVaultSecretAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAnyProperty ([spring.cloud.azure.keyvault.,spring.cloud.azure.keyvault.secret.]endpoint) did not find properties 'endpoint', 'endpoint'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.messaging.AzureMessagingListenerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.messaging.implementation.annotation.EnableAzureMessaging'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.redis.AzureRedisAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'org.springframework.data.redis.core.RedisOperations', 'com.azure.resourcemanager.AzureResourceManager'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.resourcemanager.AzureEventHubsResourceManagerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.cloud.resourcemanager.implementation.provisioning.EventHubsProvisioner'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.resourcemanager.AzureResourceManagerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.resourcemanager.AzureResourceManager'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.resourcemanager.AzureServiceBusResourceManagerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.cloud.resourcemanager.implementation.provisioning.ServiceBusProvisioner'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.resourcemanager.AzureStorageQueueResourceManagerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.cloud.resourcemanager.implementation.connectionstring.StorageQueueArmConnectionStringProvider'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.servicebus.AzureServiceBusAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.messaging.servicebus.ServiceBusClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.servicebus.AzureServiceBusMessagingAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.messaging.servicebus.core.ServiceBusTemplate'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.AzureStorageBlobAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.storage.blob.BlobServiceClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.AzureStorageBlobProtocolResolverConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobProperties; SearchStrategy: all) did not find any beans of type com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobProperties"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.AzureStorageBlobResourceAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.ConfigurationWithConnectionDetailsBean" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobConnectionDetails; SearchStrategy: all) did not find any beans of type com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.AzureStorageBlobConnectionDetails"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.blob.properties.ConfigurationWithoutConnectionDetailsBean" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAnyProperty ([spring.cloud.azure.storage.blob.,spring.cloud.azure.storage.][account-name,endpoint,connection-string]) did not find properties 'account-name', 'endpoint', 'connection-string', 'account-name', 'endpoint', 'connection-string'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.fileshare.AzureStorageFileShareAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.storage.file.share.ShareServiceClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.fileshare.AzureStorageFileShareResourceAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAnyProperty ([spring.cloud.azure.storage.fileshare.,spring.cloud.azure.storage.][account-name,endpoint,connection-string]) did not find properties 'account-name', 'endpoint', 'connection-string', 'account-name', 'endpoint', 'connection-string'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.queue.AzureStorageQueueAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.storage.queue.QueueServiceClientBuilder'"
+    },
+    "com.azure.spring.cloud.autoconfigure.implementation.storage.queue.AzureStorageQueueMessagingAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.azure.spring.messaging.storage.queue.core.factory.StorageQueueClientFactory'"
+    },
+    "com.wiredoctor.WireDoctorAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "com.wiredoctor.WireDoctorAutoConfiguration$GhostTrackingConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnProperty (wiredoctor.ghost-tracking.enabled=true) did not find property 'wiredoctor.ghost-tracking.enabled'"
+    },
+    "com.wiredoctor.actuator.WireDoctorActuatorAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "com.wiredoctor.actuator.WireDoctorActuatorAutoConfiguration#wireDoctorEndpoint" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "io.spring.initializr.actuate.autoconfigure.InitializrActuatorEndpointsAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "io.spring.initializr.actuate.autoconfigure.InitializrStatsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "initializr.stats.elastic.uri is not set"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration#dependencyMetadataProvider" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration#indentingWriterFactory" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration#initializrMetadataProvider" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration#projectDirectoryFactory" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration#templateRenderer" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrCacheConfiguration" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration#cliDistributionController" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration#commandLineMetadataController" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration#projectGenerationController" : {
+      "outcome" : "matched"
+    },
+    "io.spring.initializr.web.autoconfigure.InitializrAutoConfiguration$InitializrWebConfiguration#projectMetadataController" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.audit.AuditAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: org.springframework.boot.actuate.audit.AuditEventRepository; SearchStrategy: all) did not find any beans of type org.springframework.boot.actuate.audit.AuditEventRepository"
+    },
+    "org.springframework.boot.actuate.autoconfigure.audit.AuditEventsEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.beans.BeansEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.condition.ConditionsReportEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.context.ShutdownEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint the configured access for endpoint 'shutdown' is NONE"
+    },
+    "org.springframework.boot.actuate.autoconfigure.context.properties.ConfigurationPropertiesReportEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration#endpointCachingOperationInvokerAdvisor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration#endpointOperationParameterMapper" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration#propertiesEndpointAccessResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.Jackson2EndpointAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.Jackson2EndpointAutoConfiguration#jackson2EndpointJsonMapper" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration#endpointJsonMapper" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (spring.jmx.enabled=true) did not find property 'spring.jmx.enabled'"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration#controllerEndpointDiscoverer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration#endpointMediaTypes" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration#pathMappedEndpoints" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration#webEndpointDiscoverer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration$WebEndpointServletConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration$WebEndpointServletConfiguration#servletEndpointDiscoverer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.env.EnvironmentEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#buildInfoContributor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#envInfoContributor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#gitInfoContributor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#javaInfoContributor" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnEnabledInfoContributor management.info.java.enabled is not true"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#osInfoContributor" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnEnabledInfoContributor management.info.os.enabled is not true"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#processInfoContributor" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnEnabledInfoContributor management.info.process.enabled is not true"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#sslInfo" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnEnabledInfoContributor management.info.ssl.enabled is not true"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration#sslInfoContributor" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnEnabledInfoContributor management.info.ssl.enabled is not true"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoEndpointAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.info.InfoEndpointAutoConfiguration#infoEndpoint" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.actuate.autoconfigure.logging.LogFileWebEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.logging.LoggersEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.management.HeapDumpWebEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint the configured access for endpoint 'heapdump' is NONE"
+    },
+    "org.springframework.boot.actuate.autoconfigure.management.ThreadDumpEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.sbom.SbomEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.scheduling.ScheduledTasksEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.startup.StartupEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.web.exchanges.HttpExchangesEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.web.mappings.MappingsEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$DifferentManagementContextConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "Management Port actual port type (SAME) did not match required type (DIFFERENT)"
+    },
+    "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration$SameManagementContextConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.admin.SpringApplicationAdminJmxAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (spring.application.admin.enabled=true) did not find property 'spring.application.admin.enabled'"
+    },
+    "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$AspectJAutoProxyingConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice'"
+    },
+    "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$ClassProxyingConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration#applicationAvailability" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.autoconfigure.context.LifecycleAutoConfiguration#defaultLifecycleProcessor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.context.MessageSourceAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "ResourceBundle did not find bundle with basename messages"
+    },
+    "org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration#propertySourcesPlaceholderConfigurer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration#buildProperties" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration#gitProperties" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (spring.jmx.enabled=true) did not find property 'spring.jmx.enabled'"
+    },
+    "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration#sslBundleRegistry" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerWrapperConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: org.springframework.scheduling.annotation.AsyncConfigurer; SearchStrategy: all) did not find any beans of type org.springframework.scheduling.annotation.AsyncConfigurer"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration#simpleAsyncTaskExecutorBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration#simpleAsyncTaskExecutorBuilderVirtualThreads" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnMissingBean (types: org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder; SearchStrategy: all) found beans of type 'org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder' simpleAsyncTaskExecutorBuilder"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration#applicationTaskExecutor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration#applicationTaskExecutorVirtualThreads" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnThreading did not find VIRTUAL"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration#threadPoolTaskExecutorBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration#scheduledBeanLazyInitializationExcludeFilter" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (names: org.springframework.scheduling.config.internalScheduledAnnotationProcessor; SearchStrategy: all) did not find any beans named org.springframework.scheduling.config.internalScheduledAnnotationProcessor"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration#simpleAsyncTaskSchedulerBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration#simpleAsyncTaskSchedulerBuilderVirtualThreads" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnMissingBean (types: org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder; SearchStrategy: all) found beans of type 'org.springframework.boot.task.SimpleAsyncTaskSchedulerBuilder' simpleAsyncTaskSchedulerBuilder"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$TaskSchedulerConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (names: org.springframework.scheduling.config.internalScheduledAnnotationProcessor; SearchStrategy: all) did not find any beans named org.springframework.scheduling.config.internalScheduledAnnotationProcessor"
+    },
+    "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration#threadPoolTaskSchedulerBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.Cache2kCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.cache2k.Cache2kBuilder'"
+    },
+    "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration#cacheManagerCustomizers" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.CacheAutoConfiguration$CacheManagerEntityManagerFactoryDependsOnConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'org.springframework.boot.jpa.autoconfigure.EntityManagerFactoryDependsOnPostProcessor', 'org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean'"
+    },
+    "org.springframework.boot.cache.autoconfigure.CachesEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.cache.autoconfigure.CaffeineCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.github.benmanes.caffeine.cache.Caffeine'"
+    },
+    "org.springframework.boot.cache.autoconfigure.CouchbaseCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.couchbase.client.java.Cluster'"
+    },
+    "org.springframework.boot.cache.autoconfigure.GenericCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: org.springframework.cache.Cache; SearchStrategy: all) did not find any beans of type org.springframework.cache.Cache"
+    },
+    "org.springframework.boot.cache.autoconfigure.HazelcastCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.hazelcast.core.HazelcastInstance'"
+    },
+    "org.springframework.boot.cache.autoconfigure.HazelcastJCacheCustomizationConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.hazelcast.core.HazelcastInstance'"
+    },
+    "org.springframework.boot.cache.autoconfigure.InfinispanCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.infinispan.spring.embedded.provider.SpringEmbeddedCacheManager'"
+    },
+    "org.springframework.boot.cache.autoconfigure.JCacheCacheConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.JCacheCacheConfiguration#jCacheCacheManager" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.NoOpCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnMissingBean (types: org.springframework.cache.CacheManager; SearchStrategy: all) found beans of type 'org.springframework.cache.CacheManager' cacheManager"
+    },
+    "org.springframework.boot.cache.autoconfigure.RedisCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.data.redis.connection.RedisConnectionFactory'"
+    },
+    "org.springframework.boot.cache.autoconfigure.SimpleCacheConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnMissingBean (types: org.springframework.cache.CacheManager; SearchStrategy: all) found beans of type 'org.springframework.cache.CacheManager' cacheManager"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$Cache2kCacheMeterBinderProviderConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'org.cache2k.Cache2kBuilder', 'org.cache2k.extra.spring.SpringCache2kCache', 'org.cache2k.extra.micrometer.Cache2kCacheMetrics'"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$CaffeineCacheMeterBinderProviderConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.github.benmanes.caffeine.cache.Cache'"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$HazelcastCacheMeterBinderProviderConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'com.hazelcast.spring.cache.HazelcastCache', 'com.hazelcast.core.Hazelcast'"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$JCacheCacheMeterBinderProviderConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMeterBinderProvidersConfiguration$RedisCacheMeterBinderProviderConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.data.redis.cache.RedisCache'"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.cache.autoconfigure.metrics.CacheMetricsRegistrarConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration#livenessStateHealthIndicator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.AvailabilityProbesAutoConfiguration#readinessStateHealthIndicator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration#healthEndpoint" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration#healthEndpointGroupMembershipValidator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration#healthEndpointGroups" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration#healthHttpCodeStatusMapper" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointConfiguration#healthStatusAggregator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointReactiveWebExtensionConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "did not find reactive web application classes"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointWebExtensionConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.actuate.endpoint.HealthEndpointWebExtensionConfiguration#healthEndpointWebExtension" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.application.AvailabilityHealthContributorAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.application.AvailabilityHealthContributorAutoConfiguration#livenessStateHealthIndicator" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (management.health.livenessstate.enabled=true) did not find property 'management.health.livenessstate.enabled'"
+    },
+    "org.springframework.boot.health.autoconfigure.application.AvailabilityHealthContributorAutoConfiguration#readinessStateHealthIndicator" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (management.health.readinessstate.enabled=true) did not find property 'management.health.readinessstate.enabled'"
+    },
+    "org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthContributorAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.application.DiskSpaceHealthContributorAutoConfiguration#diskSpaceHealthIndicator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration#sslHealthIndicator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.application.SslHealthContributorAutoConfiguration#sslInfo" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.health.autoconfigure.contributor.HealthContributorAutoConfiguration#pingHealthContributor" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration#healthContributorRegistry" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration$ReactiveHealthContributorRegistryConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.health.autoconfigure.registry.HealthContributorRegistryAutoConfiguration$ReactiveHealthContributorRegistryConfiguration#reactiveHealthContributorRegistry" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.HttpClientAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.http.client.autoconfigure.HttpClientAutoConfiguration#httpClientSettings" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientAutoConfiguration#clientHttpRequestFactory" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.imperative.ImperativeHttpClientAutoConfiguration#clientHttpRequestFactoryBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.metrics.HttpClientMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration#clientHttpConnector" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration#clientHttpConnectorBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.client.autoconfigure.reactive.ReactiveHttpClientAutoConfiguration$ReactorNetty" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.springframework.boot.reactor.netty.autoconfigure.ReactorNettyConfigurations'"
+    },
+    "org.springframework.boot.http.client.autoconfigure.service.HttpServiceClientPropertiesAutoConfiguration" : {
+      "outcome" : "unconditional"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.GsonHttpMessageConvertersConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.GsonHttpMessageConvertersConfiguration$GsonHttpMessageConverterConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "AnyNestedCondition 0 matched 2 did not; NestedCondition on GsonHttpMessageConvertersConfiguration.PreferGsonOrJacksonAndJsonbUnavailableCondition.JacksonJsonbUnavailable NoneNestedConditions 1 matched 2 did not; NestedCondition on GsonHttpMessageConvertersConfiguration.JacksonAndJsonbUnavailableCondition.JsonbPreferred @ConditionalOnProperty (spring.http.converters.preferred-json-mapper=jsonb) did not find property 'spring.http.converters.preferred-json-mapper'; NestedCondition on GsonHttpMessageConvertersConfiguration.JacksonAndJsonbUnavailableCondition.Jackson2Available @ConditionalOnBean (types: org.springframework.boot.http.converter.autoconfigure.Jackson2HttpMessageConvertersConfiguration$Jackson2JsonMessageConvertersCustomizer; SearchStrategy: all) did not find any beans of type org.springframework.boot.http.converter.autoconfigure.Jackson2HttpMessageConvertersConfiguration$Jackson2JsonMessageConvertersCustomizer; NestedCondition on GsonHttpMessageConvertersConfiguration.JacksonAndJsonbUnavailableCondition.JacksonAvailable @ConditionalOnBean (types: org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConvertersCustomizer; SearchStrategy: all) found bean 'jacksonJsonHttpMessageConvertersCustomizer'; NestedCondition on GsonHttpMessageConvertersConfiguration.PreferGsonOrJacksonAndJsonbUnavailableCondition.GsonPreferred @ConditionalOnProperty (spring.http.converters.preferred-json-mapper=gson) did not find property 'spring.http.converters.preferred-json-mapper'"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration#stringHttpMessageConvertersCustomizer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.Jackson2HttpMessageConvertersConfiguration$MappingJackson2HttpMessageConverterConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "AnyNestedCondition 0 matched 2 did not; NestedCondition on Jackson2HttpMessageConvertersConfiguration.PreferJackson2OrJacksonUnavailableCondition.JacksonUnavailable @ConditionalOnMissingBean (types: org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConvertersCustomizer; SearchStrategy: all) found beans of type 'org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConvertersCustomizer' jacksonJsonHttpMessageConvertersCustomizer; NestedCondition on Jackson2HttpMessageConvertersConfiguration.PreferJackson2OrJacksonUnavailableCondition.Jackson2Preferred @ConditionalOnProperty (spring.http.converters.preferred-json-mapper=jackson2) did not find property 'spring.http.converters.preferred-json-mapper'"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.Jackson2HttpMessageConvertersConfiguration$MappingJackson2XmlHttpMessageConverterConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'com.fasterxml.jackson.dataformat.xml.XmlMapper'"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConverterConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonJsonHttpMessageConverterConfiguration#jacksonJsonHttpMessageConvertersCustomizer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.JacksonHttpMessageConvertersConfiguration$JacksonXmlHttpMessageConverterConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'tools.jackson.dataformat.xml.XmlMapper'"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.JsonbHttpMessageConvertersConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'jakarta.json.bind.Jsonb'"
+    },
+    "org.springframework.boot.http.converter.autoconfigure.KotlinSerializationHttpMessageConvertersConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required classes 'kotlinx.serialization.Serializable', 'kotlinx.serialization.json.Json'"
+    },
+    "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration#jacksonJsonMapper" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration#jsonMapperBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$CborConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'tools.jackson.dataformat.cbor.CBORMapper'"
+    },
+    "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$JsonProblemDetailsConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration$XmlConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'tools.jackson.dataformat.xml.XmlMapper'"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperBuilderConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperBuilderConfiguration#jackson2ObjectMapperBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$JacksonObjectMapperConfiguration#jackson2ObjectMapper" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$ParameterNamesModuleConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.jackson2.autoconfigure.Jackson2AutoConfiguration$ParameterNamesModuleConfiguration#jackson2ParameterNamesModule" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.CompositeMeterRegistryAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.CompositeMeterRegistryConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "NoneNestedConditions 1 matched 1 did not; NestedCondition on CompositeMeterRegistryConfiguration.MultipleNonPrimaryMeterRegistriesCondition.SingleInjectableMeterRegistry @ConditionalOnSingleCandidate (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found a single bean 'simpleMeterRegistry'; NestedCondition on CompositeMeterRegistryConfiguration.MultipleNonPrimaryMeterRegistriesCondition.NoMeterRegistryCondition @ConditionalOnMissingBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found beans of type 'io.micrometer.core.instrument.MeterRegistry' simpleMeterRegistry"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAspectsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsAutoConfiguration#micrometerClock" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.MetricsEndpointAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.NoOpMeterRegistryConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnMissingBean (types: io.micrometer.core.instrument.MeterRegistry; SearchStrategy: all) found beans of type 'io.micrometer.core.instrument.MeterRegistry' simpleMeterRegistry"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.appoptics.AppOpticsMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.appoptics.AppOpticsMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.atlas.AtlasMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.atlas.AtlasMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.datadog.DatadogMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.datadog.DatadogMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.dynatrace.DynatraceMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.dynatrace.DynatraceMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.elastic.ElasticMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.elastic.ElasticMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.ganglia.GangliaMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.ganglia.GangliaMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.graphite.GraphiteMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.graphite.GraphiteMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.humio.HumioMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.humio.HumioMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.influx.InfluxMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.influx.InfluxMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.jmx.JmxMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.jmx.JmxMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.kairos.KairosMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.kairos.KairosMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.newrelic.NewRelicMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.newrelic.NewRelicMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.otlp.OtlpMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.registry.otlp.OtlpMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.prometheus.PrometheusMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.prometheusmetrics.PrometheusMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleMetricsExportAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.simple.SimpleMetricsExportAutoConfiguration#simpleConfig" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.stackdriver.StackdriverMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.stackdriver.StackdriverMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.export.statsd.StatsdMetricsExportAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.statsd.StatsdMeterRegistry'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#classLoaderMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#jvmCompilationMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#jvmGcMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#jvmHeapPressureMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#jvmInfoMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#jvmMemoryMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration#jvmThreadMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.jvm.JvmMetricsAutoConfiguration$VirtualThreadMetricsConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'io.micrometer.java21.instrument.binder.jdk.VirtualThreadMetrics'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.logging.log4j2.Log4J2MetricsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.apache.logging.log4j.core.LoggerContext'"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.logging.logback.LogbackMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.logging.logback.LogbackMetricsAutoConfiguration#logbackMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.ssl.SslMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.startup.StartupTimeMetricsListenerAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.startup.StartupTimeMetricsListenerAutoConfiguration#startupTimeMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration#diskSpaceMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration#fileDescriptorMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration#processorMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.system.SystemMetricsAutoConfiguration#uptimeMetrics" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.metrics.autoconfigure.task.TaskExecutorMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration#observationRegistry" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration#spelValueExpressionResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.micrometer.observation.autoconfigure.ObservationAutoConfiguration$ObservedAspectConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice'"
+    },
+    "org.springframework.boot.micrometer.observation.autoconfigure.ScheduledTasksObservationAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration#mustacheCompiler" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.mustache.autoconfigure.MustacheAutoConfiguration#mustacheTemplateLoader" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.mustache.autoconfigure.MustacheReactiveWebConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "did not find reactive web application classes"
+    },
+    "org.springframework.boot.mustache.autoconfigure.MustacheServletWebConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.mustache.autoconfigure.MustacheServletWebConfiguration#mustacheViewResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration#restClientBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration#restClientBuilderConfigurer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration#restClientSsl" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration$HttpMessageConvertersConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration$HttpMessageConvertersConfiguration#httpMessageConvertersRestClientCustomizer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestClientObservationAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestTemplateAutoConfiguration#restTemplateBuilder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.RestTemplateObservationAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.restclient.autoconfigure.service.HttpServiceClientAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: org.springframework.web.service.registry.HttpServiceProxyRegistry; SearchStrategy: all) did not find any beans of type org.springframework.web.service.registry.HttpServiceProxyRegistry"
+    },
+    "org.springframework.boot.servlet.autoconfigure.HttpEncodingAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.HttpEncodingAutoConfiguration#characterEncodingFilter" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration#multipartConfigElement" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration#multipartResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletEndpointManagementContextConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletManagementContextAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.servlet.autoconfigure.actuate.web.ServletManagementContextAutoConfiguration$ApplicationContextFilterConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (management.server.add-application-context-header=true) did not find property 'management.server.add-application-context-header'"
+    },
+    "org.springframework.boot.servlet.autoconfigure.actuate.web.exchanges.ServletHttpExchangesAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository; SearchStrategy: all) did not find any beans of type org.springframework.boot.actuate.web.exchanges.HttpExchangeRepository"
+    },
+    "org.springframework.boot.servlet.autoconfigure.actuate.web.mappings.ServletMappingsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration#tomcatVirtualThreadsProtocolHandlerCustomizer" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnThreading did not find VIRTUAL"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.TomcatWebServerConfiguration$TomcatWebSocketConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.actuate.web.server.TomcatReactiveManagementContextAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnWebApplication did not find reactive web application classes"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.actuate.web.server.TomcatServletManagementContextAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "Management Port actual port type (SAME) did not match required type (DIFFERENT)"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.metrics.TomcatMetricsAutoConfiguration#tomcatMetricsBinder" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.reactive.TomcatReactiveWebServerAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnWebApplication did not find reactive web application classes"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration#tomcatForwardedHeaderFilterCustomizer" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnProperty (server.forward-headers-strategy=framework) found different value in property 'server.forward-headers-strategy'"
+    },
+    "org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration#tomcatServletWebServerFactory" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.web.server.autoconfigure.servlet.ServletWebServerConfiguration#forwardedHeaderFilter" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnProperty (server.forward-headers-strategy=framework) found different value in property 'server.forward-headers-strategy'"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletConfiguration#multipartResolver" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBean (types: org.springframework.web.multipart.MultipartResolver; SearchStrategy: all) did not find any beans of type org.springframework.web.multipart.MultipartResolver"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletRegistrationConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration$DispatcherServletRegistrationConfiguration#dispatcherServletRegistration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration#formContentFilter" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration#hiddenHttpMethodFilter" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (spring.mvc.hiddenmethod.filter.enabled=true) did not find property 'spring.mvc.hiddenmethod.filter.enabled'"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration#flashMapManager" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration#localeResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$EnableWebMvcConfiguration#viewNameTranslator" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$ProblemDetailsErrorHandlingConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnBooleanProperty (spring.mvc.problemdetails.enabled=true) did not find property 'spring.mvc.problemdetails.enabled'"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$ResourceChainCustomizerConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnEnabledResourceChain did not find class org.webjars.WebJarVersionLocator"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter#beanNameViewResolver" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnMissingBean (types: org.springframework.web.servlet.view.BeanNameViewResolver; SearchStrategy: all) found beans of type 'org.springframework.web.servlet.view.BeanNameViewResolver' beanNameViewResolver"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter#defaultViewResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter#requestContextFilter" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration$WebMvcAutoConfigurationAdapter#viewResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration#webMvcObservationFilter" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration$MeterFilterConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.endpoint.web.WebMvcHealthEndpointExtensionAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration#controllerEndpointHandlerMapping" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration#endpointJackson2ObjectMapperWebMvcConfigurer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration#endpointJsonMapperWebMvcConfigurer" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration#webEndpointServletHandlerMapping" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration$HealthConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.WebMvcEndpointManagementContextConfiguration$HealthConfiguration#managementHealthEndpointWebMvcHandlerMapping" : {
+      "outcome" : "notMatched",
+      "reason" : "Management Port actual port type (SAME) did not match required type (DIFFERENT)"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.actuate.web.mappings.WebMvcMappingsAutoConfiguration" : {
+      "outcome" : "notMatched",
+      "reason" : "@ConditionalOnAvailableEndpoint not exposed"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration#basicErrorController" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration#errorAttributes" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$DefaultErrorViewResolverConfiguration#conventionErrorViewResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration#beanNameViewResolver" : {
+      "outcome" : "matched"
+    },
+    "org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration$WhitelabelErrorViewConfiguration#defaultErrorView" : {
+      "outcome" : "matched"
+    }
+  },
+  "gates" : {
+    "baselineConfigured" : true,
+    "mode" : "diff",
+    "armed" : [ "startup-time", "slow-bean" ],
+    "config" : {
+      "startupTimeAbsoluteThresholdMs" : 500,
+      "startupTimeRelativePercent" : 20.0,
+      "slowBeanThresholdMs" : 100
+    },
+    "baseline" : "wiredoctor-baseline.json",
+    "failed" : [ "slow-bean" ],
+    "startupTime" : {
+      "baselineMs" : 5336,
+      "currentMs" : 5608,
+      "deltaMs" : 272,
+      "percentChange" : 5.097451274362818
+    },
+    "newSlowBeans" : [ {
+      "beanName" : "requestMappingHandlerAdapter",
+      "instantiationMs" : 101
+    } ]
+  }
+}

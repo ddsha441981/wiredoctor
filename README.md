@@ -58,6 +58,16 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ---
 
+## 📸 Screenshots
+
+Captured from a real run against **start.spring.io** (Spring Initializr, Boot 4.0.x, 390 beans) — performance gates armed, and the `slow-bean` gate genuinely tripped (note the red `GATE FAIL` chip):
+
+![WireDoctor report — Overview tab](docs/images/overview.png)
+
+→ **[Full report tour](docs/report-tour.md)** — every tab explained with screenshots (Graph with red cycle highlighting, Ghosts, Smells, Timing + gate verdicts, Conditions). Or open the pre-generated reports in [`sample/`](sample/) directly in your browser.
+
+---
+
 ## ✅ Supported Versions
 
 The full test suite runs against this matrix in CI ([compat.yml](.github/workflows/compat.yml)); the table below reflects what is actually green, not what we hope works:
