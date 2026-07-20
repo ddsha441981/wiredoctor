@@ -23,6 +23,8 @@ public final class WireDoctorMessages {
     
     public static final String INTERCEPTING_STARTUP = "[WireDoctor] Intercepting startup to register BufferingApplicationStartup...";
     public static final String STARTUP_NOT_BUFFERING_WARNING = "[WireDoctor] WARNING: ApplicationStartup is not BufferingApplicationStartup! It is: {}";
+    public static final String STARTUP_ALREADY_BUFFERING = "[WireDoctor] Application already uses a BufferingApplicationStartup — keeping it, startup timings available.";
+    public static final String STARTUP_FOREIGN_DETECTED = "[WireDoctor] Application already set its own ApplicationStartup ({}) — WireDoctor will NOT overwrite it. Startup timing analysis will be unavailable; all other analysis runs normally.";
     
     public static final String SAVED_JSON_REPORT = "[WireDoctor] Saved detailed report to: {}";
     public static final String SAVED_HTML_REPORT = "[WireDoctor] Saved interactive HTML visualizer to: {}";

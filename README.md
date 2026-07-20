@@ -83,6 +83,7 @@ Notes:
 - **Floor is Boot 2.4**: startup timings need `BufferingApplicationStartup`, introduced in Boot 2.4. Lines older than 2.7 are not CI-verified — they may work, but you're on your own.
 - Boot lines between the tested ones (3.0–3.2, 3.4) are expected to work since WireDoctor only uses stable `spring-context` / `spring-boot` APIs, but only the listed lines carry a CI guarantee.
 - WireDoctor itself is compiled for **Java 17** bytecode, so Java 8/11 apps cannot load it even on Boot 2.7.
+- **WebFlux (reactive, Netty)**: verified since v0.8.0 — an integration test boots a reactive (non-servlet) context in CI and asserts reports, startup timings, and ghost analysis all work; `RouterFunction`, `WebHandler`, `WebSocketHandler` and `WebExceptionHandler` beans are recognized as entry points (never flagged as ghosts).
 
 ---
 
@@ -151,6 +152,9 @@ wiredoctor.fail-on=startup-time,slow-bean
 wiredoctor.startup-time-absolute-threshold=500   # milliseconds (default: 500)
 wiredoctor.startup-time-relative-threshold=0.10  # 10% (default: 0.10)
 # slow-bean gate uses your slow-bean-threshold-ms (already configured above)
+# Jitter margin (v0.8.0): a NEW slow bean must exceed threshold+margin to trip
+# the gate — beans in the margin band are reported but never fail CI. 0 = off.
+wiredoctor.slow-bean-margin-ms=20                # milliseconds (default: 20)
 ```
 
 ### 📋 Example: Performance Gates in CI
@@ -228,8 +232,8 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
 4. 🙈 **Early-Reference Cycle Blindspot (`allow-circular-references=true`):**
    Cycle detection uses `getDependenciesForBean()` which may not capture cycles resolved via Spring's early-reference mechanism (the 3-level cache earlySingletonObjects pathway). Only explicit `@DependsOn` and fully-registered constructor/setter dependencies are detected. Some silently resolved cycles might go unreported.
 
-5. 🔭 **Tested Bean Scopes:**
-   The analyzer focuses heavily on `Singleton` beans. `Prototype` beans or complex `FactoryBean` structures may not fully map out in the dependency graph until they are lazily instantiated during runtime.
+5. 🔭 **Bean Scopes (pinned by tests since v0.8.0):**
+   `Prototype` and `@Lazy` bean *definitions* appear as graph nodes, but they are **never instantiated** by the analysis (zero-intrusion promise — a regression test proves it). Their proxy status can't be known without instantiating them, so they are skipped by the proxy scan and honestly counted in `proxies.notInstantiatedSkipped`. `FactoryBean`s appear under the factory's bean name; a consumer of the *product* gets its dependency edge recorded against the factory's name (Spring's own bookkeeping). Runtime-only facts about these scopes — how often a prototype is created, whether a lazy bean is ever touched — are outside a startup snapshot's reach.
 
 ---
 ## 🔮 Roadmap

@@ -402,4 +402,55 @@ class WireDoctorBaselineDiffTest {
         // We'll test this in integration test instead.
         assertThat(diff.newSlowBeans()).isNotNull();
     }
+
+    // ── v0.8.0: slow-bean jitter margin ──────────────────────────────────────
+
+    private static List<Map<String, Object>> slowBeans(Object... nameMsPairs) {
+        List<Map<String, Object>> beans = new java.util.ArrayList<>();
+        for (int i = 0; i < nameMsPairs.length; i += 2) {
+            beans.add(Map.of("beanName", nameMsPairs[i], "durationMs", nameMsPairs[i + 1]));
+        }
+        return beans;
+    }
+
+    @Test
+    void beanInsideMarginBandDoesNotGate() {
+        // The start.spring.io false positive: 101ms vs 100ms threshold is JVM
+        // jitter — with a 20ms margin it must NOT count as a new slow bean.
+        var result = WireDoctorBaselineDiff.computeNewSlowBeans(
+                Set.of(), 100L, slowBeans("requestMappingHandlerAdapter", 101L), 100L, 20L);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void beanPastMarginBandGates() {
+        var result = WireDoctorBaselineDiff.computeNewSlowBeans(
+                Set.of(), 100L, slowBeans("orderService", 130L), 100L, 20L);
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).beanName()).isEqualTo("orderService");
+        assertThat(result.get(0).instantiationMs()).isEqualTo(130L);
+    }
+
+    @Test
+    void zeroMarginKeepsExactPreV080Behavior() {
+        // margin=0 => any bean over the threshold gates, 101 vs 100 included.
+        var result = WireDoctorBaselineDiff.computeNewSlowBeans(
+                Set.of(), 100L, slowBeans("borderline", 101L), 100L, 0L);
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void beanAlreadySlowInBaselineNeverGatesRegardlessOfMargin() {
+        var result = WireDoctorBaselineDiff.computeNewSlowBeans(
+                Set.of("alreadySlow"), 100L, slowBeans("alreadySlow", 500L), 100L, 20L);
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void exactMarginBoundaryDoesNotGate() {
+        // threshold + margin exactly (120 with 100+20) sits ON the band edge — not past it.
+        var result = WireDoctorBaselineDiff.computeNewSlowBeans(
+                Set.of(), 100L, slowBeans("edgeBean", 120L), 100L, 20L);
+        assertThat(result).isEmpty();
+    }
 }

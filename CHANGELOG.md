@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-07-20
+
+Verification Debt: the original design plan's unfinished verification checks, closed before the v1.0.0 API freeze turns their answers into contracts — plus a jitter fix found in real-world gate validation.
+
+### Added
+- 🌊 **WebFlux/reactive validation** — an integration test now boots a REACTIVE (Netty, non-servlet) context in CI and asserts reports are written, startup timings populated and ghost analysis runs. Reactive entry points added to ghost detection: `WebHandler`, `WebSocketHandler`, `WebExceptionHandler` (joining `RouterFunction`) — a `RouterFunction` bean is pinned by test to never be flagged as a ghost. README supported-versions note added.
+- 🔬 **Bean-scope behavior pinned by tests** — prototype definitions appear as graph nodes but are never instantiated (zero-intrusion promise, regression-tested); untouched `@Lazy` beans survive the full analysis untouched; `FactoryBean` product edges resolve to the factory's bean name; skipped not-instantiated beans are honestly counted. README Limitation #5 rewritten from vague to these test-backed facts.
+- ⏱️ **`wiredoctor.slow-bean-margin-ms`** (default `20`) — jitter margin for the `slow-bean` gate: a NEW slow bean must exceed `threshold + margin` to trip; beans inside the margin band stay in the report but never fail CI. Born from real-world validation: start.spring.io tripped the gate at 101ms vs a 100ms threshold — measurement noise, not a regression. `0` restores exact pre-0.8.0 behavior. Margin surfaces in `gates.config` and the HTML gate card.
+
+### Fixed
+- 🤝 **Never overwrite a user-set `ApplicationStartup`** — the startup listener previously replaced any `ApplicationStartup` the application (or another tool) had installed. It now keeps a pre-existing non-default instance: buffering ones keep timings working (INFO), foreign ones get a WARN and the timing section degrades gracefully while every other analysis runs normally. Contract pinned by coexistence tests.
+
 ## [0.7.1] - 2026-07-20
 
 Gate verdicts in the HTML report: the v0.7.0 performance gates and baseline diff results are now visible in the self-contained HTML console — no new tabs, no CI contract changes.
