@@ -48,7 +48,7 @@ Beyond bean cycles and condition changes, WireDoctor can now gate your CI pipeli
 **Solution:** The `startup-time` gate compares your current `totalStartupMs` against the baseline and trips when **both thresholds** are exceeded:
 
 - **Absolute threshold** (`startup-time-absolute-threshold`, default 500ms): The raw millisecond regression.
-- **Relative threshold** (`startup-time-relative-threshold`, default 0.10 = 10%): The percentage regression.
+- **Relative threshold** (`startup-time-relative-threshold`, default 0.20 = 20%): The percentage regression.
 
 **Example:**
 ```
@@ -101,7 +101,7 @@ This default was chosen from real-world validation: running against start.spring
 |----------|---------|-------------|
 | `wiredoctor.fail-on` | `""` | Comma-separated gate names. Add `startup-time` and/or `slow-bean`. Combinable with `new-cycle`, `condition-changed`. |
 | `wiredoctor.startup-time-absolute-threshold` | `500` | Milliseconds. Startup must regress by **more than this** to trip (AND condition). |
-| `wiredoctor.startup-time-relative-threshold` | `0.10` | Fraction (0.10 = 10%). Startup must regress by **more than this percentage** to trip (AND condition). |
+| `wiredoctor.startup-time-relative-threshold` | `0.20` | Fraction (0.20 = 20%). Startup must regress by **more than this percentage** to trip (AND condition). |
 | `wiredoctor.slow-bean-threshold-ms` | `100` | Milliseconds. Beans taking longer than this are logged and included in baseline. The `slow-bean` gate trips on **new entries** crossing this threshold. |
 | `wiredoctor.slow-bean-margin-ms` | `20` | Milliseconds. Jitter margin for the `slow-bean` gate: a new bean must exceed `threshold + margin` to trip. `0` = exact pre-v0.8.0 behavior. |
 

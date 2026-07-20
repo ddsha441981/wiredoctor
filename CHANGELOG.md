@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-07-20
+
+Front Door: a docs-only release. The README is rewritten as a problem-first funnel for launch, and everything that didn't belong in the project's front door is gone. No code changes.
+
+### Changed
+- 📖 **README rewritten** (271 → ~170 lines) — new "Why WireDoctor?" pain-point section; features regrouped by job (**See / Diagnose / Guard**) at 1–2 lines each with guide links, replacing the version-wise "New in vX" changelog-style sections (release history now points here); Quick start trimmed to dependency + baseline + gates; Documentation index table added; License section added (MIT OR Apache-2.0, matching the poms).
+- ⚙️ **Configuration reference extracted** to `docs/configuration.md` — every property grouped by feature (core / gates / ghost tracking / production safety) with defaults and examples.
+- 🧭 **CONTRIBUTING gains a README-discipline rule** — new features get 1–2 lines + a guide link; no "New in vX" sections may return.
+
+### Removed
+- 👤 **Author section** — profile links (X, Medium, Crates.io, Docker Hub) and an unrelated research-paper citation removed; a one-line maintainer credit (GitHub / LinkedIn / email) lives under Contributing.
+
+### Fixed
+- 📐 `docs/performance-gates.md` stated the `startup-time-relative-threshold` default as `0.10`; the code default is `0.20` — docs corrected.
+- 🔗 `docs/report-tour.md` link updated to the renamed Quick-start anchor.
+
 ## [0.8.0] - 2026-07-20
 
 Verification Debt: the original design plan's unfinished verification checks, closed before the v1.0.0 API freeze turns their answers into contracts — plus a jitter fix found in real-world gate validation.

@@ -85,4 +85,4 @@ Why snapshot something Boot already keeps? Because a snapshot can be **diffed**.
 
 ## Try it yourself
 
-Open the pre-generated reports in [`sample/`](../sample/) in any browser, or add the dependency to your own app — the report appears in your working directory on next startup. See [How to use](../README.md#-how-to-use).
+Open the pre-generated reports in [`sample/`](../sample/) in any browser, or add the dependency to your own app — the report appears in your working directory on next startup. See [Quick start](../README.md#-quick-start).

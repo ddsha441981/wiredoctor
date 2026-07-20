@@ -1,70 +1,92 @@
 # 🩺 WireDoctor
+
 > *"Your bean graph has a story. WireDoctor reads it."*
 
-WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. It works as an auto-configuration starter that hooks directly into the real, resolved Spring `ApplicationContext` without requiring any build-tool changes. **Zero-intrusion, zero-dashboard-server, pure insights.** See the [supported versions](#-supported-versions) table below — every listed combination is verified by CI on each build.
-
----
-
-## ✨ Features
-
-### New in v0.7.0
-- ⏱️ **Startup Time & Performance Gates**: Beyond bean cycles, you can now gate PRs on **startup time regressions** and **new slow beans** via `wiredoctor.fail-on=startup-time,slow-bean`. The baseline snapshot now includes `totalStartupMs` and the slow-bean threshold, and WireDoctor diffs them on each run. Configure absolute + relative thresholds — both must be exceeded to trip the gate (noise-tolerant by design). Example: `wiredoctor.startup-time-absolute-threshold=500` (ms) + `wiredoctor.startup-time-relative-threshold=0.10` (10%) means the gate trips only when startup regresses by **more than 500ms AND more than 10%**. The `slow-bean` gate trips when a bean crosses your `slow-bean-threshold-ms` in the current run but was **not** slow in the baseline — catches new performance bottlenecks before they ship. Both gates write `wiredoctor-gate.status` with `PASS` or `FAIL` verdicts for CI inspection. → **[Performance Gates guide](docs/performance-gates.md)**
-  ```
-  WireDoctorRegressionException: WireDoctor regression gate 'startup-time' tripped: 
-    startup time increased by 734ms (18.2%) vs baseline (4025ms -> 4759ms)
-  
-  WireDoctorRegressionException: WireDoctor regression gate 'slow-bean' tripped: 
-    2 bean(s) crossed the slow threshold (100ms) vs baseline: [orderService (142ms), paymentProcessor (201ms)]
-  ```
-
-### New in v0.6.0
-- 👻 **Ghost Bean Detector**: Which beans cost you startup time and memory but never do anything? Two phases, two trust postures. **Phase 1 (passive, always on):** the `ghostCandidates` report section crosses three signals — eagerly instantiated ∧ zero incoming dependencies ∧ no detectable entry point (`@Controller`, `@Scheduled`/`@EventListener` holders, `CommandLineRunner`, messaging listeners, ...) — a strictly stronger signal than the raw orphan list, still labeled `confidence: LOW` with an honest disclaimer. **Phase 2 (opt-in, dev/staging):** `wiredoctor.ghost-tracking.enabled=true` wraps eligible user beans in a thin first-touch counting proxy (~180 ns/call after first touch — one `AtomicBoolean`, no timing, no args) and writes `wiredoctor-ghost-report.json` at shutdown: touched / untouched / untrackable. By default the tracking `BeanPostProcessor` is **never registered** — a regression test proves the passivity promise on every build. Live view via `/actuator/wiredoctor/ghosts`. Never claims "unused" — only "never invoked during this run". → **[Ghost Detector guide](docs/ghost-detector.md)**
-  ```
-  [WireDoctor] Ghost tracking summary: 38 touched, 3 untouched, 6 untrackable
-    ('untouched' means not invoked during THIS run — not 'unused')
-  ```
-
-### New in v0.5.0
-- 🩺 **Upgrade Guard (Autoconfig Condition Diff)**: Bumped Spring Boot and a feature quietly broke because an autoconfiguration stopped applying? WireDoctor now snapshots Spring Boot's **condition evaluation report** into your baseline and diffs it across builds — so a `matched → notMatched` flip is caught automatically. Your bean diff already shows *what* vanished; the condition diff shows **why**, with the exact `@ConditionalOnBean`/`@ConditionalOnClass` message. Gate it in CI with `wiredoctor.fail-on=condition-changed` (combinable with `new-cycle`). Validated on Spring PetClinic (Boot 4.1) — excluding one autoconfig surfaced the direct flip *and* the downstream cascade it triggered. → **[Upgrade Guard guide](docs/upgrade-guard.md)**
-  ```
-  [WireDoctor] Baseline Diff (vs wiredoctor-baseline-default.json):
-    - Conditions: 2 changed | 0 added | 7 removed
-    - CONDITION CHANGED: JacksonAutoConfiguration (matched -> excluded)
-    - CONDITION CHANGED: JacksonJsonHttpMessageConverterConfiguration$... (matched -> notMatched)
-  ```
-  Backward compatible: a pre-v0.5.0 baseline (no condition data) skips the condition diff gracefully — the gate never trips on it.
-
-### New in v0.3.0
-- 💡 **@Lazy Suggestions to Break Cycles**: When a cycle is detected, WireDoctor doesn't just report it — it tells you how to fix it. The `lazySuggestions` report section (and a ranked console summary) lists which beans, if marked `@Lazy`, would break the cycle — ranked by cycles broken first, then smallest blast radius (fewest downstream dependents):
-  ```
-  [WireDoctor] @Lazy Suggestions to Break Cycles:
-    1. Make 'alphaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
-    2. Make 'betaBean' @Lazy (breaks 1 cycle(s), impacts 1 bean(s))
-  ```
-- 📐 **Architecture Smell Metrics**: Classic architecture-health metrics computed on the *live, resolved* bean graph — what Spring actually wired (proxies, conditionals, profiles), not what the source declares. The `smells` report section includes top-10 **fan-in hotspots** (coupling / God Object smell), top-10 **fan-out hotspots** (Shotgun Surgery smell), and beans over Martin's **instability** threshold (`I = Ce/(Ca+Ce) ≥ 0.8`). Graph nodes in the HTML report are now sized by fan-in — the bigger the dot, the more beans depend on it.
-- 🏋️ **Large-application hardening**: Verified against a 5,000-bean synthetic context. Above `wiredoctor.max-graph-nodes` (default 2000), the serialized graph is capped to the top-N beans by fan-in (cycle members always kept), with honest `graphTruncated` metadata and an HTML warning banner. Analysis — cycles, smells, critical path, baseline diff — always runs on the full graph; only the serialized view is capped.
-
-### New in v0.2.0
-- 🛡️ **Architectural Regression Guard**: Commit `wiredoctor-baseline.json` like a lockfile for your architecture, and **fail your PR when someone adds a bean cycle** via `wiredoctor.fail-on=new-cycle`. Fully opt-in, degrades gracefully when no baseline is configured. → **[CI gating guide](docs/ci-gating.md)**
-- ⛓️ **Startup Critical Path**: The longest instantiation-weighted dependency chain gating your startup — the `criticalPath` report section and a console summary show which chain of beans your readiness time actually sits on (instantiation-weighted approximation; parallel init is not modeled).
-- 📦 **Truly self-contained HTML**: The vis-network graph library is bundled and inlined into `wiredoctor-report.html` at generation time — the report renders fully offline.
-
-### Since v0.1.0
-- 🕸️ **Interactive HTML Console**: Automatically generates `wiredoctor-report.html` — since v0.6.1 a tabbed diagnostic console (Overview / Graph / Ghosts / Smells / Timing / Conditions) with a health-status header, searchable & filterable dependency graph with click-to-inspect node details, and a filterable autoconfiguration-condition table. Single file, fully self-contained — the vis-network graph library is bundled and inlined at generation time, so it renders completely offline.
-- ⏱️ **Startup Timings**: Hooks into `ApplicationStartup` via `BufferingApplicationStartup` early in the lifecycle to measure and report exact bean instantiation times without reflection-heavy heuristics.
-- 🔗 **Dependency Graph Analysis**: Directly hooks `ConfigurableListableBeanFactory.getDependenciesForBean` to view the completely resolved dependency graph.
-- 🔄 **Circular Dependency Detection**: Runs a Tarjan's SCC cycle detector over the bean graph to find structural design smells, even if Spring resolves them via proxies/setters.
-- 🎭 **Proxy Overhead Counter**: Scans for CGLIB and JDK proxies (e.g. `@Async`, `@Transactional`) in your bean graph to expose hidden indirection layers.
-
----
-
-## 📸 Screenshots
-
-Captured from a real run against **start.spring.io** (Spring Initializr, Boot 4.0.x, 390 beans) — performance gates armed, and the `slow-bean` gate genuinely tripped (note the red `GATE FAIL` chip):
+WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. Add one dependency — it hooks into the real, resolved `ApplicationContext` at startup and turns it into an interactive report, honest advice, and CI gates. **Zero-intrusion, zero-dashboard-server, pure insights.**
 
 ![WireDoctor report — Overview tab](docs/images/overview.png)
 
-→ **[Full report tour](docs/report-tour.md)** — every tab explained with screenshots (Graph with red cycle highlighting, Ghosts, Smells, Timing + gate verdicts, Conditions). Or open the pre-generated reports in [`sample/`](sample/) directly in your browser.
+*Captured from a real run against start.spring.io (Boot 4.0.x, 390 beans) with performance gates armed — the red `GATE FAIL` chip is a genuinely tripped gate, not a mockup. [Full report tour →](docs/report-tour.md)*
+
+---
+
+## Why WireDoctor?
+
+- **"Why does this service take 40 seconds to boot now?"** — Actuator gives you raw `StartupStep` JSON; nobody ships the analysis layer on top. WireDoctor ranks the slow beans, computes the critical path, and tells you which `@Lazy` would pay off most.
+- **"We bumped Spring Boot and a feature quietly broke."** — An autoconfiguration stopped matching and nobody noticed until production. WireDoctor diffs Boot's condition report across builds and catches the `matched → notMatched` flip in CI, with the exact condition message.
+- **"Someone added a bean cycle six months ago and now it's load-bearing."** — Commit a baseline like a lockfile for your architecture; the PR that introduces a new cycle fails its build the same day, not at refactoring time.
+- **"Which of these beans actually do anything?"** — Ghost detection crosses three signals to find beans that cost startup time and memory but show no sign of use — honestly labeled, never overclaimed.
+
+---
+
+## ✨ What it does
+
+*(Release history lives in the [CHANGELOG](CHANGELOG.md).)*
+
+### 🔍 See — the report
+
+- **Interactive HTML console** — a single self-contained `wiredoctor-report.html` (tabs: Overview / Graph / Ghosts / Smells / Timing / Conditions) with a health-verdict header and a searchable, click-to-inspect dependency graph. Renders fully offline. → [Report tour](docs/report-tour.md)
+- **Real startup timings** — per-bean instantiation times from `BufferingApplicationStartup`, no reflection heuristics.
+- **The resolved graph** — read directly from `getDependenciesForBean()`: what Spring actually wired, not what the source suggests.
+- **Condition snapshot** — Boot's autoconfiguration decisions, tabbed and filterable.
+- **JSON export** — `wiredoctor-report.json` as the single source of truth for tooling; live views via `/actuator/wiredoctor/*`.
+
+### 🚨 Diagnose — the analysis
+
+- **Cycle detection with fix advice** — Tarjan SCC finds silently-resolved cycles, and `lazySuggestions` ranks which `@Lazy` breaks the most cycles with the smallest blast radius.
+- **Startup critical path** — the instantiation-weighted dependency chain your readiness time actually sits on.
+- **Architecture smells** — fan-in coupling hotspots, fan-out shotgun-surgery risk, and instability metrics on the live graph; framework beans filtered so every ranked bean is refactorable.
+- **Ghost beans** — passive candidates (always on, labeled `confidence: LOW`) plus opt-in first-touch tracking for dev/staging. → [Ghost Detector guide](docs/ghost-detector.md)
+- **Proxy overhead** — CGLIB/JDK proxy count exposing hidden indirection layers.
+
+### 🛡️ Guard — the CI gates
+
+- **Architectural regression guard** — commit `wiredoctor-baseline.json`, fail the PR that adds a new cycle (`fail-on=new-cycle`). → [CI gating guide](docs/ci-gating.md)
+- **Upgrade Guard** — condition diff across Boot upgrades; gate on `condition-changed`. → [Upgrade Guard guide](docs/upgrade-guard.md)
+- **Performance gates** — fail on startup-time regressions (dual-threshold, noise-tolerant) and new slow beans (jitter-margin protected). → [Performance Gates guide](docs/performance-gates.md)
+- **CI-friendly output** — gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json`; the report is written even when a gate fails the build.
+
+---
+
+## 🚀 Quick start
+
+Add the dependency — that's it. WireDoctor runs at startup, writes `wiredoctor-report.html` + `wiredoctor-report.json`, and prints a diagnostic summary to your logs.
+
+**Maven:**
+```xml
+<dependency>
+    <groupId>io.github.ddsha441981</groupId>
+    <artifactId>wiredoctor-autoconfigure</artifactId>
+    <version>0.9.0</version>
+</dependency>
+```
+
+**Gradle:**
+```groovy
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.9.0'
+```
+
+Want CI gates? Capture a baseline once, commit it, arm the gates:
+
+```bash
+./mvnw spring-boot:run \
+  -Dspring-boot.run.arguments="--wiredoctor.baseline=wiredoctor-baseline.json --wiredoctor.baseline-write=true"
+git add wiredoctor-baseline.json && git commit -m "chore: WireDoctor baseline"
+```
+
+```properties
+# application-ci.properties
+wiredoctor.baseline=wiredoctor-baseline.json
+wiredoctor.fail-on=new-cycle,startup-time,slow-bean
+```
+
+A tripped gate fails startup with a precise message:
+```
+WireDoctorRegressionException: WireDoctor regression gate 'startup-time' tripped:
+  startup time increased by 734ms (18.2%) vs baseline (4025ms -> 4759ms)
+```
+
+Common knobs (`wiredoctor.scan-packages`, thresholds, output path, production kill-switch `wiredoctor.enabled=false`) are in the **[configuration reference](docs/configuration.md)**.
 
 ---
 
@@ -87,137 +109,24 @@ Notes:
 
 ---
 
-## 🚀 How to use
+## 📚 Documentation
 
-Just add the `wiredoctor-autoconfigure` dependency to your Spring Boot project. 
+| Guide | What it covers |
+|-------|----------------|
+| [Report tour](docs/report-tour.md) | Every tab of the HTML console, explained with real screenshots |
+| [Configuration reference](docs/configuration.md) | Every property, grouped by feature, with defaults |
+| [CI gating](docs/ci-gating.md) | Fail your PR on a new bean cycle — the full workflow |
+| [Performance gates](docs/performance-gates.md) | Startup-time and slow-bean gates, thresholds, noise tolerance |
+| [Upgrade Guard](docs/upgrade-guard.md) | Catching silent autoconfiguration changes across Boot upgrades |
+| [Ghost Detector](docs/ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Security posture](docs/security-posture.md) | What the reports expose, offline-only network behavior |
 
-**Maven:**
-```xml
-<dependency>
-    <groupId>io.github.ddsha441981</groupId>
-    <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>0.7.0</version>
-</dependency>
-```
-
-**Gradle:**
-```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:0.7.0'
-```
-
-WireDoctor runs automatically at application startup, generates a JSON report (`wiredoctor-report.json`) alongside an interactive dashboard (`wiredoctor-report.html`), and prints a clean diagnostic summary to your standard SLF4J logs.
-
-### ⚙️ Configuration (Optional)
-By default, WireDoctor automatically filters out internal infrastructure packages (like `org.springframework`, `java.`, `org.apache`, etc.) from the "Orphan Beans" list to reduce noise. 
-
-If you want to explicitly define which packages should be analyzed for orphans, you can configure `wiredoctor.scan-packages` in your `application.properties`:
-```properties
-# Single package
-wiredoctor.scan-packages=com.yourcompany.app
-
-# Multiple packages (comma-separated)
-wiredoctor.scan-packages=com.yourcompany.app,io.yourteam.service
-
-# Configure the path where HTML and JSON reports are saved (default: project root)
-wiredoctor.output-path=/path/to/your/reports
-
-# Customize the threshold for flagging a bean as "slow" during instantiation (default: 100ms)
-wiredoctor.slow-bean-threshold-ms=50
-
-# --- Architectural Regression Guard (v0.2.0, opt-in) ---
-# Path to the committed architecture baseline; enables the diff
-wiredoctor.baseline=wiredoctor-baseline.json
-# Run once with this to create/refresh the baseline (never diffs or gates)
-wiredoctor.baseline-write=true
-# CI gate: fail startup when a cycle not in the baseline appears
-wiredoctor.fail-on=new-cycle
-
-# --- Large-application graph cap (v0.3.0) ---
-# Above this many beans, the SERIALIZED graph (JSON + HTML view) is capped to the
-# top-N by fan-in (cycle members always kept) so the report stays reviewable and
-# the browser doesn't freeze. Analysis itself (cycles, smells, critical path,
-# baseline diff) ALWAYS runs on the full graph. 0 = unlimited. Default: 2000.
-wiredoctor.max-graph-nodes=2000
-
-# --- Ghost tracking (v0.6.0, opt-in — dev/staging only) ---
-# Wraps eligible user beans in a thin first-touch counting proxy. OFF by default:
-# without this property the tracking BeanPostProcessor is never registered at all.
-wiredoctor.ghost-tracking.enabled=true
-# Beans to never wrap (reported as untrackable:excluded, never silently hidden)
-wiredoctor.ghost-tracking.exclude=legacySoapClient,nativeBridge
-
-# --- Performance gates (v0.7.0, opt-in — CI only) ---
-# Gate CI on startup time regressions (both thresholds must be exceeded to trip)
-wiredoctor.fail-on=startup-time,slow-bean
-wiredoctor.startup-time-absolute-threshold=500   # milliseconds (default: 500)
-wiredoctor.startup-time-relative-threshold=0.10  # 10% (default: 0.10)
-# slow-bean gate uses your slow-bean-threshold-ms (already configured above)
-# Jitter margin (v0.8.0): a NEW slow bean must exceed threshold+margin to trip
-# the gate — beans in the margin band are reported but never fail CI. 0 = off.
-wiredoctor.slow-bean-margin-ms=20                # milliseconds (default: 20)
-```
-
-### 📋 Example: Performance Gates in CI
-
-**Step 1** — Capture baseline (one-time, commit the file):
-```bash
-./mvnw spring-boot:run \
-  -Dspring-boot.run.arguments="--wiredoctor.baseline=wiredoctor-baseline.json --wiredoctor.baseline-write=true"
-
-git add wiredoctor-baseline.json
-git commit -m "chore: WireDoctor baseline"
-```
-
-**Step 2** — Enable gates in CI (`application-ci.properties`):
-```properties
-wiredoctor.baseline=wiredoctor-baseline.json
-wiredoctor.baseline-write=false
-wiredoctor.fail-on=startup-time,slow-bean
-wiredoctor.startup-time-absolute-threshold=500
-wiredoctor.startup-time-relative-threshold=0.10
-wiredoctor.slow-bean-threshold-ms=100
-```
-
-**Step 3** — CI job reads gate status:
-```yaml
-- name: Run tests with gates
-  run: mvn verify -Dspring.profiles.active=ci
-
-- name: Check gate status
-  run: |
-    if grep -q FAIL target/wiredoctor-gate.status; then
-      echo "::error::WireDoctor gate tripped"
-      cat target/wiredoctor-diff.json
-      exit 1
-    fi
-```
-
-**Gate trips look like:**
-```
-WireDoctorRegressionException: WireDoctor regression gate 'startup-time' tripped: 
-  startup time increased by 734ms (18.2%) vs baseline (4025ms -> 4759ms)
-
-WireDoctorRegressionException: WireDoctor regression gate 'slow-bean' tripped: 
-  2 bean(s) crossed the slow threshold (100ms) vs baseline: 
-  [orderService (142ms), paymentProcessor (201ms)]
-```
-
-See **[Performance Gates guide](docs/performance-gates.md)** for full walkthrough.
-
-See the **[CI gating guide](docs/ci-gating.md)** for the full "fail your PR on a new bean cycle" workflow.
-
-### 🛑 Production Safety (Disabling WireDoctor)
-WireDoctor is enabled by default. If you accidentally leave the dependency in your production build, you can completely disable the analyzer to prevent it from running, writing reports, or exposing bean structures by setting:
-```properties
-# application-prod.properties
-wiredoctor.enabled=false
-```
-
-For what the reports expose, how to handle them, and WireDoctor's **offline-only** network behavior (its JVM does zero network I/O), see the **[security posture guide](docs/security-posture.md)**.
+Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/).
 
 ---
 
 ## 🔬 Epistemic Honesty & Known Limitations
+
 Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over false certainty:
 
 1. ⚡ **AOT / GraalVM Native Image Support:**
@@ -235,13 +144,13 @@ Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over
 5. 🔭 **Bean Scopes (pinned by tests since v0.8.0):**
    `Prototype` and `@Lazy` bean *definitions* appear as graph nodes, but they are **never instantiated** by the analysis (zero-intrusion promise — a regression test proves it). Their proxy status can't be known without instantiating them, so they are skipped by the proxy scan and honestly counted in `proxies.notInstantiatedSkipped`. `FactoryBean`s appear under the factory's bean name; a consumer of the *product* gets its dependency edge recorded against the factory's name (Spring's own bookkeeping). Runtime-only facts about these scopes — how often a prototype is created, whether a lazy bean is ever touched — are outside a startup snapshot's reach.
 
+See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for the full, versioned list.
+
 ---
+
 ## 🔮 Roadmap
 
-Shipped: **v0.4.0** (Enterprise Fit), **v0.5.0** (Upgrade Guard — autoconfig condition diff), **v0.6.0** (Ghost Bean Detector — passive candidates + opt-in first-touch tracking), and **v0.7.0** (Cost Guardian — startup time & slow bean gates). Next up:
-
-1. 🏁 **v1.0.0 — API & schema freeze + Maven Central launch:**
-   *Report schema stabilized (all sections now shipped), publish to Maven Central, launch.*
+Next up: **v1.0.0 — API & schema freeze + Maven Central launch.** Report schema stabilized, publish to Maven Central, launch.
 
 Dropped (deliberately): **Memory Footprint Estimation** — honest per-bean heap numbers need a Java Agent; shallow size-of is a correctness trap. The Ghost Detector answers the same underlying question ("which beans are wasting resources?") without lying about bytes.
 
@@ -249,27 +158,10 @@ Dropped (deliberately): **Memory Footprint Estimation** — honest per-bean heap
 
 ## 🤝 Contributing
 
-Contributions are welcome — bug reports, docs, tests, and features. See
-**[CONTRIBUTING.md](CONTRIBUTING.md)** for build/test conventions and the
-zero-intrusion design posture, and please follow the
-**[Code of Conduct](CODE_OF_CONDUCT.md)**. New here? Look for issues labelled
-[`good first issue`](https://github.com/ddsha441981/wiredoctor/labels/good%20first%20issue).
+Contributions are welcome — bug reports, docs, tests, and features. See **[CONTRIBUTING.md](CONTRIBUTING.md)** for build/test conventions and the zero-intrusion design posture, and please follow the **[Code of Conduct](CODE_OF_CONDUCT.md)**. New here? Look for issues labelled [`good first issue`](https://github.com/ddsha441981/wiredoctor/labels/good%20first%20issue).
 
----
+Maintained by **[Deendayal Kumawat](https://github.com/ddsha441981)** · [LinkedIn](https://www.linkedin.com/in/deendayal-kumawat/) · [deendayal_kumawat@hotmail.com](mailto:deendayal_kumawat@hotmail.com)
 
-## 👤 Author
+## 📄 License
 
-**Deendayal Kumawat** 
-
-* 📧 **Email:** [deendayal_kumawat@hotmail.com](mailto:deendayal_kumawat@hotmail.com)
-* 💼 **LinkedIn:** [deendayal-kumawat](https://www.linkedin.com/in/deendayal-kumawat/)
-* 🐙 **GitHub:** [ddsha441981](https://github.com/ddsha441981)
-* 𝕏 **X (Twitter):** [@ddsha44198](https://x.com/ddsha44198)
-* 📝 **Medium:** [@ddsha441981](https://medium.com/@ddsha441981)
-* 📦 **Maven Central:** [io.github.ddsha441981](https://mvnrepository.com/artifact/io.github.ddsha441981)
-* 🦀 **Crates.io:** [ddsha441981](https://crates.io/users/ddsha441981)
-* 🐳 **Docker Hub:** [ripdedup](https://hub.docker.com/u/ripdedup)
-
-### 📚 Research Paper
-*Kumawat, D. (2026). Project Lethe: Bio-Inspired Autonomous Edge Intelligence via Sub-Microsecond Continual Learning and Active Forgetting (4.2.0). Zenodo.* 
-🔗 [https://doi.org/10.5281/zenodo.20531995](https://doi.org/10.5281/zenodo.20531995)
+Dual-licensed under [MIT](LICENSE) OR Apache-2.0 — pick whichever suits your project.

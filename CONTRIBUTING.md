@@ -95,6 +95,12 @@ Keep the tone of new docs and messages grounded and honest — describe what the
 tool actually does and its limitations, not what we wish it did. WireDoctor's
 credibility rests on being precise about heuristics vs. facts.
 
+**README discipline:** the README's feature sections (See / Diagnose / Guard)
+are grouped by job, not by version. A new feature gets **1–2 lines plus a link
+to a `docs/` guide** — detailed walkthroughs, property tables and example
+output belong in the guide, release history belongs in `CHANGELOG.md`. Do not
+add "New in vX.Y" sections back.
+
 ---
 
 ## Good first issues
