@@ -1,9 +1,13 @@
 target/
 *.txt
 *.json
+!sample/**/*.json
 .idea/
 *.iml
 .DS_Store
 brain/
 plan/
+/images/
+!docs/images/
+/wiredoctor-report.html
 .claude/

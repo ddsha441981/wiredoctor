@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-20
+
+Gate verdicts in the HTML report: the v0.7.0 performance gates and baseline diff results are now visible in the self-contained HTML console — no new tabs, no CI contract changes.
+
+### Added
+- 🚦 **`gates` report section** — `wiredoctor-report.json` (and the actuator view) now carries a `gates` key: `mode` (`off` / `write` / `diff` / `baseline-missing` / `baseline-unreadable`), `armed` (parsed `fail-on` list), `config` (the three thresholds), and — in diff mode — `baseline`, `failed` (fired gate signals, armed or not, same semantics as `wiredoctor-gate.status`), `startupTime` (baseline/current/delta/percent, recorded even when no regression tripped) and `newSlowBeans`.
+- 🏷️ **Combined header verdict chip** — precedence: gate failed (red `GATE FAIL: <gates>`, with `+Xms` for startup-time) → cycles (red `N CYCLES`) → diff ran clean (green `GATES PASS`) → `HEALTHY`.
+- 📋 **"Performance Gates" card in the Timing tab** — all four gates (`startup-time`, `slow-bean`, `new-cycle`, `condition-changed`) with threshold/config, actuals, and a PASS / FAIL / NOT RUN verdict chip; unarmed gates carry a muted `not armed` tag. When no baseline was diffed, the card shows the configured thresholds plus a hint on enabling gates in CI.
+
+### Changed
+- **Analyzer ordering** — the regression guard now runs BEFORE the JSON/HTML write so gate verdicts reach the report files. CI contract intact: the gate exception is still thrown only after all files are written.
+- **Baseline files never carry `gates`** — the section is a per-run verdict, not part of the architecture snapshot; it is stripped from baseline serialization (like the graph-swap pattern).
+
 ## [0.7.0] - 2026-07-19
 
 The "Cost Guardian" release: gate your CI pipeline on startup time regressions and new slow beans. Answers the P3 pain from market research — "K8s cold-start cost" — by making performance degradation visible and blockable before it ships.

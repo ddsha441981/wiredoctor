@@ -675,4 +675,82 @@ class WireDoctorRegressionGuardIntegrationTest {
         assertThat(lines.get(0)).isEqualTo("PASS");
         assertThat(lines).noneMatch(l -> l.startsWith("newSlowBeansCount="));
     }
+
+    // ── v0.7.1: gate verdicts surfaced in the report (JSON + HTML) ───────────
+
+    @Test
+    void reportJsonContainsGateVerdictWhenGateTrips(@TempDir Path tempDir) throws Exception {
+        // Step 1: Baseline WITHOUT the slow bean.
+        try (var ignored = boot(SlowBeanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                "wiredoctor.baseline-write=true",
+                "wiredoctor.slow-bean-threshold-ms=800")) { }
+
+        // Step 2: Slow bean appears — signal fires (unarmed, app stays up) and
+        // the verdict must land in the report files, which are written AFTER
+        // the guard runs (v0.7.1 reorder).
+        try (var context = boot(SlowBeanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + tempDir.resolve("wiredoctor-baseline.json"),
+                "wiredoctor.slow-bean-threshold-ms=800",
+                "wd.slow.enabled=true")) {
+            assertThat(context.isActive()).isTrue();
+        }
+
+        JsonNode report = new ObjectMapper()
+                .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+        JsonNode gates = report.path("gates");
+        assertThat(gates.path("mode").asText()).isEqualTo("diff");
+        assertThat(gates.path("baselineConfigured").asBoolean()).isTrue();
+        java.util.List<String> failed = new java.util.ArrayList<>();
+        gates.path("failed").forEach(n -> failed.add(n.asText()));
+        assertThat(failed).contains("slow-bean");
+        assertThat(gates.path("newSlowBeans").isArray()).isTrue();
+        assertThat(gates.path("newSlowBeans").size()).isPositive();
+
+        // The HTML report embeds the same data (string-level check: the gates
+        // section reached the injected JSON).
+        String html = Files.readString(tempDir.resolve("wiredoctor-report.html"));
+        assertThat(html).contains("\"gates\"").contains("\"slow-bean\"");
+    }
+
+    @Test
+    void reportJsonContainsGatesConfigWhenBaselineOff(@TempDir Path tempDir) throws Exception {
+        // No baseline configured: mode stays "off", but armed + config are
+        // still recorded so the HTML can show the discovery hint + thresholds.
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir)) { }
+
+        JsonNode report = new ObjectMapper()
+                .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+        JsonNode gates = report.path("gates");
+        assertThat(gates.path("mode").asText()).isEqualTo("off");
+        assertThat(gates.path("baselineConfigured").asBoolean()).isFalse();
+        assertThat(gates.path("armed").isArray()).isTrue();
+        assertThat(gates.path("failed").isMissingNode()).isTrue(); // no diff → no verdict
+        JsonNode config = gates.path("config");
+        assertThat(config.path("startupTimeAbsoluteThresholdMs").asLong()).isEqualTo(500);
+        assertThat(config.path("slowBeanThresholdMs").asLong()).isEqualTo(100);
+    }
+
+    @Test
+    void baselineFileDoesNotContainGatesKey(@TempDir Path tempDir) throws Exception {
+        // The gates section is a per-run verdict, not part of the architecture
+        // snapshot — it must be stripped from the persisted baseline (a stale
+        // verdict there would be misleading and pure churn on rewrite).
+        Path baseline = tempDir.resolve("wiredoctor-baseline.json");
+        try (var ignored = boot(CleanApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + baseline,
+                "wiredoctor.baseline-write=true")) { }
+
+        JsonNode parsed = new ObjectMapper().readTree(baseline.toFile());
+        assertThat(parsed.path("gates").isMissingNode()).isTrue();
+
+        // ...while the report written in the same run still carries it.
+        JsonNode report = new ObjectMapper()
+                .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+        assertThat(report.path("gates").path("mode").asText()).isEqualTo("write");
+    }
 }

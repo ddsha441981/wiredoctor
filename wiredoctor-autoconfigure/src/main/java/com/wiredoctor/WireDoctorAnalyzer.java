@@ -504,6 +504,31 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             log.warn(WireDoctorMessages.CONDITIONS_UNAVAILABLE, t.getMessage());
         }
 
+        // ── Feature (v0.7.1): Gates section — verdicts surfaced in the report ──
+        // Base config is recorded here; runRegressionGuard() below enriches it
+        // with the actual mode/verdicts BEFORE the JSON/HTML write, so the gate
+        // results land in the report files and the actuator view.
+        Map<String, Object> gatesMap = new LinkedHashMap<>();
+        gatesMap.put("baselineConfigured",
+                properties.getBaseline() != null && !properties.getBaseline().isBlank());
+        gatesMap.put("mode", "off"); // guard overwrites: write | diff | baseline-missing | baseline-unreadable
+        gatesMap.put("armed", parseArmedGates());
+        Map<String, Object> gatesConfig = new LinkedHashMap<>();
+        gatesConfig.put("startupTimeAbsoluteThresholdMs", properties.getStartupTimeAbsoluteThreshold());
+        gatesConfig.put("startupTimeRelativePercent", properties.getStartupTimeRelativeThreshold() * 100);
+        gatesConfig.put("slowBeanThresholdMs", slowBeanThresholdMs);
+        gatesMap.put("config", gatesConfig);
+        report.put("gates", gatesMap);
+
+        // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
+        // v0.7.1: runs BEFORE the JSON/HTML write so the gate verdicts reach
+        // the report. CI contract intact: the gate exception is RETURNED (not
+        // thrown), so every file below is still written before CI failure.
+        WireDoctorRegressionException trippedGate =
+                runRegressionGuard(graph, cycles, conditionOutcomes, totalStartupMs,
+                                   slowBeanThresholdMs, slowBeans, report, gatesMap,
+                                   outputDir, activeProfiles);
+
         // Retain the completed report in memory for out-of-core consumers (the
         // optional wiredoctor-actuator endpoint). Set BEFORE the disk write so a
         // failed write never leaves the endpoint without a report to serve.
@@ -525,11 +550,6 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } catch (Exception e) {
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
         }
-
-        // ── Feature (v0.2.0): Architectural Regression Guard ─────────────────
-        WireDoctorRegressionException trippedGate =
-                runRegressionGuard(graph, cycles, conditionOutcomes, totalStartupMs,
-                                   slowBeanThresholdMs, slowBeans, report, outputDir, activeProfiles);
 
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
@@ -631,6 +651,21 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
     }
 
     /**
+     * Parses {@code wiredoctor.fail-on} into the list of recognized armed
+     * gates (v0.7.1) — recorded in the report's {@code gates.armed} so the
+     * HTML report can show which verdicts would actually fail CI. Unknown
+     * tokens are silently ignored (lenient, consistent with {@code hasGate}).
+     */
+    private List<String> parseArmedGates() {
+        List<String> armed = new ArrayList<>();
+        if (properties.isFailOnNewCycle())         armed.add("new-cycle");
+        if (properties.isFailOnConditionChanged()) armed.add("condition-changed");
+        if (properties.isFailOnStartupTime())      armed.add("startup-time");
+        if (properties.isFailOnSlowBean())         armed.add("slow-bean");
+        return armed;
+    }
+
+    /**
      * Architectural Regression Guard (v0.2.0).
      * <p>
      * In {@code baseline-write} mode, saves the current report as the new
@@ -655,6 +690,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
      * @param currentThreshold   current slow-bean threshold (v0.7.0)
      * @param currentSlowBeans   current slow beans list (v0.7.0)
      * @param report             the full current report (persisted as baseline in write mode)
+     * @param gatesMap           the report's {@code gates} section (v0.7.1) — enriched
+     *                           in place with mode and verdicts before the report is written
      * @param outputDir          directory for {@code wiredoctor-diff.json}
      * @param activeProfiles     the environment's active profiles, used to resolve a
      *                           {@code {profiles}} token in the baseline path (v0.4.0)
@@ -667,6 +704,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                                              long currentThreshold,
                                                              List<Map<String, Object>> currentSlowBeans,
                                                              Map<String, Object> report,
+                                                             Map<String, Object> gatesMap,
                                                              File outputDir,
                                                              String[] activeProfiles) {
         String baselinePath = properties.getBaseline();
@@ -688,6 +726,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } catch (Exception ignored) {}
 
         if (properties.isBaselineWrite()) {
+            gatesMap.put("mode", "write"); // v0.7.1
             try {
                 mapper.enable(SerializationFeature.INDENT_OUTPUT);
                 File parent = baselineFile.getAbsoluteFile().getParentFile();
@@ -696,14 +735,19 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 // compare against it, and a truncated baseline would report
                 // spurious bean/edge changes. Swap the (possibly truncated)
                 // serialized graph out for the write, then restore it.
+                // v0.7.1: the gates section is a per-run verdict, not part of
+                // the architecture snapshot — strip it from the baseline the
+                // same way, so a future diff never reads a stale verdict.
                 @SuppressWarnings("unchecked")
                 Map<String, Object> deps = (Map<String, Object>) report.get("dependencies");
                 Object serializedGraph = deps.get("graph");
                 deps.put("graph", graph);
+                Object gatesSection = report.remove("gates");
                 try {
                     Files.writeString(baselineFile.toPath(), mapper.writeValueAsString(report));
                 } finally {
                     deps.put("graph", serializedGraph);
+                    report.put("gates", gatesSection);
                 }
                 log.info(WireDoctorMessages.BASELINE_WRITTEN, baselineFile.getAbsolutePath());
             } catch (Exception e) {
@@ -714,6 +758,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         if (!baselineFile.isFile()) {
+            gatesMap.put("mode", "baseline-missing"); // v0.7.1
             log.info(WireDoctorMessages.BASELINE_MISSING, baselineFile.getAbsolutePath());
             return null;
         }
@@ -724,6 +769,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             baselineJsonRoot = mapper.readTree(baselineFile);
             baseline = WireDoctorBaselineDiff.Snapshot.fromJson(baselineJsonRoot);
         } catch (Exception e) {
+            gatesMap.put("mode", "baseline-unreadable"); // v0.7.1
             log.warn(WireDoctorMessages.BASELINE_UNREADABLE,
                      baselineFile.getAbsolutePath(), e.getMessage());
             return null;
@@ -822,6 +868,37 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
         }
 
+        // ── Feature (v0.7.1): enrich the report's gates section with verdicts ──
+        // Mirrors the gate.status semantics: `failed` lists every gate whose
+        // SIGNAL fired, armed or not (`armed` tells which would fail CI).
+        List<String> failedGates = computeFailedGates(diff);
+        gatesMap.put("mode", "diff");
+        gatesMap.put("baseline", baselineFile.getName());
+        gatesMap.put("failed", failedGates);
+        if (baseline.timing() != null && totalStartupMs != null) {
+            // Always record the delta when both sides carry timing — the HTML
+            // shows it even when no regression tripped.
+            long baselineMs = baseline.timing().totalStartupMs();
+            long deltaMs = totalStartupMs - baselineMs;
+            Map<String, Object> startupTime = new LinkedHashMap<>();
+            startupTime.put("baselineMs", baselineMs);
+            startupTime.put("currentMs", totalStartupMs);
+            startupTime.put("deltaMs", deltaMs);
+            startupTime.put("percentChange",
+                    baselineMs > 0 ? (double) deltaMs / baselineMs * 100 : 0.0);
+            gatesMap.put("startupTime", startupTime);
+        }
+        if (diff.hasNewSlowBeans()) {
+            List<Map<String, Object>> slowBeanEntries = new ArrayList<>();
+            for (WireDoctorBaselineDiff.NewSlowBean b : diff.newSlowBeans()) {
+                Map<String, Object> entry = new LinkedHashMap<>();
+                entry.put("beanName", b.beanName());
+                entry.put("instantiationMs", b.instantiationMs());
+                slowBeanEntries.add(entry);
+            }
+            gatesMap.put("newSlowBeans", slowBeanEntries);
+        }
+
         // ── Feature (v0.4.0): CI marker-file contract ────────────────────────
         // A machine-readable verdict so Maven/Gradle steps can gate without
         // parsing logs or forcing a JVM exit code. Written on EVERY completed
@@ -910,6 +987,39 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
     }
 
     /**
+     * Computes which gate SIGNALS fired in the diff (v0.7.1 — extracted from
+     * {@link #writeGateStatus}): {@code new-cycle}, {@code condition-changed},
+     * {@code startup-time} (dual-threshold), {@code slow-bean}. Armed-or-not —
+     * this is the signal list shared by the gate.status marker file and the
+     * report's {@code gates.failed} section.
+     */
+    private List<String> computeFailedGates(WireDoctorBaselineDiff.DiffResult diff) {
+        List<String> failedGates = new ArrayList<>();
+        if (diff.hasNewCycles()) {
+            failedGates.add("new-cycle");
+        }
+        if (diff.conditionDiffAvailable() && diff.hasConditionChanges()) {
+            failedGates.add("condition-changed");
+        }
+        // v0.7.0: startup-time gate signal (trips only if dual-threshold check passes)
+        if (diff.hasStartupTimeRegression()) {
+            WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
+            double relativeThreshold = properties.getStartupTimeRelativeThreshold();
+            long absoluteThreshold = properties.getStartupTimeAbsoluteThreshold();
+            boolean tripsDual = regression.deltaMs() >= absoluteThreshold
+                                && regression.percentChange() >= relativeThreshold;
+            if (tripsDual) {
+                failedGates.add("startup-time");
+            }
+        }
+        // v0.7.0: slow-bean gate signal
+        if (diff.hasNewSlowBeans()) {
+            failedGates.add("slow-bean");
+        }
+        return failedGates;
+    }
+
+    /**
      * CI marker-file contract (v0.4.0): writes {@code wiredoctor-gate.status}
      * with a machine-readable verdict.
      * <p>
@@ -935,28 +1045,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // Line 1 contract: "PASS" or "FAIL:<gate>[,<gate>...]" — a gate appears
         // in the FAIL list when its SIGNAL fired, armed or not (gateArmed tells
         // the consumer whether the JVM was configured to die over it).
-        List<String> failedGates = new ArrayList<>();
-        if (diff.hasNewCycles()) {
-            failedGates.add("new-cycle");
-        }
-        if (diff.conditionDiffAvailable() && diff.hasConditionChanges()) {
-            failedGates.add("condition-changed");
-        }
-        // v0.7.0: startup-time gate signal (trips only if dual-threshold check passes)
-        if (diff.hasStartupTimeRegression()) {
-            WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
-            double relativeThreshold = properties.getStartupTimeRelativeThreshold();
-            long absoluteThreshold = properties.getStartupTimeAbsoluteThreshold();
-            boolean tripsDual = regression.deltaMs() >= absoluteThreshold
-                                && regression.percentChange() >= relativeThreshold;
-            if (tripsDual) {
-                failedGates.add("startup-time");
-            }
-        }
-        // v0.7.0: slow-bean gate signal
-        if (diff.hasNewSlowBeans()) {
-            failedGates.add("slow-bean");
-        }
+        List<String> failedGates = computeFailedGates(diff);
         if (failedGates.isEmpty()) {
             status.append("PASS");
         } else {

@@ -1,0 +1,135 @@
+{
+  "startupSlowestSteps" : [ {
+    "name" : "spring.context.refresh",
+    "durationMs" : 2362,
+    "tags" : { }
+  }, {
+    "name" : "spring.context.beans.post-process",
+    "durationMs" : 1317,
+    "tags" : { }
+  }, {
+    "name" : "spring.context.beandef-registry.post-process",
+    "durationMs" : 800,
+    "tags" : {
+      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@1930621d"
+    }
+  }, {
+    "name" : "spring.context.config-classes.parse",
+    "durationMs" : 784,
+    "tags" : {
+      "classCount" : "69"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 253,
+    "tags" : {
+      "beanName" : "healthEndpointGroupsBeanPostProcessor",
+      "beanType" : "interface org.springframework.beans.factory.config.BeanPostProcessor"
+    }
+  }, {
+    "name" : "spring.context.bean-factory.post-process",
+    "durationMs" : 79,
+    "tags" : {
+      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@1930621d"
+    }
+  }, {
+    "name" : "spring.context.config-classes.enhance",
+    "durationMs" : 78,
+    "tags" : {
+      "classCount" : "1"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 76,
+    "tags" : {
+      "beanName" : "meterRegistryCloser"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 72,
+    "tags" : {
+      "beanName" : "simpleMeterRegistry"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 69,
+    "tags" : {
+      "beanName" : "alphaBean"
+    }
+  }, {
+    "name" : "spring.beans.smart-initialize",
+    "durationMs" : 53,
+    "tags" : {
+      "beanName" : "meterRegistryPostProcessor"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 48,
+    "tags" : {
+      "beanName" : "org.springframework.boot.actuate.autoconfigure.metrics.task.TaskExecutorMetricsAutoConfiguration"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 47,
+    "tags" : {
+      "beanName" : "diskSpaceHealthIndicator"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 44,
+    "tags" : {
+      "beanName" : "proxyBean"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 39,
+    "tags" : {
+      "beanName" : "management.health.diskspace-org.springframework.boot.actuate.autoconfigure.system.DiskSpaceHealthIndicatorProperties"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 36,
+    "tags" : {
+      "beanName" : "observedAspect"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 36,
+    "tags" : {
+      "beanName" : "org.springframework.context.annotation.internalConfigurationAnnotationProcessor",
+      "beanType" : "interface org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 35,
+    "tags" : {
+      "beanName" : "observationRegistry"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 33,
+    "tags" : {
+      "beanName" : "jvmHeapPressureMetrics"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 30,
+    "tags" : {
+      "beanName" : "applicationTaskExecutor"
+    }
+  } ],
+  "proxies" : {
+    "cglibCount" : 1,
+    "jdkCount" : 0,
+    "cglibBeans" : [ "proxyBean" ],
+    "jdkBeans" : [ ]
+  },
+  "dependencies" : {
+    "totalBeans" : 140,
+    "totalEdges" : 102,
+    "cyclesCount" : 1,
+    "cycles" : [ [ "alphaBean", "betaBean" ] ],
+    "orphanBeansCount" : 84,
+    "orphanBeans" : [ "org.springframework.context.annotation.internalConfigurationAnnotationProcessor", "org.springframework.context.annotation.internalAutowiredAnnotationProcessor", "org.springframework.context.annotation.internalCommonAnnotationProcessor", "org.springframework.context.event.internalEventListenerProcessor", "org.springframework.context.event.internalEventListenerFactory", "testApplication", "proxyBean", "org.springframework.context.annotation.internalAsyncAnnotationProcessor", "org.springframework.boot.autoconfigure.AutoConfigurationPackages", "org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration", "propertySourcesPlaceholderConfigurer", "wireDoctorAnalyzer", "applicationAvailability", "org.springframework.boot.actuate.autoconfigure.availability.AvailabilityHealthContributorAutoConfiguration", "jsonMixinModule", "jsonComponentModule", "endpointOperationParameterMapper", "endpointCachingOperationInvokerAdvisor", "org.springframework.boot.actuate.autoconfigure.endpoint.jackson.JacksonEndpointAutoConfiguration", "org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor", "org.springframework.boot.context.internalConfigurationPropertiesBinder", "org.springframework.boot.context.properties.BoundConfigurationProperties", "org.springframework.boot.context.properties.EnableConfigurationPropertiesRegistrar.methodValidationExcludeFilter", "healthStatusAggregator", "healthHttpCodeStatusMapper", "healthEndpointGroupMembershipValidator", "healthEndpoint", "healthEndpointGroupsBeanPostProcessor", "org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration", "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration", "org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration", "management.info-org.springframework.boot.actuate.autoconfigure.info.InfoContributorProperties", "meterRegistryPostProcessor", "propertiesMeterFilter", "meterRegistryCloser", "org.springframework.boot.actuate.autoconfigure.metrics.CompositeMeterRegistryAutoConfiguration", "jvmGcMetrics", "jvmHeapPressureMetrics", "jvmMemoryMetrics", "jvmThreadMetrics", "classLoaderMetrics", "jvmInfoMetrics", "jvmCompilationMetrics", "logbackMetrics", "countedAspect", "timedAspect", "uptimeMetrics", "processorMetrics", "fileDescriptorMetrics", "diskSpaceMetrics", "org.springframework.boot.actuate.autoconfigure.metrics.integration.IntegrationMetricsAutoConfiguration", "startupTimeMetrics", "threadPoolTaskExecutorBuilder", "simpleAsyncTaskExecutorBuilder", "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration", "threadPoolTaskSchedulerBuilder", "taskSchedulerBuilder", "simpleAsyncTaskSchedulerBuilder", "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration", "org.springframework.boot.actuate.autoconfigure.metrics.task.TaskExecutorMetricsAutoConfiguration", "eagerTaskExecutorMetrics", "observedAspect", "defaultMeterObservationHandler", "org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration$MeterObservationHandlerConfiguration", "metricsObservationHandlerGrouping", "observationRegistryPostProcessor", "propertiesObservationFilter", "sslPropertiesSslBundleRegistrar", "sslBundleRegistry", "metricsHttpClientUriTagFilter", "org.springframework.boot.actuate.autoconfigure.observation.web.client.HttpClientObservationsAutoConfiguration", "observabilitySchedulingConfigurer", "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$AspectJAutoProxyingConfiguration$CglibAutoProxyConfiguration", "org.springframework.aop.config.internalAutoProxyCreator", "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$AspectJAutoProxyingConfiguration", "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration", "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration", "lifecycleProcessor", "org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration", "spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties", "org.springframework.boot.sql.init.dependency.DatabaseInitializationDependencyConfigurer$DependsOnDatabaseInitializationPostProcessor", "org.springframework.boot.actuate.autoconfigure.web.server.ManagementContextAutoConfiguration", "management.endpoints.web-org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointProperties", "management.server-org.springframework.boot.actuate.autoconfigure.web.server.ManagementServerProperties" ]
+  }
+}
