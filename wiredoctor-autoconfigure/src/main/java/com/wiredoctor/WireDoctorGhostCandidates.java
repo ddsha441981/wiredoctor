@@ -87,7 +87,8 @@ public final class WireDoctorGhostCandidates {
             "ApplicationListener", "Lifecycle", "SmartLifecycle",
             "Filter", "Servlet", "WebFilter", "HandlerInterceptor",
             "HealthIndicator", "InfoContributor", "MessageListener",
-            "RouterFunction"
+            "RouterFunction", "WebHandler", "WebSocketHandler",
+            "WebExceptionHandler"
     );
 
     /**
