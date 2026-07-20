@@ -517,6 +517,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         gatesConfig.put("startupTimeAbsoluteThresholdMs", properties.getStartupTimeAbsoluteThreshold());
         gatesConfig.put("startupTimeRelativePercent", properties.getStartupTimeRelativeThreshold() * 100);
         gatesConfig.put("slowBeanThresholdMs", slowBeanThresholdMs);
+        gatesConfig.put("slowBeanMarginMs", properties.getSlowBeanMarginMs());
         gatesMap.put("config", gatesConfig);
         report.put("gates", gatesMap);
 
@@ -798,7 +799,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     baselineSlowBeanNames,
                     baseline.slowBeanThreshold(),
                     currentSlowBeans,
-                    currentThreshold);
+                    currentThreshold,
+                    properties.getSlowBeanMarginMs());
             // Rebuild the diff with the computed slow beans
             diff = new WireDoctorBaselineDiff.DiffResult(
                     diff.addedBeans(), diff.removedBeans(),

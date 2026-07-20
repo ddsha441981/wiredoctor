@@ -473,7 +473,7 @@ function gatesCard() {
     : '<span class="dim">—</span>';
   const rows = [
     ['startup-time', `≥${fmt(cfg.startupTimeAbsoluteThresholdMs ?? 500)}ms AND ≥${(cfg.startupTimeRelativePercent ?? 20).toFixed(0)}%`, stActual],
-    ['slow-bean',    `>${fmt(cfg.slowBeanThresholdMs ?? 100)}ms, new vs baseline`, sbActual],
+    ['slow-bean',    `>${fmt(cfg.slowBeanThresholdMs ?? 100)}ms${(cfg.slowBeanMarginMs ?? 0) > 0 ? ` (+${fmt(cfg.slowBeanMarginMs)}ms jitter margin)` : ''}, new vs baseline`, sbActual],
     ['new-cycle',    'any new dependency cycle', diffRan ? (gatesFailed.includes('new-cycle') ? 'new cycle(s) introduced' : '<span class="dim">no new cycles</span>') : '<span class="dim">—</span>'],
     ['condition-changed', 'any autoconfig outcome change', diffRan ? (gatesFailed.includes('condition-changed') ? 'condition outcome(s) changed' : '<span class="dim">no changes</span>') : '<span class="dim">—</span>'],
   ];

@@ -152,6 +152,9 @@ wiredoctor.fail-on=startup-time,slow-bean
 wiredoctor.startup-time-absolute-threshold=500   # milliseconds (default: 500)
 wiredoctor.startup-time-relative-threshold=0.10  # 10% (default: 0.10)
 # slow-bean gate uses your slow-bean-threshold-ms (already configured above)
+# Jitter margin (v0.8.0): a NEW slow bean must exceed threshold+margin to trip
+# the gate — beans in the margin band are reported but never fail CI. 0 = off.
+wiredoctor.slow-bean-margin-ms=20                # milliseconds (default: 20)
 ```
 
 ### 📋 Example: Performance Gates in CI

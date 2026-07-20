@@ -82,6 +82,17 @@ Gate trips with:
 
 **Why it matters:** A bean that's always been slow is tracked, but the gate only trips when a **new** one appears — that's the signal for "something changed."
 
+**Jitter margin (v0.8.0):** JVM timing is noisy — a bean that measured 98ms yesterday can measure 101ms today with zero code change. If your threshold is 100ms, that 1ms of jitter would fail CI. So the gate only trips when a new bean exceeds `slow-bean-threshold-ms + slow-bean-margin-ms` (default margin: 20ms). Beans inside the margin band still appear in the report's slow-bean list — they just don't fail the build. This mirrors the dual-threshold noise tolerance of the startup-time gate. Set `wiredoctor.slow-bean-margin-ms=0` for exact pre-v0.8.0 behavior.
+
+```
+threshold=100ms, margin=20ms:
+  newBean at 101ms  → reported as slow, gate does NOT trip (jitter band)
+  newBean at 120ms  → reported as slow, gate does NOT trip (band edge)
+  newBean at 121ms+ → gate TRIPS (past the band — real signal)
+```
+
+This default was chosen from real-world validation: running against start.spring.io, `requestMappingHandlerAdapter` measured 101ms against a 100ms threshold and tripped the gate — pure measurement noise, not a regression.
+
 ---
 
 ## Configuration Reference
@@ -92,6 +103,7 @@ Gate trips with:
 | `wiredoctor.startup-time-absolute-threshold` | `500` | Milliseconds. Startup must regress by **more than this** to trip (AND condition). |
 | `wiredoctor.startup-time-relative-threshold` | `0.10` | Fraction (0.10 = 10%). Startup must regress by **more than this percentage** to trip (AND condition). |
 | `wiredoctor.slow-bean-threshold-ms` | `100` | Milliseconds. Beans taking longer than this are logged and included in baseline. The `slow-bean` gate trips on **new entries** crossing this threshold. |
+| `wiredoctor.slow-bean-margin-ms` | `20` | Milliseconds. Jitter margin for the `slow-bean` gate: a new bean must exceed `threshold + margin` to trip. `0` = exact pre-v0.8.0 behavior. |
 
 ---
 

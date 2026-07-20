@@ -578,6 +578,14 @@ public final class WireDoctorBaselineDiff {
      * NOT in the baseline's slowBeans list — regardless of threshold changes
      * between runs (we care about "was it slow then", not "what was the threshold").
      * <p>
+     * v0.8.0 jitter guard: for gating, the bean must additionally exceed
+     * {@code currentThreshold + marginMs}. A bean sitting in the margin band
+     * (e.g. 101ms vs a 100ms threshold with a 20ms margin) stays in the
+     * report's slowBeans list but does NOT become a gate-tripping regression —
+     * real-world validation showed that band is JVM jitter, not signal. This
+     * mirrors the dual-threshold noise tolerance of the startup-time gate.
+     * Pass {@code 0} for exact pre-v0.8.0 behavior.
+     * <p>
      * Called from {@code WireDoctorAnalyzer} after the main diff, since it
      * needs the live current slowBeans data not present in the snapshot.
      *
@@ -585,13 +593,15 @@ public final class WireDoctorBaselineDiff {
      * @param baselineThreshold     baseline's slow-bean threshold (for reporting)
      * @param currentSlowBeans      current run's slow beans list (from report)
      * @param currentThreshold      current run's slow-bean threshold
+     * @param marginMs              jitter margin added to the threshold for gating
      * @return list of beans that became slow; empty when baseline lacks data
      */
     public static List<NewSlowBean> computeNewSlowBeans(
             Set<String> baselineSlowBeanNames,
             long baselineThreshold,
             java.util.List<Map<String, Object>> currentSlowBeans,
-            long currentThreshold) {
+            long currentThreshold,
+            long marginMs) {
 
         List<NewSlowBean> newSlowBeans = new ArrayList<>();
         for (Map<String, Object> bean : currentSlowBeans) {
@@ -600,8 +610,10 @@ public final class WireDoctorBaselineDiff {
             Number durationMsNum = (Number) bean.get("durationMs");
             if (beanName != null && durationMsNum != null) {
                 long instantiationMs = durationMsNum.longValue();
-                // New slow: in current slowBeans but NOT in baseline slowBeans
-                if (!baselineSlowBeanNames.contains(beanName)) {
+                // New slow: in current slowBeans but NOT in baseline slowBeans,
+                // and past the jitter margin band.
+                if (!baselineSlowBeanNames.contains(beanName)
+                        && instantiationMs > currentThreshold + marginMs) {
                     newSlowBeans.add(new NewSlowBean(beanName, instantiationMs, baselineThreshold));
                 }
             }

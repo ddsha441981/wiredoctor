@@ -143,6 +143,19 @@ public class WireDoctorProperties {
      */
     private long startupTimeAbsoluteThreshold = 500;
 
+    /**
+     * Jitter margin for the {@code slow-bean} gate (v0.8.0). A bean only counts
+     * as "new slow" for GATING purposes when its instantiation time exceeds
+     * {@code slowBeanThresholdMs + slowBeanMarginMs} — beans in the margin band
+     * still appear in the report's slow-bean list, they just don't fail CI.
+     * <p>
+     * Why: real-world validation on start.spring.io tripped the gate on a bean
+     * at 101ms vs a 100ms threshold — pure JVM jitter, not a regression. This
+     * mirrors the dual-threshold noise tolerance the startup-time gate already
+     * has. Default {@code 20}. Set {@code 0} for exact pre-v0.8.0 behavior.
+     */
+    private long slowBeanMarginMs = 20;
+
     /** Nested {@code wiredoctor.ghost-tracking.*} properties. */
     public static class GhostTracking {
 
@@ -353,6 +366,14 @@ public class WireDoctorProperties {
 
     public void setStartupTimeAbsoluteThreshold(long startupTimeAbsoluteThreshold) {
         this.startupTimeAbsoluteThreshold = startupTimeAbsoluteThreshold;
+    }
+
+    public long getSlowBeanMarginMs() {
+        return slowBeanMarginMs;
+    }
+
+    public void setSlowBeanMarginMs(long slowBeanMarginMs) {
+        this.slowBeanMarginMs = slowBeanMarginMs;
     }
 
     /**
