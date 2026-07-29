@@ -74,6 +74,8 @@ class WireDoctorAnalyzerIntegrationTest {
             assertThat(report.has("dependencies")).isTrue();
             assertThat(report.has("proxies")).isTrue();
             assertThat(report.has("beanCategories")).isTrue();
+            // v0.10.0: full per-bean timing map for graph timing heat
+            assertThat(report.has("beanTimings")).isTrue();
             assertThat(report.path("dependencies").path("totalBeans").asInt()).isPositive();
         }
     }
