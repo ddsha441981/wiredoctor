@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-07-29
+
+Graph Timing: WireDoctor's core value — startup timing analysis — is now visible directly in the Graph tab, not just the Timing tab.
+
+### Added
+- 🔥 **Timing heat chip** — toggles node color (green→red, log scale) and size mapped to per-bean instantiation time, so expensive beans jump out at a glance. Off by default; cycle/ghost/proxy/orphan colors keep priority; untimed (never-instantiated) beans stay default.
+- 🥇 **Critical path chip** — traces the startup critical path in gold through the graph (nodes glow, path edges widen) and dims everything else. Handles condensed `[cycle: a, b]` path entries by highlighting all members. Hidden when no timing data is available. Composes with filters and heat.
+- 🔍 **Inspector timing line** — the node panel now shows `Instantiation: N ms` and an `on critical path` tag where applicable.
+- 📊 **`beanTimings` JSON field** — the full per-bean instantiation timing map is serialized in the report (previously only `slowBeans` above the threshold survived).
+
 ## [0.9.0] - 2026-07-20
 
 Front Door: a docs-only release. The README is rewritten as a problem-first funnel for launch, and everything that didn't belong in the project's front door is gone. No code changes.

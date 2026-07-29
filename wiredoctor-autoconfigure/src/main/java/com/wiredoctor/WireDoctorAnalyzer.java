@@ -243,6 +243,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         report.put("startupSlowestSteps", slowSteps);
         report.put("slowBeans", slowBeans);
+        // v0.10.0: full per-bean timing map (not just >threshold) for graph timing heat
+        report.put("beanTimings", beanInstantiationMs);
         // v0.7.0: record threshold in baseline so diff knows what "slow" meant then
         report.put("slowBeanThreshold", slowBeanThresholdMs);
 
