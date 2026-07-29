@@ -249,6 +249,13 @@ const fanIn = (reportData.smells && reportData.smells.fanIn) || {};
 const conditions = reportData.conditions || {};
 const condEntries = Object.entries(conditions);
 const cp = reportData.criticalPath || { available: false };
+/* v0.10.0: full per-bean timing map + parsed critical-path sets (a path entry can be "[cycle: a, b]") */
+const beanTimings = reportData.beanTimings || {};
+const cpGroups = (cp.available && cp.path ? cp.path : []).map(n => {
+  const m = /^\[cycle: (.*)\]$/.exec(n.beanName);
+  return new Set(m ? m[1].split(', ') : [n.beanName]);
+});
+const cpSet = new Set(); cpGroups.forEach(g => g.forEach(b => cpSet.add(b)));
 const gc = reportData.ghostCandidates || { count: 0, beans: [] };
 const gates = reportData.gates || { mode: 'off', armed: [], config: {} };
 const gatesFailed = gates.failed || [];
@@ -525,6 +532,8 @@ $('#tab-graph').innerHTML = `
         <button class="g-filter on" data-f="fw"><span class="sw" style="background:var(--text-dim)"></span>Framework</button>
         <button class="g-filter" data-f="cycles"><span class="sw" style="background:var(--danger)"></span>Cycles only</button>
         <button class="g-filter" data-f="ghosts"><span class="sw" style="background:var(--ghost)"></span>Ghosts only</button>
+        <button class="g-filter" data-f="heat"><span class="sw" style="background:linear-gradient(90deg,#4caf7d,#e5534b)"></span>Timing heat</button>
+        <button class="g-filter" data-f="cp" id="g-cp" style="${cp.available?'':'display:none'}"><span class="sw" style="background:#e0b13e"></span>Critical path</button>
       </div>
       <div id="graph-canvas"></div>
     </div>
@@ -592,14 +601,62 @@ function buildGraph() {
     if (p.nodes.length) showNode(p.nodes[0]); else $('#node-panel').classList.remove('open');
   });
   /* filters */
-  const state = { user:true, fw:true, cycles:false, ghosts:false };
+  const state = { user:true, fw:true, cycles:false, ghosts:false, heat:false, cp:false };
   document.querySelectorAll('.g-filter').forEach(btn => btn.onclick = () => {
     const f = btn.dataset.f;
     state[f] = !state[f]; btn.classList.toggle('on', state[f]);
+    if (f==='heat' || f==='cp') { applyStyles(); return; }
     if (f==='cycles' && state.cycles) { state.ghosts=false; document.querySelector('[data-f=ghosts]').classList.remove('on'); }
     if (f==='ghosts' && state.ghosts) { state.cycles=false; document.querySelector('[data-f=cycles]').classList.remove('on'); }
     applyFilter();
   });
+  /* v0.10.0: timing heat + critical-path highlight (restyle only — no graph rebuild) */
+  const maxMs = Math.max(1, ...Object.values(beanTimings));
+  function heatColor(ms) {
+    const t = Math.log(1 + ms) / Math.log(1 + maxMs); // log scale: startup times are long-tailed
+    const lerp = (a, b) => Math.round(a + (b - a) * t);
+    return `rgb(${lerp(76,229)},${lerp(175,83)},${lerp(125,75)})`; /* #4caf7d → #e5534b */
+  }
+  function edgeOnCp(from, to) {
+    for (let i = 0; i < cpGroups.length; i++) {
+      if (cpGroups[i].has(from) && cpGroups[i].has(to)) return true; // within a condensed cycle
+      if (i + 1 < cpGroups.length &&
+          ((cpGroups[i].has(from) && cpGroups[i+1].has(to)) ||
+           (cpGroups[i].has(to) && cpGroups[i+1].has(from)))) return true;
+    }
+    return false;
+  }
+  function applyStyles() {
+    const nUpd = [], eUpd = [];
+    allNodes.forEach(n => {
+      const bean = n.id, c = nodeColor(bean), ms = beanTimings[bean];
+      let bg = c.bg;
+      if (state.heat && ms != null && bg === '#3d4a63') bg = heatColor(ms); // heat only recolors default nodes
+      const onCp = state.cp && cpSet.has(bean);
+      const dimmed = state.cp && !onCp;
+      nUpd.push({ id: bean,
+        size: state.heat && ms != null ? Math.max(8, 8 + Math.sqrt(ms)*2.2)
+                                       : Math.max(8, 8 + Math.sqrt(fanIn[bean]||0)*3.5),
+        color: { background: dimmed ? 'rgba(61,74,99,0.15)' : bg,
+                 border: onCp ? '#e0b13e' : 'rgba(255,255,255,0.12)',
+                 highlight: { background:'#4f8ef7', border:'#fff' } },
+        borderWidth: onCp ? 3 : 1,
+        shadow: onCp ? { enabled:true, color:'#e0b13e', size:18, x:0, y:0 }
+              : (c.glow && !dimmed) ? { enabled:true, color:'#e5534b', size:18, x:0, y:0 } : false,
+        font: { color: dimmed ? 'rgba(154,164,184,0.25)' : '#9aa4b8', size: 11, strokeWidth: 3, strokeColor: '#0b0e14' },
+      });
+    });
+    allEdges.forEach(e => {
+      const inCycle = cycleBeans.has(e.from) && cycleBeans.has(e.to);
+      let color = inCycle ? 'rgba(229,83,75,0.7)' : 'rgba(154,164,184,0.14)', width = inCycle ? 2 : 1;
+      if (state.cp) {
+        if (edgeOnCp(e.from, e.to)) { color = '#e0b13e'; width = 3; }
+        else color = 'rgba(154,164,184,0.05)';
+      }
+      eUpd.push({ id: e.id, color: { color, highlight:'#4f8ef7' }, width });
+    });
+    allNodes.update(nUpd); allEdges.update(eUpd);
+  }
   function applyFilter() {
     const upd = [];
     allNodes.forEach(n => {
@@ -627,10 +684,13 @@ function showNode(bean) {
   if (proxyBeans.has(bean)) tags.push('<span class="pill reason">proxied</span>');
   if (ghosts.has(bean)) tags.push('<span class="pill ghost">ghost candidate</span>');
   if (orphans.has(bean)) tags.push('<span class="pill low">orphan</span>');
+  if (cpSet.has(bean)) tags.push('<span class="pill low" style="color:#e0b13e;border-color:rgba(224,177,62,0.4)">on critical path</span>');
+  const ms = beanTimings[bean];
   panel.innerHTML = `
     <button class="np-close" onclick="this.parentElement.classList.remove('open')">×</button>
     <h3>${esc(bean)}</h3>
     <div style="margin:8px 0 14px;display:flex;gap:6px;flex-wrap:wrap">${tags.join('')||'<span class="pill matched">healthy</span>'}</div>
+    ${ms != null ? `<div class="np-row"><span class="l">Instantiation</span><span class="bean">${ms} ms</span></div>` : ''}
     <div class="np-row"><span class="l">Dependents (fan-in)</span><span class="bean">${fi}</span></div>
     <div class="np-row"><span class="l">Dependencies (fan-out)</span><span class="bean">${depsOut.length}</span></div>
     <div class="section-h" style="margin-top:16px">Depends on</div>

@@ -86,4 +86,13 @@ class WireDoctorHtmlReporterTest {
         // Honest-wording strings survive templating.
         assertThat(content).contains("neither ever claims");
     }
+
+    @Test
+    void graphTabHasHeatAndCriticalPathChips(@TempDir Path tempDir) throws Exception {
+        // v0.10.0: timing-heat and critical-path toggles ship in the graph toolbar.
+        WireDoctorHtmlReporter.generateHtmlReport(MINIMAL_REPORT, tempDir.toFile());
+        String content = Files.readString(tempDir.resolve("wiredoctor-report.html"));
+
+        assertThat(content).contains("data-f=\"heat\"").contains("data-f=\"cp\"");
+    }
 }
