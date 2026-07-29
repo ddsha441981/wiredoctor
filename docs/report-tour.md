@@ -28,11 +28,16 @@ The sidebar footer states the trust posture: *generated at startup, zero-intrusi
 
 The full resolved dependency graph, rendered interactively. Filter chips toggle **User beans / Framework / Cycles only / Ghosts only**, and the search box focuses any bean by name.
 
+Two more chips bring startup timing into the graph (v0.10.0):
+
+- **Timing heat** — recolors nodes green→red (log scale) and scales their size by per-bean instantiation time, so expensive beans jump out at a glance. Off by default; cycle/ghost/proxy/orphan colors keep priority.
+- **Critical path** — traces the startup critical path in gold and dims everything else, matching the chain shown in the Timing tab. Hidden when no timing data was captured.
+
 The screenshot above (from the demo app) shows the killer feature: **circular dependencies are highlighted in red** — `alphaBean ⇄ betaBean` jump out instantly even in a busy graph. Spring may resolve such cycles at runtime via proxies or setter injection, but they remain structural design smells, and WireDoctor's Tarjan SCC detector finds them regardless of how Spring papered over them.
 
 ![Focused bean with dependency details](images/graph-focus.png)
 
-Clicking a node opens the **inspector panel**: health status, fan-in (dependents), fan-out (dependencies), and the exact list of beans it depends on. Here `viewControllerHandlerMapping` is focused — its 3 outgoing edges are highlighted in blue while the rest of the graph dims. This is how you answer "what actually depends on this bean?" without grepping.
+Clicking a node opens the **inspector panel**: health status, instantiation time (when captured), an `on critical path` tag, fan-in (dependents), fan-out (dependencies), and the exact list of beans it depends on. Here `viewControllerHandlerMapping` is focused — its 3 outgoing edges are highlighted in blue while the rest of the graph dims. This is how you answer "what actually depends on this bean?" without grepping.
 
 ---
 
