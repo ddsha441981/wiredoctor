@@ -8,6 +8,8 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 *Captured from a real run against start.spring.io (Boot 4.0.x, 390 beans) with performance gates armed — the red `GATE FAIL` chip is a genuinely tripped gate, not a mockup. [Full report tour →](docs/report-tour.md)*
 
+**▶ [Open this exact report live in your browser](https://ddsha441981.github.io/wiredoctor/sample/test2/wiredoctor-report.html)** — no install needed; it's the self-contained HTML WireDoctor writes on every run.
+
 ---
 
 ## Why WireDoctor?
@@ -121,7 +123,7 @@ Notes:
 | [Ghost Detector](docs/ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
 | [Security posture](docs/security-posture.md) | What the reports expose, offline-only network behavior |
 
-Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/).
+Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/) — or **[view the start.spring.io report live](https://ddsha441981.github.io/wiredoctor/sample/test2/wiredoctor-report.html)** without cloning anything.
 
 ---
 
