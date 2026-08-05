@@ -1,0 +1,11 @@
+FAIL:startup-time
+baseline=wiredoctor-baseline.json
+profiles=dev
+newCycles=0
+resolvedCycles=0
+addedBeans=0
+removedBeans=0
+conditionsChanged=0
+startupTimeDeltaMs=14171
+startupTimePercentChange=45.8
+gateArmed=true
