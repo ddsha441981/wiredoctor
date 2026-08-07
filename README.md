@@ -131,8 +131,8 @@ Pre-generated sample reports (from real apps, including start.spring.io) are in 
 
 Like any static/runtime analysis tool, WireDoctor prefers honest heuristics over false certainty:
 
-1. ⚡ **AOT / GraalVM Native Image Support:**
-   Currently, WireDoctor is designed for **traditional JVM mode only**. Spring Boot 3+ AOT processing fundamentally changes bean instantiation. Running this under Native Image is untested and will likely yield incomplete data.
+1. ⚡ **AOT / GraalVM Native Image — not supported, skipped gracefully:**
+   WireDoctor is designed for **traditional JVM mode only**. When running inside a GraalVM native image (detected at runtime via `NativeDetector.inNativeImage()`), the entire analysis is skipped automatically with a single `WARN` log line — no crash, no incomplete report, no gates. Set `wiredoctor.enabled=false` in your native profile to silence the warning. Boot 3+ AOT *compilation* (not native-image runtime) is unaffected; analysis runs normally in JVM mode even when the app was compiled with AOT processing enabled.
 
 2. 👻 **Orphan Bean Heuristic (Weak Signal):**
    The tool reports "Orphan Beans" (beans with 0 incoming dependencies). This is a **heuristic, not a guarantee** that the bean is unused. Beans accessed dynamically via `ApplicationContext.getBean()`, event listeners, or scheduled tasks will appear as "orphaned". Since v0.6.0 the `ghostCandidates` section refines this (entry-point detection filters out controllers/listeners/runners), and opt-in ghost tracking measures actual invocation — but even a tracked "untouched" bean only means *not invoked during this run*, never "unused".

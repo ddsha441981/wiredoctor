@@ -68,3 +68,16 @@ wiredoctor.enabled=false
 ```
 
 For what the reports expose and WireDoctor's offline-only network behavior (its JVM does zero network I/O), see the [security posture guide](security-posture.md).
+
+---
+
+## v1.0.0 Stability Contract
+
+All `wiredoctor.*` property names listed above are **frozen** as of v1.0.0:
+
+- A property will not be removed without being deprecated for **at least one minor release** first.
+- Deprecated properties log a `WARN` on startup; the old name remains functional until the next major.
+- The report JSON field names (`schemaVersion`, `beanCategories`, `dependencies`, `smells`, `gates`, etc.) are frozen at `schemaVersion: 1`. A field rename or removal requires a new `schemaVersion` value and a **major version bump**.
+- Default values will not change in patch or minor releases.
+
+If you pin the dependency at `1.0.x`, you are guaranteed no breaking config or schema changes until `2.0.0`.
