@@ -20,7 +20,7 @@ import java.util.*;
  * @author Deendayal Kumawat
  * @since 0.1.0
  */
-public class CycleDetector {
+public final class CycleDetector {
 
     /**
      * Detects and returns all cyclic dependency chains in the provided graph.

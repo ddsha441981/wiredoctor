@@ -17,6 +17,7 @@ import org.springframework.boot.context.metrics.buffering.BufferingApplicationSt
 import org.springframework.boot.context.metrics.buffering.StartupTimeline;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.NativeDetector;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.metrics.ApplicationStartup;
 import org.springframework.core.metrics.StartupStep;
@@ -133,6 +134,16 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
     }
 
     private WireDoctorRegressionException analyze(ApplicationReadyEvent event) {
+        // v1.0.0: AOT/native image — unsupported; skip gracefully rather than crash.
+        // Bytecode introspection (AopUtils, BeanFactory reflection) is unreliable
+        // inside a GraalVM native image. All analysis is skipped; reports are not
+        // written. Set wiredoctor.enabled=false explicitly to suppress this warning.
+        if (NativeDetector.inNativeImage()) {
+            log.warn("[WireDoctor] Skipping analysis: running inside a GraalVM native image. "
+                    + "WireDoctor is unsupported in native-image mode (set wiredoctor.enabled=false "
+                    + "in your native profile to silence this warning).");
+            return null;
+        }
         log.info(WireDoctorMessages.BANNER_TOP);
         log.info(WireDoctorMessages.BANNER_TEXT);
         log.info(WireDoctorMessages.BANNER_BOTTOM);
@@ -181,6 +192,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
 
         Map<String, Object> report = new LinkedHashMap<>();
+        // v1.0.0: schema version frozen — increment only on breaking field changes (major bump required)
+        report.put("schemaVersion", 1);
         report.put("activeProfiles", Arrays.asList(activeProfiles));
 
         // ── Section 1: Startup timing + Slow bean instantiation ──────────────

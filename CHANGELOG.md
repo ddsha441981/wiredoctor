@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-08-08
+
+API Freeze & Certification: the promises become contracts. From this release, `wiredoctor.*` config property names, the report JSON schema, and the performance budget are **frozen** — patch and minor releases within 1.x carry no breaking changes.
+
+### Added
+- 📌 **`schemaVersion: 1`** — the first field in every `wiredoctor-report.json`. Schema is now versioned and frozen; a breaking field change requires a new `schemaVersion` value and a major version bump.
+- ⚡ **AOT / GraalVM native image graceful skip** — `NativeDetector.inNativeImage()` check at analysis start. In native-image mode: single `WARN` log, no crash, no incomplete report, no gate trip. JVM mode with AOT compilation is unaffected.
+- ⏱️ **Performance budget test** (`WireDoctorPerformanceBudgetTest`) — CI-enforced: boot + analysis on 1 000 synthetic beans must complete within 30 s and produce a valid report with `schemaVersion: 1`.
+- 📚 **Docs site foundation** (`mkdocs.yml` + `docs/index.md`) — GitHub Pages with Material theme; all existing guides wired in under Guides/Reference navigation.
+- 📋 **Deprecation policy** in `docs/configuration.md` — properties deprecated ≥1 minor before removal; defaults frozen for the 1.x line.
+
+### Changed
+- 🔒 **`CycleDetector` and `WireDoctorHtmlReporter` sealed `final`** — implementation classes not meant for extension. Last-chance API surface review before the freeze.
+
+### Compatibility
+- Boot 2.7.x / 3.3.x / 3.5.x / 4.0.x — CI compat matrix green.
+- WebFlux (Netty) — verified since v0.8.0.
+- AOT / GraalVM native — skipped gracefully (see above).
+- Java 17 / 21 / 25 — all green.
+
+---
+
 ## [0.10.0] - 2026-07-29
 
 Graph Timing: WireDoctor's core value — startup timing analysis — is now visible directly in the Graph tab, not just the Timing tab.

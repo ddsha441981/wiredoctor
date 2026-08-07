@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-parent</artifactId>
-    <version>0.10.0</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <name>WireDoctor</name>

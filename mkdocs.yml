@@ -1,0 +1,65 @@
+site_name: WireDoctor
+site_description: Runtime diagnostic and architectural analysis tool for Spring Boot
+site_url: https://ddsha441981.github.io/wiredoctor/
+repo_name: ddsha441981/wiredoctor
+repo_url: https://github.com/ddsha441981/wiredoctor
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep-purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep-purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+nav:
+  - Home: index.md
+  - Guides:
+    - Report Tour: report-tour.md
+    - CI Gating: ci-gating.md
+    - Performance Gates: performance-gates.md
+    - Upgrade Guard: upgrade-guard.md
+    - Ghost Detector: ghost-detector.md
+    - Security Posture: security-posture.md
+  - Reference:
+    - Configuration: configuration.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ddsha441981/wiredoctor
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/deendayal-kumawat

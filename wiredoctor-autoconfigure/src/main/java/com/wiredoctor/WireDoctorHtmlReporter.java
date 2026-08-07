@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * @author Deendayal Kumawat
  * @since 0.1.0
  */
-public class WireDoctorHtmlReporter {
+public final class WireDoctorHtmlReporter {
     private static final Logger log = LoggerFactory.getLogger(WireDoctorHtmlReporter.class);
 
     /** Classpath location of the bundled vis-network standalone UMD build. */
