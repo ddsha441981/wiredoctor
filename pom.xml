@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
 
     <name>WireDoctor</name>
-    <description>Enterprise-grade Spring Boot diagnostic suite for cyclic dependencies, slow beans, and context analysis.</description>
+    <description>Zero-intrusion runtime architecture analyzer for Spring Boot — detects cyclic dependencies, ghost beans, proxy overhead, and startup bottlenecks, with CI regression gates.</description>
     <url>https://github.com/ddsha441981/wiredoctor</url>
 
     <scm>
