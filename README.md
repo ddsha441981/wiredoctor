@@ -1,5 +1,7 @@
 # 🩺 WireDoctor
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-274%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
+
 > *"Your bean graph has a story. WireDoctor reads it."*
 
 WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. Add one dependency — it hooks into the real, resolved `ApplicationContext` at startup and turns it into an interactive report, honest advice, and CI gates. **Zero-intrusion, zero-dashboard-server, pure insights.**
