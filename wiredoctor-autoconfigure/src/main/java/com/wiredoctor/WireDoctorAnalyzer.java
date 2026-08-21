@@ -759,6 +759,49 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 Object serializedGraph = deps.get("graph");
                 deps.put("graph", graph);
                 Object gatesSection = report.remove("gates");
+                // v1.1.0: append trend-history entry before writing the baseline
+                try {
+                    int trendCap = properties.resolveTrendHistorySize();
+                    @SuppressWarnings("unchecked")
+                    java.util.List<java.util.Map<String, Object>> trendHistory =
+                            new java.util.ArrayList<>();
+                    // Read existing baseline to carry forward prior trend entries
+                    if (baselineFile.isFile()) {
+                        try {
+                            JsonNode root = mapper.readTree(baselineFile);
+                            JsonNode trendNode = root.path("trendHistory");
+                            if (trendNode.isArray()) {
+                                for (JsonNode entry : trendNode) {
+                                    java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+                                    JsonNode ts = entry.get("timestamp");
+                                    JsonNode ms = entry.get("totalStartupMs");
+                                    JsonNode sb = entry.get("slowBeanCount");
+                                    if (ts != null) map.put("timestamp", ts.asLong());
+                                    if (ms != null) map.put("totalStartupMs", ms.asLong());
+                                    if (sb != null) map.put("slowBeanCount", sb.asInt());
+                                    if (!map.isEmpty()) trendHistory.add(map);
+                                }
+                            }
+                        } catch (Exception ignored) {
+                            // Corrupt baseline trend section — start fresh
+                        }
+                    }
+                    // Append current entry
+                    java.util.Map<String, Object> currentEntry = new java.util.LinkedHashMap<>();
+                    currentEntry.put("timestamp", System.currentTimeMillis());
+                    if (totalStartupMs != null) {
+                        currentEntry.put("totalStartupMs", totalStartupMs);
+                    }
+                    currentEntry.put("slowBeanCount", currentSlowBeans.size());
+                    trendHistory.add(currentEntry);
+                    // Cap at configured size (0 = unlimited)
+                    if (trendCap > 0 && trendHistory.size() > trendCap) {
+                        trendHistory = trendHistory.subList(trendHistory.size() - trendCap, trendHistory.size());
+                    }
+                    report.put("trendHistory", trendHistory);
+                } catch (Exception e) {
+                    log.warn("[WireDoctor] Failed to build trend history: {}", e.getMessage());
+                }
                 try {
                     Files.writeString(baselineFile.toPath(), mapper.writeValueAsString(report));
                 } finally {

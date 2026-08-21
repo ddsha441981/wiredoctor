@@ -286,6 +286,76 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    // ── v1.1.0: trend history ────────────────────────────────────────────────
+
+    @Test
+    void baselineWriteProducesTrendHistory(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            JsonNode trend = report.path("trendHistory");
+            assertThat(trend.isArray()).isTrue();
+            assertThat(trend).hasSize(1);
+            assertThat(trend.get(0).has("timestamp")).isTrue();
+            assertThat(trend.get(0).has("totalStartupMs")).isTrue();
+            assertThat(trend.get(0).has("slowBeanCount")).isTrue();
+        }
+    }
+
+    @Test
+    void trendHistoryCarriesForwardAcrossWrites(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext ctx1 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true")) {
+            JsonNode first = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            assertThat(first.path("trendHistory")).hasSize(1);
+            long firstTimestamp = first.path("trendHistory").get(0).path("timestamp").asLong();
+            assertThat(firstTimestamp).isPositive();
+        }
+        // Second write should carry forward the first entry and append a new one
+        try (ConfigurableApplicationContext ctx2 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true")) {
+            JsonNode second = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            assertThat(second.path("trendHistory")).hasSize(2);
+            assertThat(second.path("trendHistory").get(0).path("timestamp").asLong())
+                    .isLessThan(second.path("trendHistory").get(1).path("timestamp").asLong());
+        }
+    }
+
+    @Test
+    void trendHistoryRespectsCap(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext ctx1 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true",
+                "wiredoctor.trend-history-size=2")) {
+            assertThat(tempDir.resolve("baseline.json")).exists();
+        }
+        try (ConfigurableApplicationContext ctx2 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true",
+                "wiredoctor.trend-history-size=2")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            assertThat(report.path("trendHistory")).hasSize(2); // capped, not 3
+        }
+    }
+
+    @Test
+    void reportContainsTrendHistoryField(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            // Normal run (no baseline-write) should not have trendHistory — it's baseline-only
+            assertThat(report.has("trendHistory")).isFalse();
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);
