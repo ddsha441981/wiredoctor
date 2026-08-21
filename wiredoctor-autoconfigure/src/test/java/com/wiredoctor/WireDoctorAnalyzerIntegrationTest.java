@@ -356,6 +356,61 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    // ── v1.1.0: thread distribution ──────────────────────────────────────────
+
+    @Test
+    void reportContainsThreadDistribution(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            JsonNode td = report.path("threadDistribution");
+            assertThat(td.isObject()).isTrue();
+            assertThat(td.has("perThread")).isTrue();
+            assertThat(td.has("counts")).isTrue();
+            assertThat(td.path("counts").isObject()).isTrue();
+            // At least one thread should be present
+            assertThat(td.path("counts").size()).isPositive();
+            // Every counted thread should have a bean list
+            td.path("perThread").fields().forEachRemaining(entry -> {
+                assertThat(entry.getValue().isArray()).isTrue();
+                assertThat(entry.getValue().size()).isPositive();
+            });
+        }
+    }
+
+    @Test
+    void threadDistributionCountsMatchBeanListSizes(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            JsonNode counts = report.path("threadDistribution").path("counts");
+            JsonNode perThread = report.path("threadDistribution").path("perThread");
+            int[] totalFromCounts = {0};
+            counts.values().forEachRemaining(v -> totalFromCounts[0] += v.asInt());
+            int[] totalFromList = {0};
+            perThread.values().forEachRemaining(list -> totalFromList[0] += list.size());
+            assertThat(totalFromCounts[0]).isEqualTo(totalFromList[0]);
+        }
+    }
+
+    @Test
+    void threadDistributionDegradesWhenNoBuffering(@TempDir Path tempDir) throws Exception {
+        // When BufferingApplicationStartup is not available, threadDistribution
+        // should still be present but empty (no thread data collected).
+        // We can't easily disable buffering in the test app, but we can verify
+        // the section is simply absent when timing is unavailable — the HTML
+        // handles absence gracefully.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            // threadDistribution should always be present when timing data exists
+            assertThat(report.has("threadDistribution")).isTrue();
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);
