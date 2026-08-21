@@ -328,13 +328,11 @@ $('#tab-overview').innerHTML = `
   <div class="grid two-col">
     <div class="card">
       <div class="section-h">Bean composition</div>
-      ${compositionBar()}
+      ${compositionDonut()}
     </div>
     <div class="card">
-      <div class="section-h">Startup critical path ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
-      ${cp.available && cp.path && cp.path.length ? `<div class="cp-chain">${
-        cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')
-      }</div><p class="dim" style="font-size:11.5px;margin:10px 0 0">${esc(cp.disclaimer||'')}</p>` : `<div class="empty">No timing data (startup was not buffering).</div>`}
+      <div class="section-h">Critical path timeline ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
+      ${cp.available && cp.path && cp.path.length ? criticalPathTimeline() : `<div class="empty">No timing data (startup was not buffering).</div>`}
     </div>
   </div>
   <div class="grid two-col" style="margin-top:16px">
@@ -350,22 +348,53 @@ $('#tab-overview').innerHTML = `
     </div>
   </div>`;
 
-function compositionBar() {
+function compositionDonut() {
   const bc = reportData.beanCategories || {};
   const total = bc.totalBeans || 1;
-  const segs = [
-    ['User-defined', bc.userDefined||0, 'var(--accent)'],
-    ['Framework', bc.frameworkOwned||0, 'var(--surface-3)'],
-  ];
-  return `<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0 14px">${
-    segs.map(([l,v,c])=>`<div style="width:${(v/total*100).toFixed(1)}%;background:${c}"></div>`).join('')
-  }</div>` + segs.map(([l,v,c])=>`
-    <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px">
-      <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:${c}"></span>${l}</span>
-      <span class="bean muted">${fmt(v)} · ${(v/total*100).toFixed(0)}%</span>
-    </div>`).join('')
-  + `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:6px">
-      <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span></div>`;
+  const ud = bc.userDefined || 0;
+  const fw = bc.frameworkOwned || 0;
+  const udPct = (ud / total * 100).toFixed(1);
+  const fwPct = (fw / total * 100).toFixed(1);
+  const conic = `var(--accent) 0 ${udPct}%, var(--surface-3) ${udPct}% 100%`;
+  return `<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div style="width:110px;height:110px;border-radius:50%;background:conic-gradient(${conic});flex-shrink:0;position:relative">
+      <div style="position:absolute;inset:22px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-2);font-weight:600;text-align:center;line-height:1.3">${fmt(total)}<br><span style="font-size:9px;font-weight:400">beans</span></div>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+        <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent)"></span>User-defined</span>
+        <span class="bean muted">${fmt(ud)} · ${(ud/total*100).toFixed(0)}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+        <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--surface-3)"></span>Framework</span>
+        <span class="bean muted">${fmt(fw)} · ${(fw/total*100).toFixed(0)}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:4px">
+        <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span>
+      </div>
+    </div>
+  </div>`;
+}
+/* v1.1.0: critical path timeline — horizontal stacked bar */
+function criticalPathTimeline() {
+  if (!cp.available || !cp.path || !cp.path.length) return '';
+  const maxMs = cp.path[0].ownMs || 1;
+  const barW = 100;
+  return `<div style="margin-top:6px">${
+    cp.path.map(n => {
+      const pct = (n.ownMs / maxMs * 100).toFixed(1);
+      const isCycle = n.beanName.startsWith('[cycle:');
+      const bg = isCycle ? 'var(--danger)' : 'var(--accent)';
+      const label = n.beanName.length > 28 ? n.beanName.slice(0,25)+'...' : n.beanName;
+      return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0">
+        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(n.beanName)}">${esc(label)}</span>
+        <div style="flex:1;height:18px;background:var(--surface-3);border-radius:3px;overflow:hidden;position:relative">
+          <div style="width:${pct}%;height:100%;background:${bg};border-radius:3px;transition:width 0.3s"></div>
+          <span style="position:absolute;right:6px;top:1px;font-size:10px;color:var(--text-2);font-family:var(--mono)">${n.ownMs!=null?n.ownMs+'ms':''}</span>
+        </div>
+      </div>`;
+    }).join('')
+  }<p class="dim" style="font-size:11px;margin:8px 0 0">${esc(cp.disclaimer||'')}</p></div>`;
 }
 function hotspotRows() {
   const list = (reportData.smells && reportData.smells.highFanIn) || [];
@@ -432,6 +461,8 @@ $('#tab-smells').innerHTML = `
 
 /* ───────── Timing tab ───────── */
 const steps = reportData.startupSlowestSteps || [];
+const trendHistory = reportData.trendHistory || [];
+const threadDist = reportData.threadDistribution;
 const slowBeans = reportData.slowBeans || [];
 function timingTable(rows, nameKey, msKey) {
   if (!rows.length) return '<div class="empty">No data.</div>';
@@ -444,6 +475,7 @@ function timingTable(rows, nameKey, msKey) {
 $('#tab-timing').innerHTML = `
   <h1 class="page-title">Startup Timing</h1>
   <p class="page-sub">From BufferingApplicationStartup — real measured instantiation, no reflection heuristics.</p>
+  ${threadDistributionCard()}
   <div class="grid two-col">
     <div class="card"><div class="section-h">Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
     <div class="card"><div class="section-h">Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
@@ -456,11 +488,9 @@ $('#tab-timing').innerHTML = `
     <div class="section-h">Critical path — the chain your readiness sits on</div>
     <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
   </div>`:''}
-  ${trendSparkline()}
-  ${threadDistributionCard()}`;
+  ${trendSparkline()}`;
 
 /* v1.1.0: trend sparkline */
-const trendHistory = reportData.trendHistory || [];
 function trendSparkline() {
   if (trendHistory.length < 2) {
     return '<div class="empty">Need at least 2 baseline writes to show a trend. Run with wiredoctor.baseline-write=true across builds.</div>';
@@ -511,7 +541,6 @@ function trendSparkline() {
 }
 
 /* v1.1.0: thread distribution donut + table */
-const threadDist = reportData.threadDistribution;
 function threadDistributionCard() {
   if (!threadDist) return '';
   const counts = threadDist.counts || {};
