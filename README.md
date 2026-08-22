@@ -1,6 +1,6 @@
 # 🩺 WireDoctor
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-242%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-242%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
 
 > *"Your bean graph has a story. WireDoctor reads it."*
 
