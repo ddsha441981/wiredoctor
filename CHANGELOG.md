@@ -5,6 +5,75 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-08-22
+
+**Longitudinal Visibility**: two focused features extending the existing baseline
+and timing infrastructure — startup time trends across builds and per-thread
+bean distribution for parallel initialization.
+
+### Added
+
+- 📈 **Startup Time Trend** — the baseline file now accumulates a `trendHistory[]`
+  array (capped at `wiredoctor.trend.history-size`, default 30, `0` = unlimited).
+  Each `baseline-write` run appends `{timestamp, totalStartupMs, slowBeanCount}`.
+  The Timing tab renders a **sparkline chart** showing the startup-time trajectory
+  over the last N builds, so a creeping +50ms/week becomes visible before the
+  gate trips. Purely additive — `Snapshot.fromJson()` skips absent sections;
+  `schemaVersion` stays `1`.
+- 🧵 **Thread Distribution** — `spring.beans.instantiate` startup steps now carry
+  a `threadName` tag captured at step creation time via
+  `WireDoctorBufferingApplicationStartup`. The report gains a `threadDistribution`
+  section mapping each thread to its beans and a per-thread count. The Timing tab
+  renders a **donut chart** (bean share per thread) and a sortable table.
+  Degrades gracefully when all beans run on `main`. Distribution only — which
+  beans ran on which threads; NOT swimlane diagrams or blocking inference (those
+  need start/end timestamps per thread + dependency overlay, a v1.2+ research item).
+- 🎨 **UI polish** — hover effects, icons, and animations across the report tabs
+  for a more polished diagnostic console experience.
+
+### Changed
+
+- **Architecture migration**: `WireDoctorStartupListener` (ApplicationListener)
+  replaced by `WireDoctorEnvironmentPostProcessor` (EnvironmentPostProcessor) +
+  `WireDoctorBufferingApplicationStartup` (extends `BufferingApplicationStartup`).
+  The new processor runs before context preparation, ensuring the
+  `ApplicationStartup` is set at the correct lifecycle phase. The subclass
+  approach keeps Actuator `/actuator/startup` type checks intact.
+- **Thread tagging moved to step creation**: instead of calling
+  `Thread.currentThread()` at analysis time (which always returned `main`),
+  `WireDoctorBufferingApplicationStartup.start()` tags each
+  `spring.beans.instantiate` step with the actual instantiating thread name.
+- **Prototype bean thread tracking**: `beanThreadMap` is now
+  `Map<String, Set<String>>` so prototype beans initialized on multiple threads
+  accumulate all their threads instead of overwriting.
+
+### Fixed
+
+- **Politeness contract restored**: the `EnvironmentPostProcessor` only replaces
+  `ApplicationStartup.DEFAULT` or `null`. Plain
+  `BufferingApplicationStartup` instances are transparently upgraded (same type,
+  additional thread-tagging capability). Foreign non-buffering
+  `ApplicationStartup` implementations are never overwritten — timing analysis
+  degrades gracefully while all other analysis runs normally.
+
+### Configuration
+
+- `wiredoctor.trend.history-size` (default `30`, `0` = unlimited) — cap on
+  `trendHistory[]` entries in the baseline file.
+
+### Tests
+
+- 242 autoconfigure tests green (+7 new: trend history carry-forward and cap,
+  trend absent from runtime report, thread distribution presence and count
+  consistency, `EnvironmentPostProcessor` politeness contract across 5 startup
+  variants, threadName tag capture on bean instantiate steps).
+
+### Documentation
+
+- Badges added to README (Maven Central, CI, tests, license).
+
+---
+
 ## [1.0.0] - 2026-08-08
 
 API Freeze & Certification: the promises become contracts. From this release, `wiredoctor.*` config property names, the report JSON schema, and the performance budget are **frozen** — patch and minor releases within 1.x carry no breaking changes.
