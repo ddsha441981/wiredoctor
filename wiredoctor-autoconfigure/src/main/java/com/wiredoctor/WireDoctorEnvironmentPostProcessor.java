@@ -19,8 +19,13 @@ import java.lang.reflect.Field;
 /**
  * Replaces the default {@link ApplicationStartup} with {@link WireDoctorBufferingApplicationStartup}.
  * <p>
- * This processor runs exactly before context preparation, ensuring that the SpringApplication
+ * This processor runs before context preparation, ensuring that the SpringApplication
  * correctly binds the updated startup tracker.
+ * <p>
+ * Politeness contract: only replaces {@code DEFAULT} or {@code null}. Foreign
+ * {@link ApplicationStartup} implementations (including non-buffering custom ones)
+ * are never overwritten — timing analysis degrades gracefully but the host app
+ * is never affected.
  *
  * @author Deendayal Kumawat
  * @since 1.1.0
@@ -51,10 +56,15 @@ public class WireDoctorEnvironmentPostProcessor implements EnvironmentPostProces
                 log.warn(WireDoctorMessages.STARTUP_FOREIGN_DETECTED, bas.getClass().getName());
                 log.warn("WireDoctor thread-distribution disabled: custom ApplicationStartup subclass '{}' detected.", bas.getClass().getName());
             }
-        } else {
+        } else if (current == ApplicationStartup.DEFAULT || current == null) {
+            // No buffering setup — install our own to capture timings + thread data
             application.setApplicationStartup(
                 new WireDoctorBufferingApplicationStartup(WireDoctorBufferingApplicationStartup.DEFAULT_CAPACITY)
             );
+        } else {
+            // Foreign (non-buffering) ApplicationStartup — respect it, never overwrite
+            log.warn(WireDoctorMessages.STARTUP_FOREIGN_DETECTED, current.getClass().getName());
+            log.warn("WireDoctor thread-distribution disabled: custom ApplicationStartup '{}' detected.", current.getClass().getName());
         }
     }
 

@@ -23,11 +23,16 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * ApplicationStartup coexistence (v0.8.0): the app (or another tool) may install
- * its own {@link ApplicationStartup} before WireDoctor's listener runs. Pins the
- * politeness contract: WireDoctor never overwrites foreign instrumentation, the
- * host never crashes, and the report degrades gracefully (timing section empty,
- * everything else intact).
+ * ApplicationStartup coexistence (v0.8.0, v1.1.0): the app (or another tool) may install
+ * its own {@link ApplicationStartup} before WireDoctor's processor runs. Pins the
+ * politeness contract:
+ * <ul>
+ *   <li>Plain {@link BufferingApplicationStartup} → transparently upgraded to
+ *       {@link WireDoctorBufferingApplicationStartup} (adds thread tagging, same type)</li>
+ *   <li>Foreign non-buffering {@link ApplicationStartup} → never overwritten,
+ *       timing analysis degrades gracefully</li>
+ *   <li>Host app never crashes regardless of what's set</li>
+ * </ul>
  */
 class WireDoctorStartupCoexistenceTest {
 
@@ -47,7 +52,11 @@ class WireDoctorStartupCoexistenceTest {
     }
 
     @Test
-    void userSetBufferingStartupIsKeptAndTimingsStillWork(@TempDir Path tempDir) throws Exception {
+    void plainBufferingStartupIsUpgradedForThreadTagging(@TempDir Path tempDir) throws Exception {
+        // v1.1.0: plain BufferingApplicationStartup is transparently replaced with
+        // WireDoctorBufferingApplicationStartup to capture threadName tags.
+        // The user's instance is NOT kept — it's upgraded to the same type with
+        // additional capability (thread tagging on step creation).
         BufferingApplicationStartup usersOwn = new BufferingApplicationStartup(5000);
         try (ConfigurableApplicationContext context = new SpringApplicationBuilder(PlainApp.class)
                 .web(WebApplicationType.NONE)
@@ -55,10 +64,11 @@ class WireDoctorStartupCoexistenceTest {
                 .properties("wiredoctor.output-path=" + tempDir)
                 .run()) {
             assertThat(context.isActive()).isTrue();
-            // WireDoctor must keep the USER'S instance, not swap in its own.
-            assertThat(context.getApplicationStartup()).isSameAs(usersOwn);
+            // Upgraded to WireDoctorBufferingApplicationStartup (same BufferingApplicationStartup type)
+            assertThat(context.getApplicationStartup())
+                    .isInstanceOf(WireDoctorBufferingApplicationStartup.class);
 
-            // And timings still work — it's buffering, so the analyzer reads it.
+            // Timings still work — it's still buffering, just with thread tagging
             JsonNode report = new ObjectMapper()
                     .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
             assertThat(report.path("startupSlowestSteps").size()).isPositive();
