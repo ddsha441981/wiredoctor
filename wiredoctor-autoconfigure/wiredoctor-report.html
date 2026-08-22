@@ -350,27 +350,27 @@ const reportData = {
   },
   "startupSlowestSteps" : [ {
     "name" : "spring.context.refresh",
-    "durationMs" : 161,
+    "durationMs" : 233,
     "tags" : { }
   }, {
     "name" : "spring.context.beans.post-process",
-    "durationMs" : 85,
+    "durationMs" : 140,
     "tags" : { }
   }, {
     "name" : "spring.context.beandef-registry.post-process",
-    "durationMs" : 77,
+    "durationMs" : 130,
     "tags" : {
-      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@60e9bda0"
+      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@1640a06f"
     }
   }, {
     "name" : "spring.context.config-classes.parse",
-    "durationMs" : 76,
+    "durationMs" : 129,
     "tags" : {
       "classCount" : "50"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 17,
+    "durationMs" : 18,
     "tags" : {
       "threadName" : "main",
       "beanName" : "standardJacksonObjectMapperBuilderCustomizer"
@@ -391,7 +391,7 @@ const reportData = {
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 4,
+    "durationMs" : 6,
     "tags" : {
       "threadName" : "main",
       "beanName" : "bootstrapExecutor",
@@ -399,10 +399,17 @@ const reportData = {
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 3,
+    "durationMs" : 5,
     "tags" : {
       "threadName" : "main",
       "beanName" : "messageConverters"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 4,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "threadPoolTaskExecutorBuilder"
     }
   }, {
     "name" : "spring.beans.instantiate",
@@ -412,33 +419,17 @@ const reportData = {
       "beanName" : "wireDoctorAnalyzer"
     }
   }, {
+    "name" : "spring.beans.smart-initialize",
+    "durationMs" : 3,
+    "tags" : {
+      "beanName" : "org.springframework.context.event.internalEventListenerProcessor"
+    }
+  }, {
     "name" : "spring.beans.instantiate",
     "durationMs" : 3,
     "tags" : {
       "threadName" : "main",
-      "beanName" : "threadPoolTaskExecutorBuilder"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "wiredoctor-com.wiredoctor.WireDoctorProperties"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "defaultCodecCustomizer"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "org.springframework.context.annotation.internalConfigurationAnnotationProcessor",
-      "beanType" : "interface org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor"
+      "beanName" : "lifecycleProcessor"
     }
   }, {
     "name" : "spring.beans.instantiate",
@@ -452,34 +443,42 @@ const reportData = {
     "durationMs" : 2,
     "tags" : {
       "threadName" : "main",
-      "beanName" : "jacksonObjectMapper"
+      "beanName" : "wiredoctor-com.wiredoctor.WireDoctorProperties"
     }
   }, {
-    "name" : "spring.beans.smart-initialize",
+    "name" : "spring.beans.instantiate",
     "durationMs" : 2,
-    "tags" : {
-      "beanName" : "org.springframework.context.event.internalEventListenerProcessor"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 1,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "stringHttpMessageConverter"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 1,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "exchangeStrategiesCustomizer"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 1,
     "tags" : {
       "threadName" : "main",
       "beanName" : "org.springframework.boot.autoconfigure.netty.NettyAutoConfiguration"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 2,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 1,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "clientHttpConnectorBuilder"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 1,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 1,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration"
     }
   } ],
   "slowBeans" : [ ],
@@ -491,51 +490,51 @@ const reportData = {
     "spring.http.reactiveclient-org.springframework.boot.autoconfigure.http.client.reactive.HttpReactiveClientProperties" : 0,
     "org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration" : 1,
     "simpleAsyncTaskSchedulerBuilder" : 0,
-    "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" : 0,
+    "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" : 1,
     "org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration$DefaultCodecsConfiguration" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration" : 0,
-    "org.springframework.context.annotation.internalConfigurationAnnotationProcessor" : 2,
+    "org.springframework.context.annotation.internalConfigurationAnnotationProcessor" : 1,
     "nettyAutoConfigurationLazyInitializationExcludeFilter" : 0,
-    "bootstrapExecutor" : 4,
+    "bootstrapExecutor" : 6,
     "propertySourcesPlaceholderConfigurer" : 0,
     "org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration" : 0,
     "parameterNamesModule" : 0,
     "reactorResourceFactoryClientHttpConnectorBuilderCustomizer" : 0,
     "spring.http.codecs-org.springframework.boot.autoconfigure.http.codec.HttpCodecsProperties" : 0,
-    "org.springframework.boot.autoconfigure.netty.NettyAutoConfiguration" : 1,
-    "reactorResourceFactory" : 0,
+    "org.springframework.boot.autoconfigure.netty.NettyAutoConfiguration" : 2,
+    "reactorResourceFactory" : 1,
     "stringHttpMessageConverter" : 1,
-    "defaultCodecCustomizer" : 2,
+    "defaultCodecCustomizer" : 1,
     "org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration" : 0,
-    "messageConverters" : 3,
+    "messageConverters" : 5,
     "jsonComponentModule" : 1,
     "org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration" : 0,
     "org.springframework.context.event.internalEventListenerFactory" : 0,
     "mappingJackson2HttpMessageConverter" : 0,
     "applicationTaskExecutorAsyncConfigurer" : 0,
     "spring.reactor.netty-org.springframework.boot.autoconfigure.reactor.netty.ReactorNettyProperties" : 0,
-    "restClientBuilderConfigurer" : 0,
+    "restClientBuilderConfigurer" : 1,
     "org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration" : 0,
     "applicationAvailability" : 0,
     "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration" : 0,
     "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" : 2,
     "clientHttpConnectorSettings" : 0,
     "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" : 0,
-    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : 0,
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : 1,
     "org.springframework.boot.context.internalConfigurationPropertiesBinder" : 0,
     "org.springframework.boot.sql.init.dependency.DatabaseInitializationDependencyConfigurer$DependsOnDatabaseInitializationPostProcessor" : 0,
     "org.springframework.boot.autoconfigure.AutoConfigurationPackages" : 0,
     "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration" : 0,
-    "spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties" : 0,
+    "spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties" : 1,
     "reactorAutoConfigurationLazyInitializationExcludeFilter" : 0,
     "reactorNettyHttpClientMapperClientHttpConnectorBuilderCustomizer" : 0,
-    "org.springframework.boot.autoconfigure.reactor.ReactorAutoConfiguration" : 0,
+    "org.springframework.boot.autoconfigure.reactor.ReactorAutoConfiguration" : 1,
     "org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration" : 0,
     "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration" : 0,
-    "standardJacksonObjectMapperBuilderCustomizer" : 17,
+    "standardJacksonObjectMapperBuilderCustomizer" : 18,
     "org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor" : 0,
-    "threadPoolTaskExecutorBuilder" : 3,
+    "threadPoolTaskExecutorBuilder" : 4,
     "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration" : 0,
     "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration" : 0,
     "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration" : 0,
@@ -549,17 +548,17 @@ const reportData = {
     "org.springframework.context.event.internalEventListenerProcessor" : 0,
     "spring.netty-org.springframework.boot.autoconfigure.netty.NettyProperties" : 1,
     "jsonMixinModuleEntries" : 12,
-    "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : 1,
+    "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : 0,
     "org.springframework.boot.context.properties.BoundConfigurationProperties" : 0,
     "jacksonObjectMapperBuilder" : 0,
-    "restClientSsl" : 0,
+    "restClientSsl" : 1,
     "threadPoolTaskSchedulerBuilder" : 1,
     "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : 0,
-    "spring.http.client-org.springframework.boot.autoconfigure.http.client.HttpClientProperties" : 0,
-    "spring.reactor-org.springframework.boot.autoconfigure.reactor.ReactorProperties" : 0,
+    "spring.http.client-org.springframework.boot.autoconfigure.http.client.HttpClientProperties" : 1,
+    "spring.reactor-org.springframework.boot.autoconfigure.reactor.ReactorProperties" : 1,
     "org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration" : 0,
-    "exchangeStrategiesCustomizer" : 1,
-    "lifecycleProcessor" : 1,
+    "exchangeStrategiesCustomizer" : 0,
+    "lifecycleProcessor" : 3,
     "org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration" : 0,
     "org.springframework.aop.config.internalAutoProxyCreator" : 1,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration" : 0,
@@ -581,7 +580,7 @@ const reportData = {
     "simpleAsyncTaskExecutorBuilder" : 0,
     "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration" : 1,
     "jsonMixinModule" : 13,
-    "clientHttpRequestFactoryBuilder" : 0,
+    "clientHttpRequestFactoryBuilder" : 1,
     "sslBundleRegistry" : 0,
     "org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration" : 0,
     "wireDoctorAnalyzer" : 3,
@@ -592,15 +591,15 @@ const reportData = {
     "fileWatcher" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$ParameterNamesModuleConfiguration" : 0,
     "org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration" : 0,
-    "jacksonObjectMapper" : 2,
+    "jacksonObjectMapper" : 1,
     "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$ClassProxyingConfiguration" : 0,
     "httpMessageConvertersRestClientCustomizer" : 0,
     "clientHttpRequestFactorySettings" : 0,
-    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : 1,
+    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : 2,
     "sslPropertiesSslBundleRegistrar" : 0
   },
   "slowBeanThreshold" : 100,
-  "totalStartupMs" : 188,
+  "totalStartupMs" : 261,
   "beanCategories" : {
     "totalBeans" : 121,
     "roleApplication" : 110,
@@ -660,12 +659,13 @@ const reportData = {
       "jsonMixinModuleEntries" : 1,
       "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : 1,
       "jacksonObjectMapperBuilder" : 1,
-      "org.springframework.beans.factory.support.DefaultListableBeanFactory@482f1b64" : 1,
       "spring.http.codecs-org.springframework.boot.autoconfigure.http.codec.HttpCodecsProperties" : 1,
       "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : 2,
       "spring.http.client-org.springframework.boot.autoconfigure.http.client.HttpClientProperties" : 1,
       "spring.reactor-org.springframework.boot.autoconfigure.reactor.ReactorProperties" : 1,
+      "org.springframework.beans.factory.support.DefaultListableBeanFactory@67cb11de" : 1,
       "reactorResourceFactory" : 1,
+      "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d" : 4,
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration" : 1,
       "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration$WebClientCodecsConfiguration" : 1,
       "wiredoctor-com.wiredoctor.WireDoctorProperties" : 1,
@@ -690,7 +690,6 @@ const reportData = {
       "clientHttpConnectorSettings" : 1,
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration" : 1,
       "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" : 1,
-      "org.springframework.context.annotation.AnnotationConfigApplicationContext@785d3dc3" : 4,
       "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : 3,
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : 1,
       "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" : 1,
@@ -742,7 +741,7 @@ const reportData = {
       "org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration" : [ ],
       "org.springframework.context.event.internalEventListenerFactory" : [ ],
       "mappingJackson2HttpMessageConverter" : [ "org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration$MappingJackson2HttpMessageConverterConfiguration", "jacksonObjectMapper" ],
-      "applicationTaskExecutorAsyncConfigurer" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration", "org.springframework.beans.factory.support.DefaultListableBeanFactory@482f1b64" ],
+      "applicationTaskExecutorAsyncConfigurer" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration", "org.springframework.beans.factory.support.DefaultListableBeanFactory@67cb11de" ],
       "restTemplateBuilderConfigurer" : [ ],
       "spring.reactor.netty-org.springframework.boot.autoconfigure.reactor.netty.ReactorNettyProperties" : [ ],
       "restClientBuilderConfigurer" : [ "org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration" ],
@@ -780,10 +779,10 @@ const reportData = {
       "webClientSsl" : [ "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration", "clientHttpConnectorBuilder", "clientHttpConnectorSettings", "sslBundleRegistry" ],
       "org.springframework.context.event.internalEventListenerProcessor" : [ ],
       "spring.netty-org.springframework.boot.autoconfigure.netty.NettyProperties" : [ ],
-      "jsonMixinModuleEntries" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@785d3dc3" ],
+      "jsonMixinModuleEntries" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d" ],
       "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : [ ],
       "org.springframework.boot.context.properties.BoundConfigurationProperties" : [ ],
-      "jacksonObjectMapperBuilder" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@785d3dc3", "standardJacksonObjectMapperBuilderCustomizer" ],
+      "jacksonObjectMapperBuilder" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d", "standardJacksonObjectMapperBuilderCustomizer" ],
       "restClientSsl" : [ "org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration", "sslBundleRegistry" ],
       "threadPoolTaskSchedulerBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration", "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" ],
       "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : [ ],
@@ -811,7 +810,7 @@ const reportData = {
       "spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties" : [ ],
       "org.springframework.context.annotation.internalAutowiredAnnotationProcessor" : [ ],
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperConfiguration" : [ ],
-      "jsonMixinModule" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@785d3dc3", "jsonMixinModuleEntries" ],
+      "jsonMixinModule" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d", "jsonMixinModuleEntries" ],
       "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration" : [ "spring.http.reactiveclient-org.springframework.boot.autoconfigure.http.client.reactive.HttpReactiveClientProperties" ],
       "simpleAsyncTaskExecutorBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" ],
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$BootstrapExecutorConfiguration" : [ ],
@@ -821,7 +820,7 @@ const reportData = {
       "wireDoctorAnalyzer" : [ "com.wiredoctor.WireDoctorAutoConfiguration", "wiredoctor-com.wiredoctor.WireDoctorProperties" ],
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration" : [ ],
       "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration" : [ ],
-      "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@785d3dc3", "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" ],
+      "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d", "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" ],
       "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" : [ ],
       "webClientHttpConnectorCustomizer" : [ ],
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$ParameterNamesModuleConfiguration" : [ ],
@@ -842,7 +841,7 @@ const reportData = {
   "criticalPath" : {
     "available" : true,
     "totalMs" : 25,
-    "percentOfReadiness" : 13.3,
+    "percentOfReadiness" : 9.6,
     "path" : [ {
       "beanName" : "jsonMixinModuleEntries",
       "ownMs" : 12,
@@ -1695,8 +1694,8 @@ const reportData = {
     }
   },
   "trendHistory" : [ {
-    "timestamp" : 1787361954103,
-    "totalStartupMs" : 188,
+    "timestamp" : 1787374482978,
+    "totalStartupMs" : 261,
     "slowBeanCount" : 0
   } ],
   "gates" : {
