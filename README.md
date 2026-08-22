@@ -1,6 +1,6 @@
 # 🩺 WireDoctor
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-274%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-242%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE)
 
 > *"Your bean graph has a story. WireDoctor reads it."*
 
@@ -61,13 +61,13 @@ Add the dependency — that's it. WireDoctor runs at startup, writes `wiredoctor
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:1.0.0'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:1.1.0'
 ```
 
 Want CI gates? Capture a baseline once, commit it, arm the gates:
@@ -154,7 +154,11 @@ See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for the full, versioned list.
 
 ## 🔮 Roadmap
 
-Next up: **v1.0.0 — API & schema freeze + Maven Central launch.** Report schema stabilized, publish to Maven Central, launch.
+**v1.1.0 (shipping) — Longitudinal Visibility** — see [CHANGELOG](CHANGELOG.md#v110---2026-08-22):
+- 📈 **Startup Time Trend** — `trendHistory[]` in baseline with a sparkline in the Timing tab, so startup-time creep is visible before the gate trips.
+- 🧵 **Thread Distribution** — per-thread bean map with donut chart, capturing which beans run on which threads in parallel Spring Boot 3.2+ initialization.
+
+**v1.2.0 — Architectural Boundaries & Dev Feedback** — multi-module boundary violation detection (`wiredoctor.module-boundaries`) and DevTools restart integration (instant per-restart smell/cycle/slow-bean diff).
 
 Dropped (deliberately): **Memory Footprint Estimation** — honest per-bean heap numbers need a Java Agent; shallow size-of is a correctness trap. The Ghost Detector answers the same underlying question ("which beans are wasting resources?") without lying about bytes.
 
