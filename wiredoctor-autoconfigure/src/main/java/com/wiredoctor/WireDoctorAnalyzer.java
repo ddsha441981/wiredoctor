@@ -224,23 +224,28 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     .collect(Collectors.toList());
 
             // Feature 3: Slow bean instantiation (spring.beans.instantiate steps)
-            Map<String, String> beanThreadMap = new HashMap<>();
+            Map<String, java.util.Set<String>> beanThreadMap = new java.util.HashMap<>();
             for (StartupTimeline.TimelineEvent e : timeline.getEvents()) {
                 if (!"spring.beans.instantiate".equals(e.getStartupStep().getName())) continue;
                 long durationMs = e.getDuration().toMillis();
 
                 String beanName = "unknown";
+                String threadName = "unknown";
                 for (StartupStep.Tag tag : e.getStartupStep().getTags()) {
                     if ("beanName".equals(tag.getKey())) {
                         beanName = tag.getValue();
-                        break;
+                    } else if ("threadName".equals(tag.getKey())) {
+                        threadName = tag.getValue();
                     }
                 }
                 // Instantiate steps nest (a bean's constructor triggers its deps),
                 // so keep the max per bean name rather than overwriting.
                 beanInstantiationMs.merge(beanName, durationMs, Math::max);
-                // v1.1.0: record which thread instantiated each bean
-                beanThreadMap.put(beanName, Thread.currentThread().getName());
+                // Fix for prototype beans initialized on multiple threads
+                if (!"unknown".equals(beanName) && !"unknown".equals(threadName)) {
+                    beanThreadMap.computeIfAbsent(beanName, k -> new java.util.HashSet<>(4))
+                                 .add(threadName);
+                }
 
                 if (durationMs < slowBeanThresholdMs) continue;
                 Map<String, Object> beanInfo = new LinkedHashMap<>();
@@ -252,9 +257,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             // v1.1.0: aggregate thread distribution
             Map<String, List<String>> threadToBeans = new LinkedHashMap<>();
             Map<String, Integer> threadToCount = new LinkedHashMap<>();
-            beanThreadMap.forEach((bean, thread) -> {
-                threadToBeans.computeIfAbsent(thread, k -> new ArrayList<>()).add(bean);
-                threadToCount.merge(thread, 1, Integer::sum);
+            beanThreadMap.forEach((bean, threads) -> {
+                for (String thread : threads) {
+                    threadToBeans.computeIfAbsent(thread, k -> new ArrayList<>()).add(bean);
+                    threadToCount.merge(thread, 1, Integer::sum);
+                }
             });
             Map<String, Object> threadDistribution = new LinkedHashMap<>();
             threadDistribution.put("perThread", threadToBeans);
