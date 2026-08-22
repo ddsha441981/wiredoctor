@@ -79,6 +79,8 @@ Notes:
 | [Performance gates](https://ddsha441981.github.io/wiredoctor/performance-gates.md) | Startup-time and slow-bean gates, thresholds, noise tolerance |
 | [Upgrade Guard](https://ddsha441981.github.io/wiredoctor/upgrade-guard.md) | Catching silent autoconfiguration changes across Boot upgrades |
 | [Ghost Detector](https://ddsha441981.github.io/wiredoctor/ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Thread Distribution](https://ddsha441981.github.io/wiredoctor/thread-distribution.md) | Per-thread bean map with donut chart (v1.1.0) |
+| [Startup Time Trend](https://ddsha441981.github.io/wiredoctor/startup-time-trend.md) | trendHistory in baseline + sparkline (v1.1.0) |
 | [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.md) | What the reports expose, offline-only network behavior |
 | [Known Limitations](https://ddsha441981.github.io/wiredoctor/known-limitations.md) | Honest heuristics and what the tool cannot guarantee |
 

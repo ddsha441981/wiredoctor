@@ -71,6 +71,8 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 | [Performance gates](performance-gates.md) | Startup-time and slow-bean gates, thresholds, noise tolerance |
 | [Upgrade Guard](upgrade-guard.md) | Catching silent autoconfiguration changes across Boot upgrades |
 | [Ghost Detector](ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Thread Distribution](thread-distribution.md) | Per-thread bean map with donut chart (v1.1.0) |
+| [Startup Time Trend](startup-time-trend.md) | trendHistory in baseline + sparkline (v1.1.0) |
 | [Security posture](security-posture.md) | What the reports expose, offline-only network behavior |
 | [Known Limitations](known-limitations.md) | Honest heuristics and what the tool cannot guarantee |
 
