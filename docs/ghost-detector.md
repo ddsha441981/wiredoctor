@@ -1,3 +1,8 @@
+---
+title: Ghost Detector
+nav_order: 8
+---
+
 # 👻 Ghost Bean Detector (v0.6.0)
 
 > *"Which beans are wasting resources?" — answered honestly, in two phases.*

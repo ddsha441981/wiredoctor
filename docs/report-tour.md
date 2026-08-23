@@ -1,3 +1,8 @@
+---
+title: Report tour
+nav_order: 3
+---
+
 # 📸 WireDoctor Report Tour
 
 A guided walkthrough of the WireDoctor HTML console, tab by tab. All screenshots are from a **real run against start.spring.io** (Spring Initializr, Spring Boot 4.0.x, 390 beans, 432 wiring edges) with WireDoctor **0.7.1** and performance gates armed (`wiredoctor.fail-on=startup-time,slow-bean`) — not a staged demo. The full sample reports are in [`sample/`](https://github.com/ddsha441981/wiredoctor/tree/main/sample).

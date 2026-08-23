@@ -1,3 +1,8 @@
+---
+title: Startup Time Trend
+nav_order: 10
+---
+
 # Startup Time Trend — track creep over time (v1.1.0)
 
 Every baseline write appends a timestamped snapshot to `trendHistory[]` inside `wiredoctor-baseline.json`. The Timing tab renders a **sparkline** so you can see startup-time creep before the gate trips.

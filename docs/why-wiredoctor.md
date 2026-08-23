@@ -1,3 +1,8 @@
+---
+title: Why WireDoctor
+nav_order: 2
+---
+
 # Why WireDoctor?
 
 Five real problems. One dependency.

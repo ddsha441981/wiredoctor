@@ -1,3 +1,8 @@
+---
+title: Security posture
+nav_order: 11
+---
+
 # Security posture
 
 WireDoctor is a startup-time diagnostic tool. It reads your application's

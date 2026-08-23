@@ -1,3 +1,8 @@
+---
+title: Upgrade Guard
+nav_order: 7
+---
+
 # Upgrade Guard — catch what a Spring Boot upgrade silently changed
 
 You bumped Spring Boot. The build is green, the app starts. Three weeks later a feature
