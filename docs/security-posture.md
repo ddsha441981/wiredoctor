@@ -37,7 +37,7 @@ structural map of your application's internals:
   into touched/untouched/untrackable). Same information class as bean names; add
   `wiredoctor-ghost-report.json` to the gitignore list below. Note the tracking
   feature itself is off by default and intended for dev/staging only — see the
-  [Ghost Detector guide](ghost-detector.md).
+  [Ghost Detector guide](ghost-detector.html).
 
 None of this is a secret in the cryptographic sense — there are no credentials,
 tokens, connection strings, or user data in the report. WireDoctor reads bean

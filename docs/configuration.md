@@ -30,7 +30,7 @@ wiredoctor.max-graph-nodes=2000
 | `wiredoctor.startup-time-absolute-threshold` | `500` | ms. Startup must regress by more than this **AND** the relative threshold to trip `startup-time`. |
 | `wiredoctor.startup-time-relative-threshold` | `0.20` | Fraction (0.20 = 20%). The other half of the dual-threshold AND condition. |
 | `wiredoctor.slow-bean-margin-ms` | `20` | Jitter margin for the `slow-bean` gate: a *new* slow bean must exceed `threshold + margin` to trip. Beans inside the margin band are reported but never fail CI. `0` = exact pre-v0.8.0 behavior. |
-| `wiredoctor.trend-history-size` | `30` | Cap on `trendHistory[]` entries kept in the baseline file. Each `baseline-write` run appends one `{timestamp, totalStartupMs, slowBeanCount}` entry and trims the oldest beyond the cap. `0` = unlimited. See [Startup Time Trend](startup-time-trend.md). |
+| `wiredoctor.trend-history-size` | `30` | Cap on `trendHistory[]` entries kept in the baseline file. Each `baseline-write` run appends one `{timestamp, totalStartupMs, slowBeanCount}` entry and trims the oldest beyond the cap. `0` = unlimited. See [Startup Time Trend](startup-time-trend.html). |
 
 ```properties
 # One-time baseline capture (commit the file):
@@ -43,7 +43,7 @@ wiredoctor.baseline-write=false
 wiredoctor.fail-on=new-cycle,startup-time,slow-bean
 ```
 
-Gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json` for CI inspection. Full walkthroughs: [Performance Gates](performance-gates.md) · [CI gating](ci-gating.md) · [Upgrade Guard](upgrade-guard.md).
+Gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json` for CI inspection. Full walkthroughs: [Performance Gates](performance-gates.html) · [CI gating](ci-gating.html) · [Upgrade Guard](upgrade-guard.html).
 
 ## Ghost Tracking (opt-in — dev/staging only)
 
@@ -57,7 +57,7 @@ wiredoctor.ghost-tracking.enabled=true
 wiredoctor.ghost-tracking.exclude=legacySoapClient,nativeBridge
 ```
 
-Results land in `wiredoctor-ghost-report.json` at shutdown, or live via `/actuator/wiredoctor/ghosts`. Details: [Ghost Detector guide](ghost-detector.md).
+Results land in `wiredoctor-ghost-report.json` at shutdown, or live via `/actuator/wiredoctor/ghosts`. Details: [Ghost Detector guide](ghost-detector.html).
 
 ## Production Safety
 
@@ -68,7 +68,7 @@ WireDoctor is enabled by default. If the dependency accidentally ships to produc
 wiredoctor.enabled=false
 ```
 
-For what the reports expose and WireDoctor's offline-only network behavior (its JVM does zero network I/O), see the [security posture guide](security-posture.md).
+For what the reports expose and WireDoctor's offline-only network behavior (its JVM does zero network I/O), see the [security posture guide](security-posture.html).
 
 ---
 

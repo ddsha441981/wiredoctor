@@ -256,5 +256,5 @@ wiredoctor.slow-bean-threshold-ms=100
 
 ## See Also
 
-- [CI Gating Guide](ci-gating.md) — Overview of all gates (`new-cycle`, `condition-changed`, `startup-time`, `slow-bean`)
-- [Upgrade Guard](upgrade-guard.md) — Gate on condition evaluation changes
+- [CI Gating Guide](ci-gating.html) — Overview of all gates (`new-cycle`, `condition-changed`, `startup-time`, `slow-bean`)
+- [Upgrade Guard](upgrade-guard.html) — Gate on condition evaluation changes

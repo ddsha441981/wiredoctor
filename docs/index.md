@@ -65,16 +65,16 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 
 | Guide | What it covers |
 |-------|----------------|
-| [Report tour](report-tour.md) | Every tab of the HTML console, explained with real screenshots |
-| [Configuration reference](configuration.md) | Every property, grouped by feature, with defaults |
-| [CI gating](ci-gating.md) | Fail your PR on a new bean cycle — the full workflow |
-| [Performance gates](performance-gates.md) | Startup-time and slow-bean gates, thresholds, noise tolerance |
-| [Upgrade Guard](upgrade-guard.md) | Catching silent autoconfiguration changes across Boot upgrades |
-| [Ghost Detector](ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
-| [Thread Distribution](thread-distribution.md) | Per-thread bean map with donut chart (v1.1.0) |
-| [Startup Time Trend](startup-time-trend.md) | trendHistory in baseline + sparkline (v1.1.0) |
-| [Security posture](security-posture.md) | What the reports expose, offline-only network behavior |
-| [Known Limitations](known-limitations.md) | Honest heuristics and what the tool cannot guarantee |
+| [Report tour](report-tour.html) | Every tab of the HTML console, explained with real screenshots |
+| [Configuration reference](configuration.html) | Every property, grouped by feature, with defaults |
+| [CI gating](ci-gating.html) | Fail your PR on a new bean cycle — the full workflow |
+| [Performance gates](performance-gates.html) | Startup-time and slow-bean gates, thresholds, noise tolerance |
+| [Upgrade Guard](upgrade-guard.html) | Catching silent autoconfiguration changes across Boot upgrades |
+| [Ghost Detector](ghost-detector.html) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Thread Distribution](thread-distribution.html) | Per-thread bean map with donut chart (v1.1.0) |
+| [Startup Time Trend](startup-time-trend.html) | trendHistory in baseline + sparkline (v1.1.0) |
+| [Security posture](security-posture.html) | What the reports expose, offline-only network behavior |
+| [Known Limitations](known-limitations.html) | Honest heuristics and what the tool cannot guarantee |
 
 ---
 

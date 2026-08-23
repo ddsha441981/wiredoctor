@@ -165,4 +165,4 @@ called during that run.** Before deleting anything, ask:
 - The shutdown writer is fully defensive: a failed report write logs a warning and never
   disturbs host shutdown.
 - Security: the ghost report reveals bean names — same information class as the main
-  report; see the [security posture guide](security-posture.md).
+  report; see the [security posture guide](security-posture.html).
