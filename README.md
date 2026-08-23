@@ -1,6 +1,6 @@
 # 🩺 WireDoctor
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-242%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-253%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome](https://awesome.re/badge.svg)](https://awesome.re)
 
 > *"Your bean graph has a story. WireDoctor reads it."*
 
@@ -46,7 +46,7 @@ wiredoctor.baseline=wiredoctor-baseline.json
 wiredoctor.fail-on=new-cycle,startup-time,slow-bean
 ```
 
-Common knobs (`wiredoctor.scan-packages`, thresholds, output path, production kill-switch `wiredoctor.enabled=false`) are in the **[configuration reference](https://ddsha441981.github.io/wiredoctor/configuration.md)**.
+Common knobs (`wiredoctor.scan-packages`, thresholds, output path, production kill-switch `wiredoctor.enabled=false`) are in the **[configuration reference](https://ddsha441981.github.io/wiredoctor/configuration.html)**.
 
 ---
 
@@ -73,16 +73,16 @@ Notes:
 
 | Guide | What it covers |
 |-------|----------------|
-| [Report tour](https://ddsha441981.github.io/wiredoctor/report-tour.md) | Every tab of the HTML console, explained with real screenshots |
-| [Configuration reference](https://ddsha441981.github.io/wiredoctor/configuration.md) | Every property, grouped by feature, with defaults |
-| [CI gating](https://ddsha441981.github.io/wiredoctor/ci-gating.md) | Fail your PR on a new bean cycle — the full workflow |
-| [Performance gates](https://ddsha441981.github.io/wiredoctor/performance-gates.md) | Startup-time and slow-bean gates, thresholds, noise tolerance |
-| [Upgrade Guard](https://ddsha441981.github.io/wiredoctor/upgrade-guard.md) | Catching silent autoconfiguration changes across Boot upgrades |
-| [Ghost Detector](https://ddsha441981.github.io/wiredoctor/ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
-| [Thread Distribution](https://ddsha441981.github.io/wiredoctor/thread-distribution.md) | Per-thread bean map with donut chart (v1.1.0) |
-| [Startup Time Trend](https://ddsha441981.github.io/wiredoctor/startup-time-trend.md) | trendHistory in baseline + sparkline (v1.1.0) |
-| [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.md) | What the reports expose, offline-only network behavior |
-| [Known Limitations](https://ddsha441981.github.io/wiredoctor/known-limitations.md) | Honest heuristics and what the tool cannot guarantee |
+| [Report tour](https://ddsha441981.github.io/wiredoctor/report-tour.html) | Every tab of the HTML console, explained with real screenshots |
+| [Configuration reference](https://ddsha441981.github.io/wiredoctor/configuration.html) | Every property, grouped by feature, with defaults |
+| [CI gating](https://ddsha441981.github.io/wiredoctor/ci-gating.html) | Fail your PR on a new bean cycle — the full workflow |
+| [Performance gates](https://ddsha441981.github.io/wiredoctor/performance-gates.html) | Startup-time and slow-bean gates, thresholds, noise tolerance |
+| [Upgrade Guard](https://ddsha441981.github.io/wiredoctor/upgrade-guard.html) | Catching silent autoconfiguration changes across Boot upgrades |
+| [Ghost Detector](https://ddsha441981.github.io/wiredoctor/ghost-detector.html) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Thread Distribution](https://ddsha441981.github.io/wiredoctor/thread-distribution.html) | Per-thread bean map with donut chart (v1.1.0) |
+| [Startup Time Trend](https://ddsha441981.github.io/wiredoctor/startup-time-trend.html) | trendHistory in baseline + sparkline (v1.1.0) |
+| [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.html) | What the reports expose, offline-only network behavior |
+| [Known Limitations](https://ddsha441981.github.io/wiredoctor/known-limitations.html) | Honest heuristics and what the tool cannot guarantee |
 
 Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/) — or **[view the start.spring.io report live](https://ddsha441981.github.io/wiredoctor/sample/test2/wiredoctor-report.html)** without cloning anything.
 

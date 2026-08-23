@@ -14,7 +14,7 @@ bean distribution for parallel initialization.
 ### Added
 
 - 📈 **Startup Time Trend** — the baseline file now accumulates a `trendHistory[]`
-  array (capped at `wiredoctor.trend.history-size`, default 30, `0` = unlimited).
+  array (capped at `wiredoctor.trend-history-size`, default 30, `0` = unlimited).
   Each `baseline-write` run appends `{timestamp, totalStartupMs, slowBeanCount}`.
   The Timing tab renders a **sparkline chart** showing the startup-time trajectory
   over the last N builds, so a creeping +50ms/week becomes visible before the
@@ -24,7 +24,7 @@ bean distribution for parallel initialization.
   a `threadName` tag captured at step creation time via
   `WireDoctorBufferingApplicationStartup`. The report gains a `threadDistribution`
   section mapping each thread to its beans and a per-thread count. The Timing tab
-  renders a **donut chart** (bean share per thread) and a sortable table.
+  renders a **donut chart** (bean share per thread) and a per-thread table ordered by bean count.
   Degrades gracefully when all beans run on `main`. Distribution only — which
   beans ran on which threads; NOT swimlane diagrams or blocking inference (those
   need start/end timestamps per thread + dependency overlay, a v1.2+ research item).
@@ -58,12 +58,12 @@ bean distribution for parallel initialization.
 
 ### Configuration
 
-- `wiredoctor.trend.history-size` (default `30`, `0` = unlimited) — cap on
+- `wiredoctor.trend-history-size` (default `30`, `0` = unlimited) — cap on
   `trendHistory[]` entries in the baseline file.
 
 ### Tests
 
-- 242 autoconfigure tests green (+7 new: trend history carry-forward and cap,
+- 253 tests green — 242 autoconfigure + 11 actuator (+7 new: trend history carry-forward and cap,
   trend absent from runtime report, thread distribution presence and count
   consistency, `EnvironmentPostProcessor` politeness contract across 5 startup
   variants, threadName tag capture on bean instantiate steps).

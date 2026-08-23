@@ -32,6 +32,8 @@ Example `trendHistory` in `wiredoctor-baseline.json`:
 
 The Timing tab shows a **sparkline chart** of `totalStartupMs` over time. Each point is a baseline write. The chart makes gradual creep visible — a 200ms drift per week becomes obvious before the `startup-time` gate trips on a single bad run.
 
+**The sparkline only appears in reports produced by a `baseline-write=true` run, and only from the second write onward.** `trendHistory[]` lives in the baseline file, not in the per-run report: a normal diff/gate run does not read it back, so its report shows the "Need at least 2 baseline writes" placeholder even when the baseline already holds 30 entries. To see the trend, look at the report from your baseline-refresh job (a nightly CI run is the natural place), or read `trendHistory[]` out of `wiredoctor-baseline.json` directly.
+
 ## Configuration
 
 | Property | Default | Description |
@@ -40,7 +42,7 @@ The Timing tab shows a **sparkline chart** of `totalStartupMs` over time. Each p
 
 ## When the trend matters most
 
-- **GradBoot upgrades** — a minor Boot bump shouldn't add 2s to startup. The sparkline catches the creep before it becomes a production incident.
+- **Boot upgrades** — a minor Boot bump shouldn't add 2s to startup. The sparkline catches the creep before it becomes a production incident.
 - **Dependency additions** — every new `@DependsOn` or eager bean shows up as a step on the line.
 - **Periodic audits** — if you run baseline-write in a nightly CI job, the sparkline becomes your startup-time health dashboard.
 
