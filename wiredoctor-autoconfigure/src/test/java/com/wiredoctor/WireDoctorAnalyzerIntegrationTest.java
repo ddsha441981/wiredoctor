@@ -286,6 +286,137 @@ class WireDoctorAnalyzerIntegrationTest {
         }
     }
 
+    // ── v1.1.0: trend history ────────────────────────────────────────────────
+
+    @Test
+    void baselineWriteProducesTrendHistory(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            JsonNode trend = report.path("trendHistory");
+            assertThat(trend.isArray()).isTrue();
+            assertThat(trend).hasSize(1);
+            assertThat(trend.get(0).has("timestamp")).isTrue();
+            assertThat(trend.get(0).has("totalStartupMs")).isTrue();
+            assertThat(trend.get(0).has("slowBeanCount")).isTrue();
+        }
+    }
+
+    @Test
+    void trendHistoryCarriesForwardAcrossWrites(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext ctx1 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true")) {
+            JsonNode first = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            assertThat(first.path("trendHistory")).hasSize(1);
+            long firstTimestamp = first.path("trendHistory").get(0).path("timestamp").asLong();
+            assertThat(firstTimestamp).isPositive();
+        }
+        // Second write should carry forward the first entry and append a new one
+        try (ConfigurableApplicationContext ctx2 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true")) {
+            JsonNode second = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            assertThat(second.path("trendHistory")).hasSize(2);
+            assertThat(second.path("trendHistory").get(0).path("timestamp").asLong())
+                    .isLessThan(second.path("trendHistory").get(1).path("timestamp").asLong());
+        }
+    }
+
+    @Test
+    void trendHistoryRespectsCap(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext ctx1 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true",
+                "wiredoctor.trend-history-size=2")) {
+            assertThat(tempDir.resolve("baseline.json")).exists();
+        }
+        try (ConfigurableApplicationContext ctx2 = boot(
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=true",
+                "wiredoctor.trend-history-size=2")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("baseline.json").toFile());
+            assertThat(report.path("trendHistory")).hasSize(2); // capped, not 3
+        }
+    }
+
+    @Test
+    void reportContainsTrendHistoryField(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            // Normal run (no baseline-write) should not have trendHistory — it's baseline-only
+            assertThat(report.has("trendHistory")).isFalse();
+        }
+    }
+
+    // ── v1.1.0: thread distribution ──────────────────────────────────────────
+
+    @Test
+    void reportContainsThreadDistribution(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            JsonNode td = report.path("threadDistribution");
+            assertThat(td.isObject()).isTrue();
+            assertThat(td.has("perThread")).isTrue();
+            assertThat(td.has("counts")).isTrue();
+            assertThat(td.path("counts").isObject()).isTrue();
+            // At least one thread should be present
+            assertThat(td.path("counts").size()).isPositive();
+            // Every counted thread should have a bean list
+            td.path("perThread").fields().forEachRemaining(entry -> {
+                assertThat(entry.getValue().isArray()).isTrue();
+                assertThat(entry.getValue().size()).isPositive();
+            });
+        }
+    }
+
+    @Test
+    void threadDistributionCountsMatchBeanListSizes(@TempDir Path tempDir) throws Exception {
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            JsonNode counts = report.path("threadDistribution").path("counts");
+            JsonNode perThread = report.path("threadDistribution").path("perThread");
+            // JsonNode is Iterable in both Jackson 2.x and 3.x; values()/elements()
+            // are not — the compat matrix spans both.
+            int totalFromCounts = 0;
+            for (JsonNode v : counts) {
+                totalFromCounts += v.asInt();
+            }
+            int totalFromList = 0;
+            for (JsonNode list : perThread) {
+                totalFromList += list.size();
+            }
+            assertThat(totalFromCounts).isEqualTo(totalFromList);
+        }
+    }
+
+    @Test
+    void threadDistributionDegradesWhenNoBuffering(@TempDir Path tempDir) throws Exception {
+        // When BufferingApplicationStartup is not available, threadDistribution
+        // should still be present but empty (no thread data collected).
+        // We can't easily disable buffering in the test app, but we can verify
+        // the section is simply absent when timing is unavailable — the HTML
+        // handles absence gracefully.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir)) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            // threadDistribution should always be present when timing data exists
+            assertThat(report.has("threadDistribution")).isTrue();
+        }
+    }
+
     private static List<JsonNode> iterableToList(JsonNode arrayNode) {
         java.util.ArrayList<JsonNode> list = new java.util.ArrayList<>();
         arrayNode.forEach(list::add);

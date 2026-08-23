@@ -224,20 +224,28 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     .collect(Collectors.toList());
 
             // Feature 3: Slow bean instantiation (spring.beans.instantiate steps)
+            Map<String, java.util.Set<String>> beanThreadMap = new java.util.HashMap<>();
             for (StartupTimeline.TimelineEvent e : timeline.getEvents()) {
                 if (!"spring.beans.instantiate".equals(e.getStartupStep().getName())) continue;
                 long durationMs = e.getDuration().toMillis();
 
                 String beanName = "unknown";
+                String threadName = "unknown";
                 for (StartupStep.Tag tag : e.getStartupStep().getTags()) {
                     if ("beanName".equals(tag.getKey())) {
                         beanName = tag.getValue();
-                        break;
+                    } else if ("threadName".equals(tag.getKey())) {
+                        threadName = tag.getValue();
                     }
                 }
                 // Instantiate steps nest (a bean's constructor triggers its deps),
                 // so keep the max per bean name rather than overwriting.
                 beanInstantiationMs.merge(beanName, durationMs, Math::max);
+                // Fix for prototype beans initialized on multiple threads
+                if (!"unknown".equals(beanName) && !"unknown".equals(threadName)) {
+                    beanThreadMap.computeIfAbsent(beanName, k -> new java.util.HashSet<>(4))
+                                 .add(threadName);
+                }
 
                 if (durationMs < slowBeanThresholdMs) continue;
                 Map<String, Object> beanInfo = new LinkedHashMap<>();
@@ -245,6 +253,20 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 beanInfo.put("durationMs", durationMs);
                 slowBeans.add(beanInfo);
             }
+
+            // v1.1.0: aggregate thread distribution
+            Map<String, List<String>> threadToBeans = new LinkedHashMap<>();
+            Map<String, Integer> threadToCount = new LinkedHashMap<>();
+            beanThreadMap.forEach((bean, threads) -> {
+                for (String thread : threads) {
+                    threadToBeans.computeIfAbsent(thread, k -> new ArrayList<>()).add(bean);
+                    threadToCount.merge(thread, 1, Integer::sum);
+                }
+            });
+            Map<String, Object> threadDistribution = new LinkedHashMap<>();
+            threadDistribution.put("perThread", threadToBeans);
+            threadDistribution.put("counts", threadToCount);
+            report.put("threadDistribution", threadDistribution);
             // Sort slowest first
             slowBeans.sort((a, b) ->
                     Long.compare((Long) b.get("durationMs"), (Long) a.get("durationMs")));
@@ -759,6 +781,49 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 Object serializedGraph = deps.get("graph");
                 deps.put("graph", graph);
                 Object gatesSection = report.remove("gates");
+                // v1.1.0: append trend-history entry before writing the baseline
+                try {
+                    int trendCap = properties.resolveTrendHistorySize();
+                    @SuppressWarnings("unchecked")
+                    java.util.List<java.util.Map<String, Object>> trendHistory =
+                            new java.util.ArrayList<>();
+                    // Read existing baseline to carry forward prior trend entries
+                    if (baselineFile.isFile()) {
+                        try {
+                            JsonNode root = mapper.readTree(baselineFile);
+                            JsonNode trendNode = root.path("trendHistory");
+                            if (trendNode.isArray()) {
+                                for (JsonNode entry : trendNode) {
+                                    java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+                                    JsonNode ts = entry.get("timestamp");
+                                    JsonNode ms = entry.get("totalStartupMs");
+                                    JsonNode sb = entry.get("slowBeanCount");
+                                    if (ts != null) map.put("timestamp", ts.asLong());
+                                    if (ms != null) map.put("totalStartupMs", ms.asLong());
+                                    if (sb != null) map.put("slowBeanCount", sb.asInt());
+                                    if (!map.isEmpty()) trendHistory.add(map);
+                                }
+                            }
+                        } catch (Exception ignored) {
+                            // Corrupt baseline trend section — start fresh
+                        }
+                    }
+                    // Append current entry
+                    java.util.Map<String, Object> currentEntry = new java.util.LinkedHashMap<>();
+                    currentEntry.put("timestamp", System.currentTimeMillis());
+                    if (totalStartupMs != null) {
+                        currentEntry.put("totalStartupMs", totalStartupMs);
+                    }
+                    currentEntry.put("slowBeanCount", currentSlowBeans.size());
+                    trendHistory.add(currentEntry);
+                    // Cap at configured size (0 = unlimited)
+                    if (trendCap > 0 && trendHistory.size() > trendCap) {
+                        trendHistory = trendHistory.subList(trendHistory.size() - trendCap, trendHistory.size());
+                    }
+                    report.put("trendHistory", trendHistory);
+                } catch (Exception e) {
+                    log.warn("[WireDoctor] Failed to build trend history: {}", e.getMessage());
+                }
                 try {
                     Files.writeString(baselineFile.toPath(), mapper.writeValueAsString(report));
                 } finally {

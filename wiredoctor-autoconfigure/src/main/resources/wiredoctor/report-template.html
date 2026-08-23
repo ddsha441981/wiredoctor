@@ -57,7 +57,7 @@ header {
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 1px solid transparent;
+  border: 1px solid transparent; white-space: nowrap;
 }
 .chip .dot { width: 6px; height: 6px; border-radius: 50%; }
 .chip.ok    { color: var(--ok); background: var(--ok-dim); border-color: rgba(52,201,142,0.25); }
@@ -108,10 +108,23 @@ main { flex: 1; overflow-y: auto; min-width: 0; }
 .card {
   background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
   padding: 18px 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
 }
 .grid { display: grid; gap: 16px; }
 .kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 20px; }
-.kpi { padding: 14px 16px; }
+.kpi {
+  padding: 14px 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
 .kpi .k-label { font-size: 11.5px; color: var(--text-2); font-weight: 600; }
 .kpi .k-value { font-size: 26px; font-weight: 700; font-family: var(--mono); letter-spacing: -1px; margin-top: 2px; }
 .kpi .k-value small { font-size: 13px; color: var(--text-2); font-weight: 500; letter-spacing: 0; }
@@ -119,24 +132,81 @@ main { flex: 1; overflow-y: auto; min-width: 0; }
 .kpi.danger .k-value { color: var(--danger); }
 .kpi.warn .k-value { color: var(--warn); }
 .kpi.ghost .k-value { color: var(--ghost); }
-.two-col { grid-template-columns: 1fr 1fr; }
+.two-col { grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
 
-table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* ═══════════ Nav: sticky sidebar on desktop, drawer on small screens ═══════════ */
+nav { position: sticky; top: 0; z-index: 10; }
+#nav-toggle {
+  display: none; flex-shrink: 0; width: 32px; height: 30px; cursor: pointer;
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; font-size: 15px; line-height: 1;
+}
+#nav-backdrop { display: none; position: fixed; inset: 52px 0 0; z-index: 20; background: rgba(0,0,0,0.55); }
+@media (max-width: 860px) {
+  #nav-toggle { display: block; }
+  nav {
+    position: fixed; top: 52px; bottom: 0; left: 0; z-index: 30; width: 200px;
+    transform: translateX(-100%); transition: transform .18s ease-out;
+    box-shadow: 4px 0 22px rgba(0,0,0,0.45);
+  }
+  nav.open { transform: none; }
+  #nav-backdrop.show { display: block; }
+  .tab { padding: 16px 14px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+  .kpi .k-value { font-size: 21px; }
+  .card { padding: 15px 16px; }
+}
+@media (max-width: 560px) {
+  header { gap: 10px; padding: 0 12px; }
+  .logo-ver, #h-profile, #h-beans { display: none; }
+  .header-meta { gap: 6px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  nav { transition: none; }
+  .card, .kpi { transition: none; }
+  .cp-bar { animation: none; }
+}
+
+/* ═══════════ Tables ═══════════ */
+.card { overflow-x: auto; }
+table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 table.data th {
   text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
-  color: var(--text-2); font-weight: 700; padding: 8px 12px;
-  border-bottom: 1px solid var(--border); white-space: nowrap;
+  color: var(--text-2); font-weight: 700; padding: 9px 12px;
+  background: var(--surface); border-bottom: 1px solid var(--border-hi);
+  white-space: nowrap; position: sticky; top: 0; z-index: 1;
 }
-table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); }
+table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 table.data td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.data tbody tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
 table.data tr:last-child td { border-bottom: none; }
 table.data tr:hover td { background: var(--surface-2); }
+table.data tbody tr td:first-child { box-shadow: inset 2px 0 0 transparent; }
+table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+
+/* ═══════════ Charts (dark-validated: ordinal ramp + categorical slots) ═══════════ */
+.chart { display: block; width: 100%; height: auto; }
+.chart .grid-line { stroke: var(--border); stroke-width: 1; }
+.chart .axis-txt { fill: var(--text-dim); font-family: var(--mono); font-size: 11px; }
+.chart .val-txt { fill: var(--text-2); font-family: var(--mono); font-size: 11.5px; font-weight: 700; }
+/* the viewBox is sized so a half-width desktop card renders it ~1:1; in a
+   narrow card it scales down, so lift the type to keep it legible */
+@media (max-width: 860px) { .chart .axis-txt { font-size: 15px; } .chart .val-txt { font-size: 16px; } }
+.chart .col { transition: opacity .12s; cursor: default; }
+.chart .col:hover { opacity: 0.75; }
+.chart-note { font-size: 11px; color: var(--text-dim); margin: 10px 0 0; }
+.stack { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; }
+.stack > span { min-width: 3px; }
+.stack-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 12px; }
+.stack-legend > span { display: flex; align-items: center; gap: 7px; }
+.stack-legend .sw { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 .bean { font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
 .muted { color: var(--text-2); }
 .dim { color: var(--text-dim); }
 
 .bar-wrap { display: flex; align-items: center; gap: 10px; }
+.bar-wrap .bean { flex-shrink: 0; white-space: nowrap; }
 .bar { height: 6px; border-radius: 3px; background: var(--accent); min-width: 2px; }
 .bar.warn { background: var(--warn); }
 
@@ -161,6 +231,11 @@ table.data tr:hover td { background: var(--surface-2); }
 .empty {
   padding: 28px; text-align: center; color: var(--text-dim); font-size: 13px;
 }
+.empty::before { content: attr(data-icon); display: block; font-size: 28px; margin-bottom: 8px; opacity: 0.5; }
+
+/* ═══════════ Animations ═══════════ */
+@keyframes bar-fill { from { width: 0 !important; } }
+.cp-bar { animation: bar-fill 0.6s ease-out; }
 
 /* ═══════════ Graph tab ═══════════ */
 #graph-shell { display: flex; height: 100%; }
@@ -213,6 +288,7 @@ table.data tr:hover td { background: var(--surface-2); }
 <body>
 
 <header>
+  <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav">☰</button>
   <div class="logo">
     <div class="logo-mark">W</div>
     <span class="logo-name">WireDoctor</span>
@@ -229,6 +305,7 @@ table.data tr:hover td { background: var(--surface-2); }
   <nav id="nav"></nav>
   <main id="main"></main>
 </div>
+<div id="nav-backdrop"></div>
 
 <script>
 const reportData = /* DATA_INJECTION_POINT */;
@@ -251,6 +328,14 @@ const condEntries = Object.entries(conditions);
 const cp = reportData.criticalPath || { available: false };
 /* v0.10.0: full per-bean timing map + parsed critical-path sets (a path entry can be "[cycle: a, b]") */
 const beanTimings = reportData.beanTimings || {};
+const TIME_RAMP = ['#2b5fa8', '#3878cc', '#4f8ef7', '#7fb0fa', '#aecdfd'];
+const TIME_BUCKETS = [
+  { label: '0',     hit: ms => ms <= 0 },
+  { label: '1–9',   hit: ms => ms >= 1 && ms < 10 },
+  { label: '10–49', hit: ms => ms >= 10 && ms < 50 },
+  { label: '50–99', hit: ms => ms >= 50 && ms < 100 },
+  { label: '≥100',  hit: ms => ms >= 100 },
+];
 const cpGroups = (cp.available && cp.path ? cp.path : []).map(n => {
   const m = /^\[cycle: (.*)\]$/.exec(n.beanName);
   return new Set(m ? m[1].split(', ') : [n.beanName]);
@@ -302,6 +387,18 @@ TABS.forEach((t,i) => {
   main.appendChild(pane);
 });
 nav.insertAdjacentHTML('beforeend', `<div class="nav-footer">Generated at startup ·<br>zero-intrusion snapshot.<br>Reads metadata, never state.</div>`);
+
+/* nav drawer — only visible under 860px, but wiring is harmless above it */
+const navToggle = $('#nav-toggle'), navBackdrop = $('#nav-backdrop');
+function setNav(open) {
+  nav.classList.toggle('open', open);
+  navBackdrop.classList.toggle('show', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+}
+navToggle.onclick = () => setNav(!nav.classList.contains('open'));
+navBackdrop.onclick = () => setNav(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setNav(false); });
+
 let graphBuilt = false;
 /* deep-linking: #graph, #ghosts, ... opens that tab */
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.some(t=>t.id===h)) activate(h); });
@@ -310,6 +407,7 @@ function activate(id) {
   location.hash = id;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab===id));
   document.querySelectorAll('.tab').forEach(p => p.classList.toggle('active', p.id==='tab-'+id));
+  setNav(false);
   if (id==='graph' && !graphBuilt) { graphBuilt = true; buildGraph(); }
 }
 
@@ -327,49 +425,179 @@ $('#tab-overview').innerHTML = `
   </div>
   <div class="grid two-col">
     <div class="card">
-      <div class="section-h">Bean composition</div>
-      ${compositionBar()}
+      <div class="section-h">🧩 Bean composition</div>
+      ${compositionDonut()}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="section-h" style="font-size:10px;margin-bottom:10px">Bean role · BeanDefinition.ROLE_*</div>
+        ${roleComposition()}
+      </div>
     </div>
     <div class="card">
-      <div class="section-h">Startup critical path ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
-      ${cp.available && cp.path && cp.path.length ? `<div class="cp-chain">${
-        cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')
-      }</div><p class="dim" style="font-size:11.5px;margin:10px 0 0">${esc(cp.disclaimer||'')}</p>` : `<div class="empty">No timing data (startup was not buffering).</div>`}
+      <div class="section-h">Critical path timeline ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
+      ${cp.available && cp.path && cp.path.length ? criticalPathTimeline() : `<div class="empty" data-icon="⏱️">No timing data (startup was not buffering).</div>`}
     </div>
   </div>
   <div class="grid two-col" style="margin-top:16px">
     <div class="card">
-      <div class="section-h">Top coupling hotspots (fan-in)</div>
+      <div class="section-h">⏱ Bean instantiation time <span class="pill reason">distribution</span></div>
+      ${timingHistogram()}
+    </div>
+    <div class="card">
+      <div class="section-h">⚙ Autoconfiguration outcomes</div>
+      ${conditionOutcomeBar()}
+      <p class="chart-note">${fmt(condEntries.length)} autoconfiguration classes evaluated · open the Conditions tab to filter by class.</p>
+    </div>
+  </div>
+  <div class="grid two-col" style="margin-top:16px">
+    <div class="card">
+      <div class="section-h">🔗 Top coupling hotspots (fan-in)</div>
       ${hotspotRows()}
     </div>
     <div class="card">
-      <div class="section-h">Ghost candidates <span class="pill low">confidence LOW</span></div>
+      <div class="section-h">👻 Ghost candidates <span class="pill low">confidence LOW</span></div>
       ${gc.count ? `<table class="data">${gc.beans.slice(0,8).map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>
       <p class="dim" style="font-size:11.5px;margin:10px 0 0">Instantiated, no dependents, no known entry point — not proof of dead code.</p>`
-      : '<div class="empty">No ghost candidates.</div>'}
+      : '<div class="empty" data-icon="👻">No ghost candidates.</div>'}
     </div>
   </div>`;
 
-function compositionBar() {
+/* ═══════════ v1.1.0 charts — hand-rolled SVG, no chart library ═══════════
+   Palettes validated for the dark surface #12161f: the timing ramp is single-hue
+   ordinal (monotone lightness, adjacent ΔL ≥ 0.06, dark end ≥ 2:1 on surface);
+   the categorical/status slots clear the CVD separation floor pairwise. */
+
+/* horizontal 100% stacked bar + legend. Zero-count segments are dropped, not
+   squeezed to a 3px sliver nobody can read. */
+function stackedBar(segs) {
+  const on = segs.filter(s => s.n > 0);
+  const total = on.reduce((a, s) => a + s.n, 0);
+  if (!total) return '';
+  const pct = n => (n / total * 100);
+  return `<div class="stack">${on.map(s =>
+      `<span style="flex:${s.n};background:${s.c}" title="${esc(s.label)} — ${fmt(s.n)} (${pct(s.n).toFixed(1)}%)"></span>`
+    ).join('')}</div>
+    <div class="stack-legend">${on.map(s =>
+      `<span><span class="sw" style="background:${s.c}"></span>${esc(s.label)}<span class="bean muted">${fmt(s.n)} · ${pct(s.n).toFixed(0)}%</span></span>`
+    ).join('')}</div>`;
+}
+
+function roleComposition() {
+  const bc = reportData.beanCategories || {};
+  return stackedBar([
+    { label: 'Application',    n: bc.roleApplication || 0,    c: '#4f8ef7' },
+    { label: 'Support',        n: bc.roleSupport || 0,        c: '#1f9d6b' },
+    { label: 'Infrastructure', n: bc.roleInfrastructure || 0, c: '#7c5cf0' },
+  ]) || '<div class="empty" data-icon="🧩">No bean-role data.</div>';
+}
+
+function conditionOutcomeBar() {
+  const c = {};
+  condEntries.forEach(([, v]) => c[v.outcome] = (c[v.outcome] || 0) + 1);
+  return stackedBar([
+    { label: 'matched',       n: c.matched || 0,       c: '#1f9d6b' },
+    { label: 'unconditional', n: c.unconditional || 0, c: '#4f8ef7' },
+    { label: 'notMatched',    n: c.notMatched || 0,    c: '#5c6780' },
+    { label: 'excluded',      n: c.excluded || 0,      c: '#d0473f' },
+  ]) || '<div class="empty" data-icon="⚙">No condition data captured this run.</div>';
+}
+
+/* column histogram of per-bean instantiation cost */
+function timingHistogram() {
+  const vals = Object.values(beanTimings).filter(v => typeof v === 'number');
+  if (!vals.length) return '<div class="empty" data-icon="⏱️">No per-bean timings captured (startup was not buffering).</div>';
+  const counts = TIME_BUCKETS.map(b => vals.filter(v => b.hit(v)).length);
+  const peak = Math.max.apply(null, counts);
+  const pow = Math.pow(10, Math.floor(Math.log10(peak || 1)));
+  const top = [1, 2, 5, 10].map(m => m * pow).find(v => v >= peak) || peak || 1;
+  const W = 560, H = 220, L = 48, R = 14, T = 20, B = 46;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  const slot = pw / counts.length;
+  const bw = Math.min(24, slot - 14);
+  const grid = [0, 0.5, 1].map(f => {
+    const y = base - ph * f;
+    return `<line class="grid-line" x1="${L}" y1="${y.toFixed(1)}" x2="${W - R}" y2="${y.toFixed(1)}"/>`
+         + `<text class="axis-txt" x="${L - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt(Math.round(top * f))}</text>`;
+  }).join('');
+  const cols = counts.map((c, i) => {
+    /* a non-empty bucket never renders thinner than 3px — the slow tail is the
+       whole point of the chart and it is always the smallest bucket. Every
+       column carries its exact count, so the floor cannot mislead. */
+    const h = c > 0 ? Math.max(3, c / top * ph) : 0;
+    const x = L + slot * i + (slot - bw) / 2;
+    const y = base - h;
+    const r = Math.min(4, h / 2);
+    const cx = (x + bw / 2).toFixed(1);
+    /* 4px rounded top, square where it meets the baseline */
+    const col = h < 0.5 ? '' :
+      `<path class="col" fill="${TIME_RAMP[i]}" d="M${x.toFixed(1)},${base} L${x.toFixed(1)},${(y + r).toFixed(1)}`
+      + ` Q${x.toFixed(1)},${y.toFixed(1)} ${(x + r).toFixed(1)},${y.toFixed(1)}`
+      + ` L${(x + bw - r).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + r).toFixed(1)}`
+      + ` L${(x + bw).toFixed(1)},${base} Z">`
+      + `<title>${TIME_BUCKETS[i].label} ms — ${fmt(c)} bean${c === 1 ? '' : 's'} (${(c / vals.length * 100).toFixed(1)}%)</title></path>`;
+    const label = c > 0
+      ? `<text class="val-txt" x="${cx}" y="${(y - 5).toFixed(1)}" text-anchor="middle">${fmt(c)}</text>` : '';
+    return col + label + `<text class="axis-txt" x="${cx}" y="${base + 16}" text-anchor="middle">${TIME_BUCKETS[i].label}</text>`;
+  }).join('');
+  const slow = counts[counts.length - 1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Bean instantiation time distribution across ${fmt(vals.length)} measured beans">
+      ${grid}${cols}
+      <text class="axis-txt" x="${L + pw / 2}" y="${H - 6}" text-anchor="middle">instantiation time (ms)</text>
+    </svg>
+    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} over 100ms — the slow-bean threshold. Brighter column = slower bucket.</p>`;
+}
+
+function compositionDonut() {
   const bc = reportData.beanCategories || {};
   const total = bc.totalBeans || 1;
-  const segs = [
-    ['User-defined', bc.userDefined||0, 'var(--accent)'],
-    ['Framework', bc.frameworkOwned||0, 'var(--surface-3)'],
-  ];
-  return `<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;margin:6px 0 14px">${
-    segs.map(([l,v,c])=>`<div style="width:${(v/total*100).toFixed(1)}%;background:${c}"></div>`).join('')
-  }</div>` + segs.map(([l,v,c])=>`
-    <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px">
-      <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:${c}"></span>${l}</span>
-      <span class="bean muted">${fmt(v)} · ${(v/total*100).toFixed(0)}%</span>
-    </div>`).join('')
-  + `<div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:6px">
-      <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span></div>`;
+  const ud = bc.userDefined || 0;
+  const fw = bc.frameworkOwned || 0;
+  const udPct = (ud / total * 100).toFixed(1);
+  const fwPct = (fw / total * 100).toFixed(1);
+  const conic = `var(--accent) 0 ${udPct}%, var(--surface-3) ${udPct}% 100%`;
+  return `<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div style="width:110px;height:110px;border-radius:50%;background:conic-gradient(${conic});flex-shrink:0;position:relative">
+      <div style="position:absolute;inset:22px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-2);font-weight:600;text-align:center;line-height:1.3">${fmt(total)}<br><span style="font-size:9px;font-weight:400">beans</span></div>
+    </div>
+    <div style="flex:1;min-width:140px">
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+        <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--accent)"></span>User-defined</span>
+        <span class="bean muted">${fmt(ud)} · ${(ud/total*100).toFixed(0)}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+        <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--surface-3)"></span>Framework</span>
+        <span class="bean muted">${fmt(fw)} · ${(fw/total*100).toFixed(0)}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:4px">
+        <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span>
+      </div>
+    </div>
+  </div>`;
+}
+/* v1.1.0: critical path timeline — horizontal stacked bar */
+function criticalPathTimeline() {
+  if (!cp.available || !cp.path || !cp.path.length) return '';
+  const maxMs = cp.path[0].ownMs || 1;
+  const barW = 100;
+  return `<div style="margin-top:6px">${
+    cp.path.map(n => {
+      const pct = (n.ownMs / maxMs * 100).toFixed(1);
+      const isCycle = n.beanName.startsWith('[cycle:');
+      const bg = isCycle ? 'var(--danger)' : 'var(--accent)';
+      const label = n.beanName.length > 28 ? n.beanName.slice(0,25)+'...' : n.beanName;
+      return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0">
+        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(n.beanName)}">${esc(label)}</span>
+        <div style="flex:1;height:18px;background:var(--surface-3);border-radius:3px;overflow:hidden;position:relative">
+          <div class="cp-bar" style="width:${pct}%;height:100%;background:${bg};border-radius:3px"></div>
+          <span style="position:absolute;right:6px;top:1px;font-size:10px;color:var(--text-2);font-family:var(--mono)">${n.ownMs!=null?n.ownMs+'ms':''}</span>
+        </div>
+      </div>`;
+    }).join('')
+  }<p class="dim" style="font-size:11px;margin:8px 0 0">${esc(cp.disclaimer||'')}</p></div>`;
 }
 function hotspotRows() {
   const list = (reportData.smells && reportData.smells.highFanIn) || [];
-  if (!list.length) return '<div class="empty">No user-bean hotspots.</div>';
+  if (!list.length) return '<div class="empty" data-icon="🔥">No user-bean hotspots.</div>';
   const max = list[0].inDegree || 1;
   return `<table class="data">${list.slice(0,8).map(e=>`
     <tr><td class="bean">${esc(e.beanName)}</td>
@@ -384,7 +612,7 @@ $('#tab-ghosts').innerHTML = `
   <div class="grid two-col">
     <div class="card">
       <div class="section-h">Phase 1 · Passive candidates <span class="pill low">confidence LOW</span></div>
-      ${gc.count ? `<table class="data"><thead><tr><th>Bean</th></tr></thead>${gc.beans.map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>` : '<div class="empty">No candidates.</div>'}
+      ${gc.count ? `<table class="data"><thead><tr><th>Bean</th></tr></thead>${gc.beans.map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="👻">No candidates.</div>'}
       <div class="callout" style="margin-top:14px">◍&nbsp; ${esc(gc.disclaimer||'')}</div>
       <div style="display:flex;gap:14px;margin-top:12px;font-size:12px" class="muted">
         <span>Entry points excluded: <b class="bean">${gc.entryPointsExcluded ?? 0}</b></span>
@@ -404,14 +632,14 @@ $('#tab-ghosts').innerHTML = `
         <div class="section-h" style="margin-top:18px">Untrackable (reason)</div>
         <table class="data">${Object.entries(ghostReport.untrackable||{}).map(([b,r])=>`<tr><td class="bean">${esc(b)}</td><td style="width:1%"><span class="pill reason">${esc(r)}</span></td></tr>`).join('')}</table>
         <p class="dim" style="font-size:11.5px;margin:12px 0 0">${esc(ghostReport.disclaimer||'')}</p>`
-      : `<div class="empty">Not enabled this run, or results pending: ghosts are only knowable at shutdown.<br><br>Enable with <span class="bean">wiredoctor.ghost-tracking.enabled=true</span> (dev/staging only — wraps beans in a thin counting proxy).<br>Results: <span class="bean">wiredoctor-ghost-report.json</span> at shutdown, or live via <span class="bean">/actuator/wiredoctor/ghosts</span>.</div>`}
+      : `<div class="empty" data-icon="👻">Not enabled this run, or results pending: ghosts are only knowable at shutdown.<br><br>Enable with <span class="bean">wiredoctor.ghost-tracking.enabled=true</span> (dev/staging only — wraps beans in a thin counting proxy).<br>Results: <span class="bean">wiredoctor-ghost-report.json</span> at shutdown, or live via <span class="bean">/actuator/wiredoctor/ghosts</span>.</div>`}
     </div>
   </div>`;
 
 /* ───────── Smells tab ───────── */
 const sm = reportData.smells || {};
 function smellTable(list, valKey, valLabel) {
-  if (!list || !list.length) return '<div class="empty">None detected.</div>';
+  if (!list || !list.length) return '<div class="empty" data-icon="🔍">None detected.</div>';
   const max = Math.max(...list.map(e=>e[valKey])) || 1;
   return `<table class="data"><thead><tr><th>Bean</th><th class="num">${valLabel}</th></tr></thead>${
     list.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td>
@@ -421,20 +649,22 @@ $('#tab-smells').innerHTML = `
   <h1 class="page-title">Architecture Smells</h1>
   <p class="page-sub">Computed on the live resolved graph — what Spring actually wired. ${sm.frameworkFiltered?'Framework beans filtered out (rankings show beans you can refactor).':''}</p>
   <div class="grid two-col">
-    <div class="card"><div class="section-h">High fan-in · coupling hotspots</div>${smellTable(sm.highFanIn,'inDegree','dependents')}</div>
-    <div class="card"><div class="section-h">High fan-out · shotgun surgery risk</div>${smellTable(sm.highFanOut,'outDegree','dependencies')}</div>
+    <div class="card"><div class="section-h">🔗 High fan-in · coupling hotspots</div>${smellTable(sm.highFanIn,'inDegree','dependents')}</div>
+    <div class="card"><div class="section-h">💥 High fan-out · shotgun surgery risk</div>${smellTable(sm.highFanOut,'outDegree','dependencies')}</div>
   </div>
   <div class="card" style="margin-top:16px">
-    <div class="section-h">Unstable beans · I = Ce / (Ca + Ce) ≥ 0.8</div>
+    <div class="section-h">📈 Unstable beans · I = Ce / (Ca + Ce) ≥ 0.8</div>
     ${(sm.unstable&&sm.unstable.length) ? `<table class="data"><thead><tr><th>Bean</th><th class="num">Instability</th><th class="num">Fan-in</th><th class="num">Fan-out</th></tr></thead>${
-      sm.unstable.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty">None over threshold.</div>'}
+      sm.unstable.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="📊">None over threshold.</div>'}
   </div>`;
 
 /* ───────── Timing tab ───────── */
 const steps = reportData.startupSlowestSteps || [];
+const trendHistory = reportData.trendHistory || [];
+const threadDist = reportData.threadDistribution;
 const slowBeans = reportData.slowBeans || [];
 function timingTable(rows, nameKey, msKey) {
-  if (!rows.length) return '<div class="empty">No data.</div>';
+  if (!rows.length) return '<div class="empty" data-icon="📋">No data.</div>';
   const max = rows[0][msKey] || 1;
   return `<table class="data">${rows.slice(0,12).map(r=>`
     <tr><td class="bean">${esc(r[nameKey])}</td>
@@ -444,18 +674,103 @@ function timingTable(rows, nameKey, msKey) {
 $('#tab-timing').innerHTML = `
   <h1 class="page-title">Startup Timing</h1>
   <p class="page-sub">From BufferingApplicationStartup — real measured instantiation, no reflection heuristics.</p>
+  ${threadDistributionCard()}
   <div class="grid two-col">
-    <div class="card"><div class="section-h">Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
-    <div class="card"><div class="section-h">Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
+    <div class="card"><div class="section-h">🐢 Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
+    <div class="card"><div class="section-h">⏳ Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
   </div>
   <div class="card" style="margin-top:16px">
-    <div class="section-h">Performance gates ${gates.mode==='diff' ? `<span class="pill reason">vs ${esc(gates.baseline||'baseline')}</span>` : ''}</div>
+    <div class="section-h">🚦 Performance gates ${gates.mode==='diff' ? `<span class="pill reason">vs ${esc(gates.baseline||'baseline')}</span>` : ''}</div>
     ${gatesCard()}
   </div>
   ${cp.available && cp.path ? `<div class="card" style="margin-top:16px">
     <div class="section-h">Critical path — the chain your readiness sits on</div>
     <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
-  </div>`:''}`;
+  </div>`:''}
+  ${trendSparkline()}`;
+
+/* v1.1.0: trend sparkline */
+function trendSparkline() {
+  if (trendHistory.length < 2) {
+    return '<div class="empty" data-icon="📈">Need at least 2 baseline writes to show a trend. Run with wiredoctor.baseline-write=true across builds.</div>';
+  }
+  const w = 600, h = 120, pad = { top: 10, right: 60, bottom: 30, left: 50 };
+  const values = trendHistory.map(e => e.totalStartupMs);
+  const min = Math.min(...values), max = Math.max(...values);
+  const range = max - min || 1;
+  const pts = trendHistory.map((e, i) => {
+    const x = pad.left + (trendHistory.length === 1 ? w/2 : (i / (trendHistory.length - 1)) * (w - pad.left - pad.right));
+    const y = pad.top + (1 - (e.totalStartupMs - min) / range) * (h - pad.top - pad.bottom);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const last = trendHistory[trendHistory.length - 1];
+  const prev = trendHistory.length >= 2 ? trendHistory[trendHistory.length - 2] : last;
+  const delta = last.totalStartupMs - prev.totalStartupMs;
+  const pct = prev.totalStartupMs > 0 ? ((delta / prev.totalStartupMs) * 100).toFixed(1) : '0.0';
+  const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
+  const color = delta > 0 ? 'var(--danger)' : delta < 0 ? 'var(--ok)' : 'var(--text-2)';
+  const dates = trendHistory.map(e => {
+    const d = new Date(e.timestamp);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+  const yTicks = [min, min + range * 0.5, max].map(v => Math.round(v) + 'ms').reverse();
+  return `<div class="card" style="margin-top:16px">
+    <div class="section-h">Startup time trend <span style="color:${color};font-weight:700;margin-left:8px">${arrow} ${delta>0?'+':''}${delta}ms (${pct}%)</span></div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${trendHistory.length} baseline entries · cap ${reportData.gates && reportData.gates.trendHistoryCap ? reportData.gates.trendHistoryCap : 'unlimited'}</div>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;max-height:140px">
+      <line x1="${pad.left}" y1="${h - pad.bottom}" x2="${w - pad.right}" y2="${h - pad.bottom}" stroke="var(--border)" stroke-width="1"/>
+      <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${h - pad.bottom}" stroke="var(--border)" stroke-width="1"/>
+      ${yTicks.map((t, i) => {
+        const y = pad.top + (i / (yTicks.length - 1)) * (h - pad.top - pad.bottom);
+        return `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${t}</text>
+                <line x1="${pad.left}" y1="${y}" x2="${w - pad.right}" y2="${y}" stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.5"/>`;
+      }).join('')}
+      <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      ${trendHistory.map((e, i) => {
+        const x = pad.left + (trendHistory.length === 1 ? w/2 : (i / (trendHistory.length - 1)) * (w - pad.left - pad.right));
+        const y = pad.top + (1 - (e.totalStartupMs - min) / range) * (h - pad.top - pad.bottom);
+        return i === trendHistory.length - 1
+          ? `<circle cx="${x}" cy="${y}" r="4" fill="var(--accent)"/><text x="${x}" y="${y - 10}" text-anchor="middle" fill="var(--accent)" font-size="10" font-family="var(--mono)">${e.totalStartupMs}ms</text>`
+          : `<circle cx="${x}" cy="${y}" r="2.5" fill="var(--text-2)" opacity="0.6"/>`;
+      }).join('')}
+      <text x="${pad.left}" y="${h - 4}" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${dates[0]}</text>
+      ${trendHistory.length > 1 ? `<text x="${w - pad.right}" y="${h - 4}" text-anchor="end" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${dates[dates.length-1]}</text>` : ''}
+    </svg>
+  </div>`;
+}
+
+/* v1.1.0: thread distribution donut + table */
+function threadDistributionCard() {
+  if (!threadDist) return '';
+  const counts = threadDist.counts || {};
+  const perThread = threadDist.perThread || {};
+  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((s, [, c]) => s + c, 0);
+  const colors = ['#4f8ef7','#34c98e','#e8a33d','#a78bfa','#d4649a','#e5534b','#5c6780'];
+  const colorMap = {};
+  entries.forEach(([t], i) => colorMap[t] = colors[i % colors.length]);
+  const conicGradient = entries.map(([t, c], i) => {
+    const pct = (c / total * 100).toFixed(1);
+    return `${colorMap[t]} ${i === 0 ? '0' : entries.slice(0, i).reduce((s, [, ct]) => s + ct / total * 100, 0).toFixed(1)}% ${entries.slice(0, i + 1).reduce((s, [, ct]) => s + ct / total * 100, 0).toFixed(1)}%`;
+  }).join(', ');
+  const singleThread = entries.length === 1;
+  return `<div class="card" style="margin-top:16px">
+    <div class="section-h">Thread distribution ${singleThread ? '<span class="pill reason">parallel init not active</span>' : ''}</div>
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(${conicGradient});flex-shrink:0;position:relative">
+        <div style="position:absolute;inset:25px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-2);font-weight:600">${total}<br><span style="font-size:9px;font-weight:400">beans</span></div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <table class="data"><thead><tr><th>Thread</th><th class="num">Beans</th><th class="num">Share</th></tr></thead>${entries.map(([t, c]) => `<tr>
+          <td class="bean" style="color:${colorMap[t]}">${esc(t)}</td>
+          <td class="num">${c}</td>
+          <td class="num">${(c / total * 100).toFixed(0)}%</td>
+        </tr>`).join('')}</table>
+        ${singleThread ? '<p class="dim" style="margin-top:10px;font-size:11.5px">All beans initialized on a single thread. Parallel bean init (virtual threads) is not active in this run.</p>' : ''}
+      </div>
+    </div>
+  </div>`;
+}
 
 /* v0.7.1: gates card — verdict per gate, config always visible */
 function gatesCard() {
@@ -514,7 +829,7 @@ $('#tab-conditions').innerHTML = `
     </table></div>
   </div>`;
 if (condEntries.length === 0) {
-  $('#tab-conditions .card').innerHTML = '<div class="empty">No condition data captured this run.</div>';
+  $('#tab-conditions .card').innerHTML = '<div class="empty" data-icon="🔧">No condition data captured this run.</div>';
 }
 $('#cond-search').addEventListener('input', e => {
   const q = e.target.value.toLowerCase();
@@ -554,7 +869,7 @@ const isFw = b => FRAMEWORK_PREFIX.test(b);
 function buildGraph() {
   if (typeof vis === 'undefined') {
     // Only reachable via the CDN fallback (bundled resource missing) while offline.
-    $('#graph-canvas').innerHTML = '<div class="empty" style="display:flex;height:100%;align-items:center;justify-content:center;line-height:1.8">' +
+    $('#graph-canvas').innerHTML = '<div class="empty" data-icon="🕸️" style="display:flex;height:100%;align-items:center;justify-content:center;line-height:1.8">' +
       '<div><b style="color:var(--text)">Graph library could not be loaded</b><br>' +
       'This report was generated without the bundled vis-network library<br>' +
       'and the CDN fallback (unpkg.com) is unreachable.<br>All other tabs are unaffected.</div></div>';

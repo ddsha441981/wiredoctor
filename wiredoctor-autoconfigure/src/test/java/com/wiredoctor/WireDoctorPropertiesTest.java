@@ -128,6 +128,35 @@ class WireDoctorPropertiesTest {
                 .isEqualTo(WireDoctorProperties.DEFAULT_MAX_GRAPH_NODES);
     }
 
+    // ── trend-history-size parsing (lenient, v1.1.0) ──────────────────────────
+
+    @Test
+    void trendHistorySizeDefaultsTo30() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        assertThat(p.resolveTrendHistorySize()).isEqualTo(30);
+    }
+
+    @Test
+    void trendHistorySizeZeroMeansUnlimited() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setTrendHistorySize("0");
+        assertThat(p.resolveTrendHistorySize()).isZero();
+    }
+
+    @Test
+    void malformedTrendHistorySizeFallsBackToDefault() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setTrendHistorySize("lots");
+        assertThat(p.resolveTrendHistorySize()).isEqualTo(30);
+    }
+
+    @Test
+    void negativeTrendHistorySizeFallsBackToDefault() {
+        WireDoctorProperties p = new WireDoctorProperties();
+        p.setTrendHistorySize("-5");
+        assertThat(p.resolveTrendHistorySize()).isEqualTo(30);
+    }
+
     // ── Context binding ──────────────────────────────────────────────────────
 
     @Test

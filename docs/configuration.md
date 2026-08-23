@@ -30,6 +30,7 @@ wiredoctor.max-graph-nodes=2000
 | `wiredoctor.startup-time-absolute-threshold` | `500` | ms. Startup must regress by more than this **AND** the relative threshold to trip `startup-time`. |
 | `wiredoctor.startup-time-relative-threshold` | `0.20` | Fraction (0.20 = 20%). The other half of the dual-threshold AND condition. |
 | `wiredoctor.slow-bean-margin-ms` | `20` | Jitter margin for the `slow-bean` gate: a *new* slow bean must exceed `threshold + margin` to trip. Beans inside the margin band are reported but never fail CI. `0` = exact pre-v0.8.0 behavior. |
+| `wiredoctor.trend-history-size` | `30` | Cap on `trendHistory[]` entries kept in the baseline file. Each `baseline-write` run appends one `{timestamp, totalStartupMs, slowBeanCount}` entry and trims the oldest beyond the cap. `0` = unlimited. See [Startup Time Trend](startup-time-trend.md). |
 
 ```properties
 # One-time baseline capture (commit the file):

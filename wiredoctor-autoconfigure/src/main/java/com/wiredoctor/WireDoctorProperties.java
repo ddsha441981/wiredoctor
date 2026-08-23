@@ -156,6 +156,16 @@ public class WireDoctorProperties {
      */
     private long slowBeanMarginMs = 20;
 
+    /** Default cap on trend-history entries written to the baseline file. */
+    public static final int DEFAULT_TREND_HISTORY_SIZE = 30;
+
+    /**
+     * Maximum number of entries kept in the baseline's {@code trendHistory[]}
+     * array (v1.1.0). Each baseline-write appends one entry; older entries are
+     * trimmed when the cap is exceeded. {@code 0} means unlimited (no trimming).
+     */
+    private String trendHistorySize = String.valueOf(DEFAULT_TREND_HISTORY_SIZE);
+
     /** Nested {@code wiredoctor.ghost-tracking.*} properties. */
     public static class GhostTracking {
 
@@ -393,5 +403,32 @@ public class WireDoctorProperties {
         } catch (NumberFormatException e) {
             return DEFAULT_MAX_GRAPH_NODES;
         }
+    }
+
+    /**
+     * Parses {@link #trendHistorySize} leniently.
+     *
+     * @return the configured cap, or {@value #DEFAULT_TREND_HISTORY_SIZE} if the
+     *         raw value is missing, negative, or not a valid number; {@code 0}
+     *         means unlimited
+     */
+    public int resolveTrendHistorySize() {
+        if (trendHistorySize == null) {
+            return DEFAULT_TREND_HISTORY_SIZE;
+        }
+        try {
+            int parsed = Integer.parseInt(trendHistorySize.trim());
+            return parsed < 0 ? DEFAULT_TREND_HISTORY_SIZE : parsed;
+        } catch (NumberFormatException e) {
+            return DEFAULT_TREND_HISTORY_SIZE;
+        }
+    }
+
+    public String getTrendHistorySize() {
+        return trendHistorySize;
+    }
+
+    public void setTrendHistorySize(String trendHistorySize) {
+        this.trendHistorySize = trendHistorySize;
     }
 }

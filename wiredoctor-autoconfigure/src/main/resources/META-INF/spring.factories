@@ -1,2 +1,2 @@
 
-org.springframework.context.ApplicationListener=com.wiredoctor.WireDoctorStartupListener
+org.springframework.boot.env.EnvironmentPostProcessor=com.wiredoctor.WireDoctorEnvironmentPostProcessor

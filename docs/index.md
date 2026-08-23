@@ -26,7 +26,7 @@ Add one dependency — WireDoctor hooks into the real, resolved `ApplicationCont
 <dependency>
   <groupId>io.github.ddsha441981</groupId>
   <artifactId>wiredoctor-autoconfigure</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
@@ -34,21 +34,53 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 
 ---
 
-## Documentation
+## What you get
+
+### See — the report
+
+- **Interactive HTML console** — self-contained `wiredoctor-report.html` with tabs: Overview, Graph, Ghosts, Smells, Timing, Conditions. Opens offline in any browser.
+- **Real startup timings** — per-bean instantiation times from `BufferingApplicationStartup`, no reflection heuristics.
+- **The resolved graph** — read directly from `getDependenciesForBean()`: what Spring actually wired, not what the source suggests.
+- **Condition snapshot** — Boot's autoconfiguration decisions, tabbed and filterable.
+- **JSON export** — `wiredoctor-report.json` as the single source of truth for tooling; live views via `/actuator/wiredoctor/*`.
+
+### Diagnose — the analysis
+
+- **Cycle detection with fix advice** — Tarjan SCC finds silently-resolved cycles; `lazySuggestions` ranks which `@Lazy` breaks the most cycles with the smallest blast radius.
+- **Startup critical path** — the instantiation-weighted dependency chain your readiness time actually sits on.
+- **Architecture smells** — fan-in coupling hotspots, fan-out shotgun-surgery risk, and instability metrics on the live graph; framework beans filtered so every ranked bean is refactorable.
+- **Ghost beans** — passive candidates (always on, labeled `confidence: LOW`) plus opt-in first-touch tracking for dev/staging.
+- **Proxy overhead** — CGLIB/JDK proxy count exposing hidden indirection layers.
+
+### Guard — the CI gates
+
+- **Architectural regression guard** — commit `wiredoctor-baseline.json`, fail the PR that adds a new cycle (`fail-on=new-cycle`).
+- **Upgrade Guard** — condition diff across Boot upgrades; gate on `condition-changed`.
+- **Performance gates** — fail on startup-time regressions (dual-threshold, noise-tolerant) and new slow beans (jitter-margin protected).
+- **CI-friendly output** — gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json`; the report is written even when a gate fails the build.
+
+---
+
+## Guides
 
 | Guide | What it covers |
 |-------|----------------|
 | [Report tour](report-tour.md) | Every tab of the HTML console, explained with real screenshots |
+| [Configuration reference](configuration.md) | Every property, grouped by feature, with defaults |
 | [CI gating](ci-gating.md) | Fail your PR on a new bean cycle — the full workflow |
 | [Performance gates](performance-gates.md) | Startup-time and slow-bean gates, thresholds, noise tolerance |
 | [Upgrade Guard](upgrade-guard.md) | Catching silent autoconfiguration changes across Boot upgrades |
-| [Ghost Detector](ghost-detector.md) | Passive candidates + opt-in first-touch tracking |
-| [Security posture](security-posture.md) | What the reports expose and WireDoctor's offline-only promise |
-| [Configuration reference](configuration.md) | Every property, grouped by feature, with defaults |
+| [Ghost Detector](ghost-detector.md) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Thread Distribution](thread-distribution.md) | Per-thread bean map with donut chart (v1.1.0) |
+| [Startup Time Trend](startup-time-trend.md) | trendHistory in baseline + sparkline (v1.1.0) |
+| [Security posture](security-posture.md) | What the reports expose, offline-only network behavior |
+| [Known Limitations](known-limitations.md) | Honest heuristics and what the tool cannot guarantee |
 
 ---
 
 ## Supported Versions
+
+The full test suite runs against this matrix in CI ([compat.yml](https://github.com/ddsha441981/wiredoctor/blob/main/.github/workflows/compat.yml)); the table below reflects what is actually green:
 
 | Spring Boot | Java 17 | Java 21 | Java 25 |
 |-------------|:-------:|:-------:|:-------:|
@@ -57,22 +89,8 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 | 3.5.x       | ✅      | ✅      | ✅      |
 | 4.0.x       | ✅      | ✅      | ✅      |
 
-- **WebFlux** (reactive/Netty): verified since v0.8.0.
-- **AOT / GraalVM native image**: not supported — analysis skips gracefully with a WARN (no crash, no incomplete report). Set `wiredoctor.enabled=false` in your native profile.
-
----
-
-## v1.0.0 Stability Contract
-
-From v1.0.0, these are **frozen contracts**:
-
-- **Report JSON schema** — `schemaVersion: 1` is the first field. Breaking changes require a major version bump.
-- **Config property names** — `wiredoctor.*` names are stable; properties deprecated for ≥1 minor before removal.
-- **Performance budget** — analysis overhead < 5 000 ms on a 1 000-bean context; enforced by CI.
-- **Zero-intrusion promise** — `@Lazy`/prototype beans are never instantiated; ghost tracking is opt-in; network I/O is never performed.
-
----
-
-## License
-
-MIT OR Apache-2.0 — [GitHub](https://github.com/ddsha441981/wiredoctor)
+Notes:
+- **Floor is Boot 2.4**: startup timings need `BufferingApplicationStartup`, introduced in Boot 2.4. Lines older than 2.7 are not CI-verified.
+- Boot lines between the tested ones (3.0–3.2, 3.4) are expected to work since WireDoctor only uses stable APIs, but only the listed lines carry a CI guarantee.
+- WireDoctor itself is compiled for **Java 17** bytecode.
+- **WebFlux (reactive, Netty)**: verified since v0.8.0 — `RouterFunction`, `WebHandler`, `WebSocketHandler` and `WebExceptionHandler` beans are recognized as entry points (never flagged as ghosts).
