@@ -142,7 +142,7 @@ header {
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 1px solid transparent;
+  border: 1px solid transparent; white-space: nowrap;
 }
 .chip .dot { width: 6px; height: 6px; border-radius: 50%; }
 .chip.ok    { color: var(--ok); background: var(--ok-dim); border-color: rgba(52,201,142,0.25); }
@@ -217,27 +217,81 @@ main { flex: 1; overflow-y: auto; min-width: 0; }
 .kpi.danger .k-value { color: var(--danger); }
 .kpi.warn .k-value { color: var(--warn); }
 .kpi.ghost .k-value { color: var(--ghost); }
-.two-col { grid-template-columns: 1fr 1fr; }
+.two-col { grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
 
-/* ═══════════ Sticky nav ═══════════ */
+/* ═══════════ Nav: sticky sidebar on desktop, drawer on small screens ═══════════ */
 nav { position: sticky; top: 0; z-index: 10; }
+#nav-toggle {
+  display: none; flex-shrink: 0; width: 32px; height: 30px; cursor: pointer;
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; font-size: 15px; line-height: 1;
+}
+#nav-backdrop { display: none; position: fixed; inset: 52px 0 0; z-index: 20; background: rgba(0,0,0,0.55); }
+@media (max-width: 860px) {
+  #nav-toggle { display: block; }
+  nav {
+    position: fixed; top: 52px; bottom: 0; left: 0; z-index: 30; width: 200px;
+    transform: translateX(-100%); transition: transform .18s ease-out;
+    box-shadow: 4px 0 22px rgba(0,0,0,0.45);
+  }
+  nav.open { transform: none; }
+  #nav-backdrop.show { display: block; }
+  .tab { padding: 16px 14px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+  .kpi .k-value { font-size: 21px; }
+  .card { padding: 15px 16px; }
+}
+@media (max-width: 560px) {
+  header { gap: 10px; padding: 0 12px; }
+  .logo-ver, #h-profile, #h-beans { display: none; }
+  .header-meta { gap: 6px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  nav { transition: none; }
+  .card, .kpi { transition: none; }
+  .cp-bar { animation: none; }
+}
 
-table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* ═══════════ Tables ═══════════ */
+.card { overflow-x: auto; }
+table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 table.data th {
   text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
-  color: var(--text-2); font-weight: 700; padding: 8px 12px;
-  border-bottom: 1px solid var(--border); white-space: nowrap;
+  color: var(--text-2); font-weight: 700; padding: 9px 12px;
+  background: var(--surface); border-bottom: 1px solid var(--border-hi);
+  white-space: nowrap; position: sticky; top: 0; z-index: 1;
 }
-table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); }
+table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 table.data td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.data tbody tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
 table.data tr:last-child td { border-bottom: none; }
 table.data tr:hover td { background: var(--surface-2); }
+table.data tbody tr td:first-child { box-shadow: inset 2px 0 0 transparent; }
+table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+
+/* ═══════════ Charts (dark-validated: ordinal ramp + categorical slots) ═══════════ */
+.chart { display: block; width: 100%; height: auto; }
+.chart .grid-line { stroke: var(--border); stroke-width: 1; }
+.chart .axis-txt { fill: var(--text-dim); font-family: var(--mono); font-size: 11px; }
+.chart .val-txt { fill: var(--text-2); font-family: var(--mono); font-size: 11.5px; font-weight: 700; }
+/* the viewBox is sized so a half-width desktop card renders it ~1:1; in a
+   narrow card it scales down, so lift the type to keep it legible */
+@media (max-width: 860px) { .chart .axis-txt { font-size: 15px; } .chart .val-txt { font-size: 16px; } }
+.chart .col { transition: opacity .12s; cursor: default; }
+.chart .col:hover { opacity: 0.75; }
+.chart-note { font-size: 11px; color: var(--text-dim); margin: 10px 0 0; }
+.stack { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; }
+.stack > span { min-width: 3px; }
+.stack-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 12px; }
+.stack-legend > span { display: flex; align-items: center; gap: 7px; }
+.stack-legend .sw { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 .bean { font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
 .muted { color: var(--text-2); }
 .dim { color: var(--text-dim); }
 
 .bar-wrap { display: flex; align-items: center; gap: 10px; }
+.bar-wrap .bean { flex-shrink: 0; white-space: nowrap; }
 .bar { height: 6px; border-radius: 3px; background: var(--accent); min-width: 2px; }
 .bar.warn { background: var(--warn); }
 
@@ -319,6 +373,7 @@ table.data tr:hover td { background: var(--surface-2); }
 <body>
 
 <header>
+  <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav">☰</button>
   <div class="logo">
     <div class="logo-mark">W</div>
     <span class="logo-name">WireDoctor</span>
@@ -335,6 +390,7 @@ table.data tr:hover td { background: var(--surface-2); }
   <nav id="nav"></nav>
   <main id="main"></main>
 </div>
+<div id="nav-backdrop"></div>
 
 <script>
 const reportData = {
@@ -350,48 +406,48 @@ const reportData = {
   },
   "startupSlowestSteps" : [ {
     "name" : "spring.context.refresh",
-    "durationMs" : 233,
+    "durationMs" : 88,
     "tags" : { }
   }, {
     "name" : "spring.context.beans.post-process",
-    "durationMs" : 140,
+    "durationMs" : 53,
     "tags" : { }
   }, {
     "name" : "spring.context.beandef-registry.post-process",
-    "durationMs" : 130,
+    "durationMs" : 49,
     "tags" : {
-      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@1640a06f"
+      "postProcessor" : "org.springframework.context.annotation.ConfigurationClassPostProcessor@1be66706"
     }
   }, {
     "name" : "spring.context.config-classes.parse",
-    "durationMs" : 129,
+    "durationMs" : 48,
     "tags" : {
       "classCount" : "50"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 18,
+    "durationMs" : 11,
     "tags" : {
       "threadName" : "main",
       "beanName" : "standardJacksonObjectMapperBuilderCustomizer"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 13,
+    "durationMs" : 8,
     "tags" : {
       "threadName" : "main",
       "beanName" : "jsonMixinModule"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 12,
+    "durationMs" : 8,
     "tags" : {
       "threadName" : "main",
       "beanName" : "jsonMixinModuleEntries"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 6,
+    "durationMs" : 2,
     "tags" : {
       "threadName" : "main",
       "beanName" : "bootstrapExecutor",
@@ -399,86 +455,88 @@ const reportData = {
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 5,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "messageConverters"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 4,
+    "durationMs" : 1,
     "tags" : {
       "threadName" : "main",
       "beanName" : "threadPoolTaskExecutorBuilder"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 3,
+    "durationMs" : 1,
     "tags" : {
       "threadName" : "main",
-      "beanName" : "wireDoctorAnalyzer"
-    }
-  }, {
-    "name" : "spring.beans.smart-initialize",
-    "durationMs" : 3,
-    "tags" : {
-      "beanName" : "org.springframework.context.event.internalEventListenerProcessor"
+      "beanName" : "messageConverters"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 3,
-    "tags" : {
-      "threadName" : "main",
-      "beanName" : "lifecycleProcessor"
-    }
-  }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
+    "durationMs" : 1,
     "tags" : {
       "threadName" : "main",
       "beanName" : "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
+    "durationMs" : 1,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "wireDoctorAnalyzer"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 1,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "jacksonObjectMapper"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 1,
     "tags" : {
       "threadName" : "main",
       "beanName" : "wiredoctor-com.wiredoctor.WireDoctorProperties"
     }
   }, {
-    "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
+    "name" : "spring.beans.smart-initialize",
+    "durationMs" : 0,
     "tags" : {
-      "threadName" : "main",
-      "beanName" : "org.springframework.boot.autoconfigure.netty.NettyAutoConfiguration"
+      "beanName" : "org.springframework.context.event.internalEventListenerProcessor"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 2,
+    "durationMs" : 0,
     "tags" : {
       "threadName" : "main",
-      "beanName" : "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration"
+      "beanName" : "defaultCodecCustomizer"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 1,
+    "durationMs" : 0,
     "tags" : {
       "threadName" : "main",
-      "beanName" : "clientHttpConnectorBuilder"
+      "beanName" : "jsonComponentModule"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 1,
+    "durationMs" : 0,
+    "tags" : {
+      "threadName" : "main",
+      "beanName" : "org.springframework.aop.config.internalAutoProxyCreator",
+      "beanType" : "interface org.springframework.beans.factory.config.BeanPostProcessor"
+    }
+  }, {
+    "name" : "spring.beans.instantiate",
+    "durationMs" : 0,
     "tags" : {
       "threadName" : "main",
       "beanName" : "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration"
     }
   }, {
     "name" : "spring.beans.instantiate",
-    "durationMs" : 1,
+    "durationMs" : 0,
     "tags" : {
       "threadName" : "main",
-      "beanName" : "org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration"
+      "beanName" : "org.springframework.context.annotation.internalConfigurationAnnotationProcessor",
+      "beanType" : "interface org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor"
     }
   } ],
   "slowBeans" : [ ],
@@ -488,53 +546,53 @@ const reportData = {
     "org.springframework.boot.context.properties.EnableConfigurationPropertiesRegistrar.methodValidationExcludeFilter" : 0,
     "forceAutoProxyCreatorToUseClassProxying" : 0,
     "spring.http.reactiveclient-org.springframework.boot.autoconfigure.http.client.reactive.HttpReactiveClientProperties" : 0,
-    "org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration" : 1,
+    "org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration" : 0,
     "simpleAsyncTaskSchedulerBuilder" : 0,
-    "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" : 1,
+    "spring.lifecycle-org.springframework.boot.autoconfigure.context.LifecycleProperties" : 0,
     "org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration$DefaultCodecsConfiguration" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration" : 0,
-    "org.springframework.context.annotation.internalConfigurationAnnotationProcessor" : 1,
+    "org.springframework.context.annotation.internalConfigurationAnnotationProcessor" : 0,
     "nettyAutoConfigurationLazyInitializationExcludeFilter" : 0,
-    "bootstrapExecutor" : 6,
+    "bootstrapExecutor" : 2,
     "propertySourcesPlaceholderConfigurer" : 0,
     "org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration" : 0,
     "parameterNamesModule" : 0,
     "reactorResourceFactoryClientHttpConnectorBuilderCustomizer" : 0,
     "spring.http.codecs-org.springframework.boot.autoconfigure.http.codec.HttpCodecsProperties" : 0,
-    "org.springframework.boot.autoconfigure.netty.NettyAutoConfiguration" : 2,
-    "reactorResourceFactory" : 1,
-    "stringHttpMessageConverter" : 1,
-    "defaultCodecCustomizer" : 1,
+    "org.springframework.boot.autoconfigure.netty.NettyAutoConfiguration" : 0,
+    "reactorResourceFactory" : 0,
+    "stringHttpMessageConverter" : 0,
+    "defaultCodecCustomizer" : 0,
     "org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration" : 0,
-    "messageConverters" : 5,
-    "jsonComponentModule" : 1,
+    "messageConverters" : 1,
+    "jsonComponentModule" : 0,
     "org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration" : 0,
     "org.springframework.context.event.internalEventListenerFactory" : 0,
     "mappingJackson2HttpMessageConverter" : 0,
     "applicationTaskExecutorAsyncConfigurer" : 0,
     "spring.reactor.netty-org.springframework.boot.autoconfigure.reactor.netty.ReactorNettyProperties" : 0,
-    "restClientBuilderConfigurer" : 1,
+    "restClientBuilderConfigurer" : 0,
     "org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration" : 0,
     "applicationAvailability" : 0,
     "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration" : 0,
-    "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" : 2,
+    "spring.task.execution-org.springframework.boot.autoconfigure.task.TaskExecutionProperties" : 1,
     "clientHttpConnectorSettings" : 0,
     "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" : 0,
-    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : 1,
+    "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" : 0,
     "org.springframework.boot.context.internalConfigurationPropertiesBinder" : 0,
     "org.springframework.boot.sql.init.dependency.DatabaseInitializationDependencyConfigurer$DependsOnDatabaseInitializationPostProcessor" : 0,
     "org.springframework.boot.autoconfigure.AutoConfigurationPackages" : 0,
     "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration" : 0,
-    "spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties" : 1,
+    "spring.sql.init-org.springframework.boot.autoconfigure.sql.init.SqlInitializationProperties" : 0,
     "reactorAutoConfigurationLazyInitializationExcludeFilter" : 0,
     "reactorNettyHttpClientMapperClientHttpConnectorBuilderCustomizer" : 0,
-    "org.springframework.boot.autoconfigure.reactor.ReactorAutoConfiguration" : 1,
+    "org.springframework.boot.autoconfigure.reactor.ReactorAutoConfiguration" : 0,
     "org.springframework.boot.autoconfigure.http.HttpMessageConvertersAutoConfiguration$StringHttpMessageConverterConfiguration" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$Jackson2ObjectMapperBuilderCustomizerConfiguration" : 0,
     "org.springframework.boot.autoconfigure.availability.ApplicationAvailabilityAutoConfiguration" : 0,
-    "standardJacksonObjectMapperBuilderCustomizer" : 18,
+    "standardJacksonObjectMapperBuilderCustomizer" : 11,
     "org.springframework.boot.context.properties.ConfigurationPropertiesBindingPostProcessor" : 0,
-    "threadPoolTaskExecutorBuilder" : 4,
+    "threadPoolTaskExecutorBuilder" : 1,
     "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration" : 0,
     "org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration" : 0,
     "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration" : 0,
@@ -542,28 +600,28 @@ const reportData = {
     "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration$ReactorNetty" : 0,
     "org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration" : 0,
     "bootstrapExecutorAliasPostProcessor" : 0,
-    "clientHttpConnectorBuilder" : 1,
+    "clientHttpConnectorBuilder" : 0,
     "webClientSsl" : 0,
     "jacksonCodecCustomizer" : 0,
     "org.springframework.context.event.internalEventListenerProcessor" : 0,
-    "spring.netty-org.springframework.boot.autoconfigure.netty.NettyProperties" : 1,
-    "jsonMixinModuleEntries" : 12,
+    "spring.netty-org.springframework.boot.autoconfigure.netty.NettyProperties" : 0,
+    "jsonMixinModuleEntries" : 8,
     "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : 0,
     "org.springframework.boot.context.properties.BoundConfigurationProperties" : 0,
     "jacksonObjectMapperBuilder" : 0,
-    "restClientSsl" : 1,
-    "threadPoolTaskSchedulerBuilder" : 1,
+    "restClientSsl" : 0,
+    "threadPoolTaskSchedulerBuilder" : 0,
     "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : 0,
-    "spring.http.client-org.springframework.boot.autoconfigure.http.client.HttpClientProperties" : 1,
-    "spring.reactor-org.springframework.boot.autoconfigure.reactor.ReactorProperties" : 1,
+    "spring.http.client-org.springframework.boot.autoconfigure.http.client.HttpClientProperties" : 0,
+    "spring.reactor-org.springframework.boot.autoconfigure.reactor.ReactorProperties" : 0,
     "org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration" : 0,
     "exchangeStrategiesCustomizer" : 0,
-    "lifecycleProcessor" : 3,
+    "lifecycleProcessor" : 0,
     "org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration" : 0,
-    "org.springframework.aop.config.internalAutoProxyCreator" : 1,
+    "org.springframework.aop.config.internalAutoProxyCreator" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration" : 0,
     "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration$WebClientCodecsConfiguration" : 0,
-    "wiredoctor-com.wiredoctor.WireDoctorProperties" : 2,
+    "wiredoctor-com.wiredoctor.WireDoctorProperties" : 1,
     "org.springframework.boot.autoconfigure.web.reactive.function.client.ClientHttpConnectorAutoConfiguration$ReactorNetty" : 0,
     "org.springframework.boot.autoconfigure.http.codec.CodecsAutoConfiguration$JacksonCodecConfiguration" : 0,
     "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$TaskExecutorConfiguration" : 0,
@@ -571,22 +629,22 @@ const reportData = {
     "com.wiredoctor.WireDoctorAutoConfiguration" : 0,
     "org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration$MappingJackson2HttpMessageConverterConfiguration" : 0,
     "org.springframework.boot.autoconfigure.reactor.netty.ReactorNettyConfigurations$ReactorResourceFactoryConfiguration" : 0,
-    "spring.jackson-org.springframework.boot.autoconfigure.jackson.JacksonProperties" : 1,
+    "spring.jackson-org.springframework.boot.autoconfigure.jackson.JacksonProperties" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration" : 0,
     "spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties" : 0,
     "org.springframework.context.annotation.internalAutowiredAnnotationProcessor" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperConfiguration" : 0,
     "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$BootstrapExecutorConfiguration" : 0,
     "simpleAsyncTaskExecutorBuilder" : 0,
-    "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration" : 1,
-    "jsonMixinModule" : 13,
-    "clientHttpRequestFactoryBuilder" : 1,
+    "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration" : 0,
+    "jsonMixinModule" : 8,
+    "clientHttpRequestFactoryBuilder" : 0,
     "sslBundleRegistry" : 0,
     "org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration" : 0,
-    "wireDoctorAnalyzer" : 3,
+    "wireDoctorAnalyzer" : 1,
     "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration" : 0,
     "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration" : 0,
-    "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : 1,
+    "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : 0,
     "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" : 0,
     "fileWatcher" : 0,
     "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$ParameterNamesModuleConfiguration" : 0,
@@ -595,11 +653,11 @@ const reportData = {
     "org.springframework.boot.autoconfigure.aop.AopAutoConfiguration$ClassProxyingConfiguration" : 0,
     "httpMessageConvertersRestClientCustomizer" : 0,
     "clientHttpRequestFactorySettings" : 0,
-    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : 2,
+    "org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration" : 0,
     "sslPropertiesSslBundleRegistrar" : 0
   },
   "slowBeanThreshold" : 100,
-  "totalStartupMs" : 261,
+  "totalStartupMs" : 102,
   "beanCategories" : {
     "totalBeans" : 121,
     "roleApplication" : 110,
@@ -649,6 +707,7 @@ const reportData = {
       "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$SimpleAsyncTaskSchedulerBuilderConfiguration" : 1,
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration" : 1,
       "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration$ReactorNetty" : 1,
+      "org.springframework.context.annotation.AnnotationConfigApplicationContext@7aeb3664" : 4,
       "clientHttpConnectorBuilder" : 1,
       "spring.http.reactiveclient-org.springframework.boot.autoconfigure.http.client.reactive.HttpReactiveClientProperties" : 1,
       "org.springframework.boot.autoconfigure.http.client.HttpClientAutoConfiguration" : 2,
@@ -657,15 +716,14 @@ const reportData = {
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration" : 1,
       "spring.netty-org.springframework.boot.autoconfigure.netty.NettyProperties" : 1,
       "jsonMixinModuleEntries" : 1,
+      "org.springframework.beans.factory.support.DefaultListableBeanFactory@785a632" : 1,
       "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : 1,
       "jacksonObjectMapperBuilder" : 1,
       "spring.http.codecs-org.springframework.boot.autoconfigure.http.codec.HttpCodecsProperties" : 1,
       "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : 2,
       "spring.http.client-org.springframework.boot.autoconfigure.http.client.HttpClientProperties" : 1,
       "spring.reactor-org.springframework.boot.autoconfigure.reactor.ReactorProperties" : 1,
-      "org.springframework.beans.factory.support.DefaultListableBeanFactory@67cb11de" : 1,
       "reactorResourceFactory" : 1,
-      "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d" : 4,
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration" : 1,
       "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration$WebClientCodecsConfiguration" : 1,
       "wiredoctor-com.wiredoctor.WireDoctorProperties" : 1,
@@ -741,7 +799,7 @@ const reportData = {
       "org.springframework.boot.autoconfigure.sql.init.SqlInitializationAutoConfiguration" : [ ],
       "org.springframework.context.event.internalEventListenerFactory" : [ ],
       "mappingJackson2HttpMessageConverter" : [ "org.springframework.boot.autoconfigure.http.JacksonHttpMessageConvertersConfiguration$MappingJackson2HttpMessageConverterConfiguration", "jacksonObjectMapper" ],
-      "applicationTaskExecutorAsyncConfigurer" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration", "org.springframework.beans.factory.support.DefaultListableBeanFactory@67cb11de" ],
+      "applicationTaskExecutorAsyncConfigurer" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$AsyncConfigurerConfiguration", "org.springframework.beans.factory.support.DefaultListableBeanFactory@785a632" ],
       "restTemplateBuilderConfigurer" : [ ],
       "spring.reactor.netty-org.springframework.boot.autoconfigure.reactor.netty.ReactorNettyProperties" : [ ],
       "restClientBuilderConfigurer" : [ "org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration" ],
@@ -779,10 +837,10 @@ const reportData = {
       "webClientSsl" : [ "org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration", "clientHttpConnectorBuilder", "clientHttpConnectorSettings", "sslBundleRegistry" ],
       "org.springframework.context.event.internalEventListenerProcessor" : [ ],
       "spring.netty-org.springframework.boot.autoconfigure.netty.NettyProperties" : [ ],
-      "jsonMixinModuleEntries" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d" ],
+      "jsonMixinModuleEntries" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@7aeb3664" ],
       "spring.codec-org.springframework.boot.autoconfigure.codec.CodecProperties" : [ ],
       "org.springframework.boot.context.properties.BoundConfigurationProperties" : [ ],
-      "jacksonObjectMapperBuilder" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d", "standardJacksonObjectMapperBuilderCustomizer" ],
+      "jacksonObjectMapperBuilder" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperBuilderConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@7aeb3664", "standardJacksonObjectMapperBuilderCustomizer" ],
       "restClientSsl" : [ "org.springframework.boot.autoconfigure.web.client.RestClientAutoConfiguration", "sslBundleRegistry" ],
       "threadPoolTaskSchedulerBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskSchedulingConfigurations$ThreadPoolTaskSchedulerBuilderConfiguration", "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" ],
       "spring.task.scheduling-org.springframework.boot.autoconfigure.task.TaskSchedulingProperties" : [ ],
@@ -810,7 +868,7 @@ const reportData = {
       "spring.info-org.springframework.boot.autoconfigure.info.ProjectInfoProperties" : [ ],
       "org.springframework.context.annotation.internalAutowiredAnnotationProcessor" : [ ],
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonObjectMapperConfiguration" : [ ],
-      "jsonMixinModule" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d", "jsonMixinModuleEntries" ],
+      "jsonMixinModule" : [ "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$JacksonMixinConfiguration", "org.springframework.context.annotation.AnnotationConfigApplicationContext@7aeb3664", "jsonMixinModuleEntries" ],
       "org.springframework.boot.autoconfigure.http.client.reactive.ClientHttpConnectorAutoConfiguration" : [ "spring.http.reactiveclient-org.springframework.boot.autoconfigure.http.client.reactive.HttpReactiveClientProperties" ],
       "simpleAsyncTaskExecutorBuilder" : [ "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$SimpleAsyncTaskExecutorBuilderConfiguration" ],
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$BootstrapExecutorConfiguration" : [ ],
@@ -820,7 +878,7 @@ const reportData = {
       "wireDoctorAnalyzer" : [ "com.wiredoctor.WireDoctorAutoConfiguration", "wiredoctor-com.wiredoctor.WireDoctorProperties" ],
       "org.springframework.boot.autoconfigure.task.TaskExecutorConfigurations$ThreadPoolTaskExecutorBuilderConfiguration" : [ ],
       "org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration" : [ ],
-      "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@263b0a8d", "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" ],
+      "org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration" : [ "org.springframework.context.annotation.AnnotationConfigApplicationContext@7aeb3664", "spring.ssl-org.springframework.boot.autoconfigure.ssl.SslProperties" ],
       "org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory" : [ ],
       "webClientHttpConnectorCustomizer" : [ ],
       "org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration$ParameterNamesModuleConfiguration" : [ ],
@@ -840,16 +898,16 @@ const reportData = {
   "lazySuggestions" : [ ],
   "criticalPath" : {
     "available" : true,
-    "totalMs" : 25,
-    "percentOfReadiness" : 9.6,
+    "totalMs" : 16,
+    "percentOfReadiness" : 15.7,
     "path" : [ {
       "beanName" : "jsonMixinModuleEntries",
-      "ownMs" : 12,
-      "cumulativeMs" : 12
+      "ownMs" : 8,
+      "cumulativeMs" : 8
     }, {
       "beanName" : "jsonMixinModule",
-      "ownMs" : 13,
-      "cumulativeMs" : 25
+      "ownMs" : 8,
+      "cumulativeMs" : 16
     } ],
     "disclaimer" : "Instantiation-weighted approximation; parallel init and background threads are not modeled."
   },
@@ -1694,8 +1752,8 @@ const reportData = {
     }
   },
   "trendHistory" : [ {
-    "timestamp" : 1787374482978,
-    "totalStartupMs" : 261,
+    "timestamp" : 1787460726622,
+    "totalStartupMs" : 102,
     "slowBeanCount" : 0
   } ],
   "gates" : {
@@ -1729,6 +1787,14 @@ const condEntries = Object.entries(conditions);
 const cp = reportData.criticalPath || { available: false };
 /* v0.10.0: full per-bean timing map + parsed critical-path sets (a path entry can be "[cycle: a, b]") */
 const beanTimings = reportData.beanTimings || {};
+const TIME_RAMP = ['#2b5fa8', '#3878cc', '#4f8ef7', '#7fb0fa', '#aecdfd'];
+const TIME_BUCKETS = [
+  { label: '0',     hit: ms => ms <= 0 },
+  { label: '1–9',   hit: ms => ms >= 1 && ms < 10 },
+  { label: '10–49', hit: ms => ms >= 10 && ms < 50 },
+  { label: '50–99', hit: ms => ms >= 50 && ms < 100 },
+  { label: '≥100',  hit: ms => ms >= 100 },
+];
 const cpGroups = (cp.available && cp.path ? cp.path : []).map(n => {
   const m = /^\[cycle: (.*)\]$/.exec(n.beanName);
   return new Set(m ? m[1].split(', ') : [n.beanName]);
@@ -1780,6 +1846,18 @@ TABS.forEach((t,i) => {
   main.appendChild(pane);
 });
 nav.insertAdjacentHTML('beforeend', `<div class="nav-footer">Generated at startup ·<br>zero-intrusion snapshot.<br>Reads metadata, never state.</div>`);
+
+/* nav drawer — only visible under 860px, but wiring is harmless above it */
+const navToggle = $('#nav-toggle'), navBackdrop = $('#nav-backdrop');
+function setNav(open) {
+  nav.classList.toggle('open', open);
+  navBackdrop.classList.toggle('show', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+}
+navToggle.onclick = () => setNav(!nav.classList.contains('open'));
+navBackdrop.onclick = () => setNav(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setNav(false); });
+
 let graphBuilt = false;
 /* deep-linking: #graph, #ghosts, ... opens that tab */
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.some(t=>t.id===h)) activate(h); });
@@ -1788,6 +1866,7 @@ function activate(id) {
   location.hash = id;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab===id));
   document.querySelectorAll('.tab').forEach(p => p.classList.toggle('active', p.id==='tab-'+id));
+  setNav(false);
   if (id==='graph' && !graphBuilt) { graphBuilt = true; buildGraph(); }
 }
 
@@ -1807,10 +1886,25 @@ $('#tab-overview').innerHTML = `
     <div class="card">
       <div class="section-h">🧩 Bean composition</div>
       ${compositionDonut()}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="section-h" style="font-size:10px;margin-bottom:10px">Bean role · BeanDefinition.ROLE_*</div>
+        ${roleComposition()}
+      </div>
     </div>
     <div class="card">
       <div class="section-h">Critical path timeline ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
       ${cp.available && cp.path && cp.path.length ? criticalPathTimeline() : `<div class="empty" data-icon="⏱️">No timing data (startup was not buffering).</div>`}
+    </div>
+  </div>
+  <div class="grid two-col" style="margin-top:16px">
+    <div class="card">
+      <div class="section-h">⏱ Bean instantiation time <span class="pill reason">distribution</span></div>
+      ${timingHistogram()}
+    </div>
+    <div class="card">
+      <div class="section-h">⚙ Autoconfiguration outcomes</div>
+      ${conditionOutcomeBar()}
+      <p class="chart-note">${fmt(condEntries.length)} autoconfiguration classes evaluated · open the Conditions tab to filter by class.</p>
     </div>
   </div>
   <div class="grid two-col" style="margin-top:16px">
@@ -1825,6 +1919,92 @@ $('#tab-overview').innerHTML = `
       : '<div class="empty" data-icon="👻">No ghost candidates.</div>'}
     </div>
   </div>`;
+
+/* ═══════════ v1.1.0 charts — hand-rolled SVG, no chart library ═══════════
+   Palettes validated for the dark surface #12161f: the timing ramp is single-hue
+   ordinal (monotone lightness, adjacent ΔL ≥ 0.06, dark end ≥ 2:1 on surface);
+   the categorical/status slots clear the CVD separation floor pairwise. */
+
+/* horizontal 100% stacked bar + legend. Zero-count segments are dropped, not
+   squeezed to a 3px sliver nobody can read. */
+function stackedBar(segs) {
+  const on = segs.filter(s => s.n > 0);
+  const total = on.reduce((a, s) => a + s.n, 0);
+  if (!total) return '';
+  const pct = n => (n / total * 100);
+  return `<div class="stack">${on.map(s =>
+      `<span style="flex:${s.n};background:${s.c}" title="${esc(s.label)} — ${fmt(s.n)} (${pct(s.n).toFixed(1)}%)"></span>`
+    ).join('')}</div>
+    <div class="stack-legend">${on.map(s =>
+      `<span><span class="sw" style="background:${s.c}"></span>${esc(s.label)}<span class="bean muted">${fmt(s.n)} · ${pct(s.n).toFixed(0)}%</span></span>`
+    ).join('')}</div>`;
+}
+
+function roleComposition() {
+  const bc = reportData.beanCategories || {};
+  return stackedBar([
+    { label: 'Application',    n: bc.roleApplication || 0,    c: '#4f8ef7' },
+    { label: 'Support',        n: bc.roleSupport || 0,        c: '#1f9d6b' },
+    { label: 'Infrastructure', n: bc.roleInfrastructure || 0, c: '#7c5cf0' },
+  ]) || '<div class="empty" data-icon="🧩">No bean-role data.</div>';
+}
+
+function conditionOutcomeBar() {
+  const c = {};
+  condEntries.forEach(([, v]) => c[v.outcome] = (c[v.outcome] || 0) + 1);
+  return stackedBar([
+    { label: 'matched',       n: c.matched || 0,       c: '#1f9d6b' },
+    { label: 'unconditional', n: c.unconditional || 0, c: '#4f8ef7' },
+    { label: 'notMatched',    n: c.notMatched || 0,    c: '#5c6780' },
+    { label: 'excluded',      n: c.excluded || 0,      c: '#d0473f' },
+  ]) || '<div class="empty" data-icon="⚙">No condition data captured this run.</div>';
+}
+
+/* column histogram of per-bean instantiation cost */
+function timingHistogram() {
+  const vals = Object.values(beanTimings).filter(v => typeof v === 'number');
+  if (!vals.length) return '<div class="empty" data-icon="⏱️">No per-bean timings captured (startup was not buffering).</div>';
+  const counts = TIME_BUCKETS.map(b => vals.filter(v => b.hit(v)).length);
+  const peak = Math.max.apply(null, counts);
+  const pow = Math.pow(10, Math.floor(Math.log10(peak || 1)));
+  const top = [1, 2, 5, 10].map(m => m * pow).find(v => v >= peak) || peak || 1;
+  const W = 560, H = 220, L = 48, R = 14, T = 20, B = 46;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  const slot = pw / counts.length;
+  const bw = Math.min(24, slot - 14);
+  const grid = [0, 0.5, 1].map(f => {
+    const y = base - ph * f;
+    return `<line class="grid-line" x1="${L}" y1="${y.toFixed(1)}" x2="${W - R}" y2="${y.toFixed(1)}"/>`
+         + `<text class="axis-txt" x="${L - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt(Math.round(top * f))}</text>`;
+  }).join('');
+  const cols = counts.map((c, i) => {
+    /* a non-empty bucket never renders thinner than 3px — the slow tail is the
+       whole point of the chart and it is always the smallest bucket. Every
+       column carries its exact count, so the floor cannot mislead. */
+    const h = c > 0 ? Math.max(3, c / top * ph) : 0;
+    const x = L + slot * i + (slot - bw) / 2;
+    const y = base - h;
+    const r = Math.min(4, h / 2);
+    const cx = (x + bw / 2).toFixed(1);
+    /* 4px rounded top, square where it meets the baseline */
+    const col = h < 0.5 ? '' :
+      `<path class="col" fill="${TIME_RAMP[i]}" d="M${x.toFixed(1)},${base} L${x.toFixed(1)},${(y + r).toFixed(1)}`
+      + ` Q${x.toFixed(1)},${y.toFixed(1)} ${(x + r).toFixed(1)},${y.toFixed(1)}`
+      + ` L${(x + bw - r).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + r).toFixed(1)}`
+      + ` L${(x + bw).toFixed(1)},${base} Z">`
+      + `<title>${TIME_BUCKETS[i].label} ms — ${fmt(c)} bean${c === 1 ? '' : 's'} (${(c / vals.length * 100).toFixed(1)}%)</title></path>`;
+    const label = c > 0
+      ? `<text class="val-txt" x="${cx}" y="${(y - 5).toFixed(1)}" text-anchor="middle">${fmt(c)}</text>` : '';
+    return col + label + `<text class="axis-txt" x="${cx}" y="${base + 16}" text-anchor="middle">${TIME_BUCKETS[i].label}</text>`;
+  }).join('');
+  const slow = counts[counts.length - 1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Bean instantiation time distribution across ${fmt(vals.length)} measured beans">
+      ${grid}${cols}
+      <text class="axis-txt" x="${L + pw / 2}" y="${H - 6}" text-anchor="middle">instantiation time (ms)</text>
+    </svg>
+    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} over 100ms — the slow-bean threshold. Brighter column = slower bucket.</p>`;
+}
 
 function compositionDonut() {
   const bc = reportData.beanCategories || {};
