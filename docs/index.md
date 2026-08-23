@@ -1,3 +1,9 @@
+---
+title: Home
+nav_order: 1
+permalink: /
+---
+
 # WireDoctor
 
 **Runtime diagnostic and architectural analysis for Spring Boot.**

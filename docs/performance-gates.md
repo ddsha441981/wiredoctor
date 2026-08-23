@@ -1,3 +1,8 @@
+---
+title: Performance gates
+nav_order: 6
+---
+
 # Performance Gates
 
 **Available since:** v0.7.0

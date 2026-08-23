@@ -1,3 +1,8 @@
+---
+title: CI gating
+nav_order: 5
+---
+
 # Fail your PR when someone adds a bean cycle
 
 WireDoctor's **Architectural Regression Guard** turns your Spring context into an

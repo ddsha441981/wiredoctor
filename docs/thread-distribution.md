@@ -1,3 +1,8 @@
+---
+title: Thread Distribution
+nav_order: 9
+---
+
 # Thread Distribution — per-thread bean map (v1.1.0)
 
 WireDoctor records which thread instantiated each bean and reports a per-thread breakdown in the Timing tab. It answers one question honestly: **did anything actually leave the `main` thread?**

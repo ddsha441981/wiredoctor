@@ -1,0 +1,71 @@
+# GitHub Pages site config for the WireDoctor docs.
+#
+# Pages builds this directory with its own Jekyll 3.10 (build_type: legacy), so
+# only plugins on https://pages.github.com/versions/ may be used. remote_theme
+# (jekyll-remote-theme 0.4.3) and jekyll-include-cache 0.2.1 are both on that
+# list, which is what lets Just the Docs work without a custom Actions build.
+
+title: WireDoctor
+description: >-
+  Runtime diagnostic and architectural analysis for Spring Boot — bean cycles,
+  slow beans, autoconfiguration drift, and CI regression gates.
+url: https://ddsha441981.github.io
+baseurl: /wiredoctor
+lang: en-US
+
+remote_theme: just-the-docs/just-the-docs@v0.12.0
+color_scheme: dark
+
+plugins:
+  # Required for remote_theme to resolve. Pages injects it on its own builds,
+  # but once an explicit plugins list exists it must be named here or the theme
+  # silently does not load ("Layout 'default' does not exist").
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-include-cache
+
+# Every page here is a doc page. Set the layout centrally so no file needs a
+# `layout:` line of its own (the default-layout plugin is not loaded once an
+# explicit plugins list exists).
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# ── Header: the way back to the repo ──────────────────────────────────────────
+aux_links:
+  GitHub: https://github.com/ddsha441981/wiredoctor
+  Maven Central: https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure
+aux_links_new_tab: true
+
+# ── Sidebar / navigation ──────────────────────────────────────────────────────
+nav_sort: case_insensitive
+back_to_top: true
+back_to_top_text: Back to top
+
+# ── Search ────────────────────────────────────────────────────────────────────
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 2
+  preview_words_before: 5
+  preview_words_after: 10
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: false
+
+# ── Footer ────────────────────────────────────────────────────────────────────
+# Replaces the default theme's "This site is open source. Improve this page."
+# edit link. Corrections still arrive as pull requests, just not from a
+# one-click editor embedded in the docs.
+footer_content: >-
+  WireDoctor — MIT OR Apache-2.0.
+  <a href="https://github.com/ddsha441981/wiredoctor">Source</a> ·
+  <a href="https://github.com/ddsha441981/wiredoctor/issues">Report an issue</a> ·
+  <a href="https://github.com/ddsha441981/wiredoctor/blob/main/CHANGELOG.md">Changelog</a>
+last_edit_timestamp: false
+gh_edit_link: false
+
+# The pre-generated sample report under sample/ has no front matter, so Jekyll
+# copies it verbatim and it never enters the nav or the search index.

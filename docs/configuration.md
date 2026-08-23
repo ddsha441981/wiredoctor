@@ -1,3 +1,8 @@
+---
+title: Configuration
+nav_order: 4
+---
+
 # Configuration Reference
 
 Every WireDoctor property in one place. All properties are optional — WireDoctor works out of the box with zero configuration.

@@ -1,3 +1,8 @@
+---
+title: Known limitations
+nav_order: 12
+---
+
 # Known Limitations
 
 WireDoctor prefers honest heuristics over false certainty. Here is what it cannot (and will not pretend to) do.
