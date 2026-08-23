@@ -22,7 +22,7 @@
 | v0.1.2 | 2026-07-17 | Crash-safety, no forced instantiation, demo boots |
 | v0.1.0 | 2026-07-17 | Initial release — cycle detection, ghost beans, proxy count |
 
-Full changelog: [CHANGELOG.md](../CHANGELOG.md)
+Full changelog: [CHANGELOG.md](https://github.com/ddsha441981/wiredoctor/blob/main/CHANGELOG.md)
 
 ---
 

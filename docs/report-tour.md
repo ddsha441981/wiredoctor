@@ -1,6 +1,6 @@
 # 📸 WireDoctor Report Tour
 
-A guided walkthrough of the WireDoctor HTML console, tab by tab. All screenshots are from a **real run against start.spring.io** (Spring Initializr, Spring Boot 4.0.x, 390 beans, 432 wiring edges) with WireDoctor **0.7.1** and performance gates armed (`wiredoctor.fail-on=startup-time,slow-bean`) — not a staged demo. The full sample reports are in [`sample/`](../sample/).
+A guided walkthrough of the WireDoctor HTML console, tab by tab. All screenshots are from a **real run against start.spring.io** (Spring Initializr, Spring Boot 4.0.x, 390 beans, 432 wiring edges) with WireDoctor **0.7.1** and performance gates armed (`wiredoctor.fail-on=startup-time,slow-bean`) — not a staged demo. The full sample reports are in [`sample/`](https://github.com/ddsha441981/wiredoctor/tree/main/sample).
 
 The report is a single self-contained `wiredoctor-report.html` — the graph library is inlined at generation time, so it renders completely offline. Just open it in a browser.
 
@@ -74,7 +74,7 @@ Real measured startup numbers from `BufferingApplicationStartup` — no reflecti
 - **Slowest startup steps**: the Boot lifecycle phases, with `spring.context.refresh` (4,619ms) at the top and individual `spring.beans.instantiate` steps below.
 - **Slow bean instantiation**: every bean over the `slow-bean-threshold-ms` (default 100ms), ranked. On this run, `bomRangesInfoContributor` (315ms) and `initializrMetadataProvider` (313ms) lead.
 
-Since v0.7.1, this tab also hosts the **Performance Gates card**: each gate (startup-time, slow-bean, new-cycle, condition-changed) with its threshold, actual value, and a PASS/FAIL/NOT RUN verdict chip — plus `not armed` tags and a CI hint when gates aren't configured. This is the UI counterpart of `wiredoctor.fail-on` CI gating (see the [Performance Gates guide](performance-gates.md)).
+Since v0.7.1, this tab also hosts the **Performance Gates card**: each gate (startup-time, slow-bean, new-cycle, condition-changed) with its threshold, actual value, and a PASS/FAIL/NOT RUN verdict chip — plus `not armed` tags and a CI hint when gates aren't configured. This is the UI counterpart of `wiredoctor.fail-on` CI gating (see the [Performance Gates guide](performance-gates.html)).
 
 ---
 
@@ -84,10 +84,10 @@ Since v0.7.1, this tab also hosts the **Performance Gates card**: each gate (sta
 
 Spring Boot's **condition evaluation report**, snapshotted into the report — 358 autoconfiguration classes here, each tagged `matched` / `notMatched` / `unconditional`, with count chips and a class-name filter.
 
-Why snapshot something Boot already keeps? Because a snapshot can be **diffed**. Commit it in your baseline and a Boot upgrade that silently flips an autoconfiguration from `matched → notMatched` is caught in CI with the exact condition message — before you debug the mystery of the vanished bean. See the [Upgrade Guard guide](upgrade-guard.md).
+Why snapshot something Boot already keeps? Because a snapshot can be **diffed**. Commit it in your baseline and a Boot upgrade that silently flips an autoconfiguration from `matched → notMatched` is caught in CI with the exact condition message — before you debug the mystery of the vanished bean. See the [Upgrade Guard guide](upgrade-guard.html).
 
 ---
 
 ## Try it yourself
 
-Open the pre-generated reports in [`sample/`](../sample/) in any browser, or add the dependency to your own app — the report appears in your working directory on next startup. See [Quick start](../README.md#-quick-start).
+Open the pre-generated reports in [`sample/`](https://github.com/ddsha441981/wiredoctor/tree/main/sample) in any browser, or add the dependency to your own app — the report appears in your working directory on next startup. See [Quick start](https://github.com/ddsha441981/wiredoctor#-quick-start).

@@ -53,4 +53,4 @@ WireDoctor prefers honest heuristics over false certainty:
 - No AOT / GraalVM native image support — the analysis skips gracefully with a single WARN.
 - Reports are build artifacts, not source — add them to `.gitignore`.
 
-See [Known Limitations](known-limitations.md) for the full list.
+See [Known Limitations](known-limitations.html) for the full list.
