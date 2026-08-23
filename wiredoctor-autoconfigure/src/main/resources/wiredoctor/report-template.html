@@ -57,7 +57,7 @@ header {
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 1px solid transparent;
+  border: 1px solid transparent; white-space: nowrap;
 }
 .chip .dot { width: 6px; height: 6px; border-radius: 50%; }
 .chip.ok    { color: var(--ok); background: var(--ok-dim); border-color: rgba(52,201,142,0.25); }
@@ -132,27 +132,81 @@ main { flex: 1; overflow-y: auto; min-width: 0; }
 .kpi.danger .k-value { color: var(--danger); }
 .kpi.warn .k-value { color: var(--warn); }
 .kpi.ghost .k-value { color: var(--ghost); }
-.two-col { grid-template-columns: 1fr 1fr; }
+.two-col { grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
 
-/* ═══════════ Sticky nav ═══════════ */
+/* ═══════════ Nav: sticky sidebar on desktop, drawer on small screens ═══════════ */
 nav { position: sticky; top: 0; z-index: 10; }
+#nav-toggle {
+  display: none; flex-shrink: 0; width: 32px; height: 30px; cursor: pointer;
+  background: var(--surface-3); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; font-size: 15px; line-height: 1;
+}
+#nav-backdrop { display: none; position: fixed; inset: 52px 0 0; z-index: 20; background: rgba(0,0,0,0.55); }
+@media (max-width: 860px) {
+  #nav-toggle { display: block; }
+  nav {
+    position: fixed; top: 52px; bottom: 0; left: 0; z-index: 30; width: 200px;
+    transform: translateX(-100%); transition: transform .18s ease-out;
+    box-shadow: 4px 0 22px rgba(0,0,0,0.45);
+  }
+  nav.open { transform: none; }
+  #nav-backdrop.show { display: block; }
+  .tab { padding: 16px 14px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+  .kpi .k-value { font-size: 21px; }
+  .card { padding: 15px 16px; }
+}
+@media (max-width: 560px) {
+  header { gap: 10px; padding: 0 12px; }
+  .logo-ver, #h-profile, #h-beans { display: none; }
+  .header-meta { gap: 6px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  nav { transition: none; }
+  .card, .kpi { transition: none; }
+  .cp-bar { animation: none; }
+}
 
-table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+/* ═══════════ Tables ═══════════ */
+.card { overflow-x: auto; }
+table.data { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 table.data th {
   text-align: left; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.8px;
-  color: var(--text-2); font-weight: 700; padding: 8px 12px;
-  border-bottom: 1px solid var(--border); white-space: nowrap;
+  color: var(--text-2); font-weight: 700; padding: 9px 12px;
+  background: var(--surface); border-bottom: 1px solid var(--border-hi);
+  white-space: nowrap; position: sticky; top: 0; z-index: 1;
 }
-table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); }
+table.data th.num, table.data td.num { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 table.data td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.data tbody tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
 table.data tr:last-child td { border-bottom: none; }
 table.data tr:hover td { background: var(--surface-2); }
+table.data tbody tr td:first-child { box-shadow: inset 2px 0 0 transparent; }
+table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
+
+/* ═══════════ Charts (dark-validated: ordinal ramp + categorical slots) ═══════════ */
+.chart { display: block; width: 100%; height: auto; }
+.chart .grid-line { stroke: var(--border); stroke-width: 1; }
+.chart .axis-txt { fill: var(--text-dim); font-family: var(--mono); font-size: 11px; }
+.chart .val-txt { fill: var(--text-2); font-family: var(--mono); font-size: 11.5px; font-weight: 700; }
+/* the viewBox is sized so a half-width desktop card renders it ~1:1; in a
+   narrow card it scales down, so lift the type to keep it legible */
+@media (max-width: 860px) { .chart .axis-txt { font-size: 15px; } .chart .val-txt { font-size: 16px; } }
+.chart .col { transition: opacity .12s; cursor: default; }
+.chart .col:hover { opacity: 0.75; }
+.chart-note { font-size: 11px; color: var(--text-dim); margin: 10px 0 0; }
+.stack { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; }
+.stack > span { min-width: 3px; }
+.stack-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 12px; }
+.stack-legend > span { display: flex; align-items: center; gap: 7px; }
+.stack-legend .sw { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 .bean { font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
 .muted { color: var(--text-2); }
 .dim { color: var(--text-dim); }
 
 .bar-wrap { display: flex; align-items: center; gap: 10px; }
+.bar-wrap .bean { flex-shrink: 0; white-space: nowrap; }
 .bar { height: 6px; border-radius: 3px; background: var(--accent); min-width: 2px; }
 .bar.warn { background: var(--warn); }
 
@@ -234,6 +288,7 @@ table.data tr:hover td { background: var(--surface-2); }
 <body>
 
 <header>
+  <button id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav">☰</button>
   <div class="logo">
     <div class="logo-mark">W</div>
     <span class="logo-name">WireDoctor</span>
@@ -250,6 +305,7 @@ table.data tr:hover td { background: var(--surface-2); }
   <nav id="nav"></nav>
   <main id="main"></main>
 </div>
+<div id="nav-backdrop"></div>
 
 <script>
 const reportData = /* DATA_INJECTION_POINT */;
@@ -272,6 +328,14 @@ const condEntries = Object.entries(conditions);
 const cp = reportData.criticalPath || { available: false };
 /* v0.10.0: full per-bean timing map + parsed critical-path sets (a path entry can be "[cycle: a, b]") */
 const beanTimings = reportData.beanTimings || {};
+const TIME_RAMP = ['#2b5fa8', '#3878cc', '#4f8ef7', '#7fb0fa', '#aecdfd'];
+const TIME_BUCKETS = [
+  { label: '0',     hit: ms => ms <= 0 },
+  { label: '1–9',   hit: ms => ms >= 1 && ms < 10 },
+  { label: '10–49', hit: ms => ms >= 10 && ms < 50 },
+  { label: '50–99', hit: ms => ms >= 50 && ms < 100 },
+  { label: '≥100',  hit: ms => ms >= 100 },
+];
 const cpGroups = (cp.available && cp.path ? cp.path : []).map(n => {
   const m = /^\[cycle: (.*)\]$/.exec(n.beanName);
   return new Set(m ? m[1].split(', ') : [n.beanName]);
@@ -323,6 +387,18 @@ TABS.forEach((t,i) => {
   main.appendChild(pane);
 });
 nav.insertAdjacentHTML('beforeend', `<div class="nav-footer">Generated at startup ·<br>zero-intrusion snapshot.<br>Reads metadata, never state.</div>`);
+
+/* nav drawer — only visible under 860px, but wiring is harmless above it */
+const navToggle = $('#nav-toggle'), navBackdrop = $('#nav-backdrop');
+function setNav(open) {
+  nav.classList.toggle('open', open);
+  navBackdrop.classList.toggle('show', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+}
+navToggle.onclick = () => setNav(!nav.classList.contains('open'));
+navBackdrop.onclick = () => setNav(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setNav(false); });
+
 let graphBuilt = false;
 /* deep-linking: #graph, #ghosts, ... opens that tab */
 window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.some(t=>t.id===h)) activate(h); });
@@ -331,6 +407,7 @@ function activate(id) {
   location.hash = id;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab===id));
   document.querySelectorAll('.tab').forEach(p => p.classList.toggle('active', p.id==='tab-'+id));
+  setNav(false);
   if (id==='graph' && !graphBuilt) { graphBuilt = true; buildGraph(); }
 }
 
@@ -350,10 +427,25 @@ $('#tab-overview').innerHTML = `
     <div class="card">
       <div class="section-h">🧩 Bean composition</div>
       ${compositionDonut()}
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+        <div class="section-h" style="font-size:10px;margin-bottom:10px">Bean role · BeanDefinition.ROLE_*</div>
+        ${roleComposition()}
+      </div>
     </div>
     <div class="card">
       <div class="section-h">Critical path timeline ${cp.available && cp.percentOfReadiness ? `<span class="pill low">${cp.percentOfReadiness}% of readiness</span>`:''}</div>
       ${cp.available && cp.path && cp.path.length ? criticalPathTimeline() : `<div class="empty" data-icon="⏱️">No timing data (startup was not buffering).</div>`}
+    </div>
+  </div>
+  <div class="grid two-col" style="margin-top:16px">
+    <div class="card">
+      <div class="section-h">⏱ Bean instantiation time <span class="pill reason">distribution</span></div>
+      ${timingHistogram()}
+    </div>
+    <div class="card">
+      <div class="section-h">⚙ Autoconfiguration outcomes</div>
+      ${conditionOutcomeBar()}
+      <p class="chart-note">${fmt(condEntries.length)} autoconfiguration classes evaluated · open the Conditions tab to filter by class.</p>
     </div>
   </div>
   <div class="grid two-col" style="margin-top:16px">
@@ -368,6 +460,92 @@ $('#tab-overview').innerHTML = `
       : '<div class="empty" data-icon="👻">No ghost candidates.</div>'}
     </div>
   </div>`;
+
+/* ═══════════ v1.1.0 charts — hand-rolled SVG, no chart library ═══════════
+   Palettes validated for the dark surface #12161f: the timing ramp is single-hue
+   ordinal (monotone lightness, adjacent ΔL ≥ 0.06, dark end ≥ 2:1 on surface);
+   the categorical/status slots clear the CVD separation floor pairwise. */
+
+/* horizontal 100% stacked bar + legend. Zero-count segments are dropped, not
+   squeezed to a 3px sliver nobody can read. */
+function stackedBar(segs) {
+  const on = segs.filter(s => s.n > 0);
+  const total = on.reduce((a, s) => a + s.n, 0);
+  if (!total) return '';
+  const pct = n => (n / total * 100);
+  return `<div class="stack">${on.map(s =>
+      `<span style="flex:${s.n};background:${s.c}" title="${esc(s.label)} — ${fmt(s.n)} (${pct(s.n).toFixed(1)}%)"></span>`
+    ).join('')}</div>
+    <div class="stack-legend">${on.map(s =>
+      `<span><span class="sw" style="background:${s.c}"></span>${esc(s.label)}<span class="bean muted">${fmt(s.n)} · ${pct(s.n).toFixed(0)}%</span></span>`
+    ).join('')}</div>`;
+}
+
+function roleComposition() {
+  const bc = reportData.beanCategories || {};
+  return stackedBar([
+    { label: 'Application',    n: bc.roleApplication || 0,    c: '#4f8ef7' },
+    { label: 'Support',        n: bc.roleSupport || 0,        c: '#1f9d6b' },
+    { label: 'Infrastructure', n: bc.roleInfrastructure || 0, c: '#7c5cf0' },
+  ]) || '<div class="empty" data-icon="🧩">No bean-role data.</div>';
+}
+
+function conditionOutcomeBar() {
+  const c = {};
+  condEntries.forEach(([, v]) => c[v.outcome] = (c[v.outcome] || 0) + 1);
+  return stackedBar([
+    { label: 'matched',       n: c.matched || 0,       c: '#1f9d6b' },
+    { label: 'unconditional', n: c.unconditional || 0, c: '#4f8ef7' },
+    { label: 'notMatched',    n: c.notMatched || 0,    c: '#5c6780' },
+    { label: 'excluded',      n: c.excluded || 0,      c: '#d0473f' },
+  ]) || '<div class="empty" data-icon="⚙">No condition data captured this run.</div>';
+}
+
+/* column histogram of per-bean instantiation cost */
+function timingHistogram() {
+  const vals = Object.values(beanTimings).filter(v => typeof v === 'number');
+  if (!vals.length) return '<div class="empty" data-icon="⏱️">No per-bean timings captured (startup was not buffering).</div>';
+  const counts = TIME_BUCKETS.map(b => vals.filter(v => b.hit(v)).length);
+  const peak = Math.max.apply(null, counts);
+  const pow = Math.pow(10, Math.floor(Math.log10(peak || 1)));
+  const top = [1, 2, 5, 10].map(m => m * pow).find(v => v >= peak) || peak || 1;
+  const W = 560, H = 220, L = 48, R = 14, T = 20, B = 46;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  const slot = pw / counts.length;
+  const bw = Math.min(24, slot - 14);
+  const grid = [0, 0.5, 1].map(f => {
+    const y = base - ph * f;
+    return `<line class="grid-line" x1="${L}" y1="${y.toFixed(1)}" x2="${W - R}" y2="${y.toFixed(1)}"/>`
+         + `<text class="axis-txt" x="${L - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end">${fmt(Math.round(top * f))}</text>`;
+  }).join('');
+  const cols = counts.map((c, i) => {
+    /* a non-empty bucket never renders thinner than 3px — the slow tail is the
+       whole point of the chart and it is always the smallest bucket. Every
+       column carries its exact count, so the floor cannot mislead. */
+    const h = c > 0 ? Math.max(3, c / top * ph) : 0;
+    const x = L + slot * i + (slot - bw) / 2;
+    const y = base - h;
+    const r = Math.min(4, h / 2);
+    const cx = (x + bw / 2).toFixed(1);
+    /* 4px rounded top, square where it meets the baseline */
+    const col = h < 0.5 ? '' :
+      `<path class="col" fill="${TIME_RAMP[i]}" d="M${x.toFixed(1)},${base} L${x.toFixed(1)},${(y + r).toFixed(1)}`
+      + ` Q${x.toFixed(1)},${y.toFixed(1)} ${(x + r).toFixed(1)},${y.toFixed(1)}`
+      + ` L${(x + bw - r).toFixed(1)},${y.toFixed(1)} Q${(x + bw).toFixed(1)},${y.toFixed(1)} ${(x + bw).toFixed(1)},${(y + r).toFixed(1)}`
+      + ` L${(x + bw).toFixed(1)},${base} Z">`
+      + `<title>${TIME_BUCKETS[i].label} ms — ${fmt(c)} bean${c === 1 ? '' : 's'} (${(c / vals.length * 100).toFixed(1)}%)</title></path>`;
+    const label = c > 0
+      ? `<text class="val-txt" x="${cx}" y="${(y - 5).toFixed(1)}" text-anchor="middle">${fmt(c)}</text>` : '';
+    return col + label + `<text class="axis-txt" x="${cx}" y="${base + 16}" text-anchor="middle">${TIME_BUCKETS[i].label}</text>`;
+  }).join('');
+  const slow = counts[counts.length - 1];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Bean instantiation time distribution across ${fmt(vals.length)} measured beans">
+      ${grid}${cols}
+      <text class="axis-txt" x="${L + pw / 2}" y="${H - 6}" text-anchor="middle">instantiation time (ms)</text>
+    </svg>
+    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} over 100ms — the slow-bean threshold. Brighter column = slower bucket.</p>`;
+}
 
 function compositionDonut() {
   const bc = reportData.beanCategories || {};

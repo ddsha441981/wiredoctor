@@ -30,6 +30,22 @@ bean distribution for parallel initialization.
   need start/end timestamps per thread + dependency overlay, a v1.2+ research item).
 - 🎨 **UI polish** — hover effects, icons, and animations across the report tabs
   for a more polished diagnostic console experience.
+- 📊 **Overview charts** — three inline-SVG/CSS charts (no libraries, still a
+  single self-contained file): a 5-bucket **bean instantiation-time histogram**
+  (`0`, `1–9`, `10–49`, `50–99`, `≥100` ms, every column labelled with its exact
+  count so the slow tail is never an invisible sliver), a **bean-role** 100%
+  stacked bar (`ROLE_APPLICATION` / `SUPPORT` / `INFRASTRUCTURE`), and an
+  **autoconfiguration-outcome** stacked bar (matched / unconditional /
+  notMatched / excluded). Palettes are colour-blind validated against the dark
+  surface; every series is legend-labelled so identity is never colour-alone.
+- 📱 **Responsive sidebar** — the desktop sticky nav becomes an off-canvas drawer
+  under 860px, opened by a header hamburger and dismissed by backdrop click,
+  `Escape`, or tab selection. KPI grid, cards, and header chips reflow instead of
+  overflowing on phone widths; motion is disabled under
+  `prefers-reduced-motion`.
+- 💅 **Table polish** — sticky uppercase headers, zebra rows, tabular-aligned
+  numeric columns, hover row highlight with an accent edge marker, and
+  horizontal scroll confined to the card instead of the page.
 
 ### Changed
 
