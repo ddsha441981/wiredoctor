@@ -387,11 +387,17 @@ class WireDoctorAnalyzerIntegrationTest {
                     .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
             JsonNode counts = report.path("threadDistribution").path("counts");
             JsonNode perThread = report.path("threadDistribution").path("perThread");
-            int[] totalFromCounts = {0};
-            counts.values().forEachRemaining(v -> totalFromCounts[0] += v.asInt());
-            int[] totalFromList = {0};
-            perThread.values().forEachRemaining(list -> totalFromList[0] += list.size());
-            assertThat(totalFromCounts[0]).isEqualTo(totalFromList[0]);
+            // JsonNode is Iterable in both Jackson 2.x and 3.x; values()/elements()
+            // are not — the compat matrix spans both.
+            int totalFromCounts = 0;
+            for (JsonNode v : counts) {
+                totalFromCounts += v.asInt();
+            }
+            int totalFromList = 0;
+            for (JsonNode list : perThread) {
+                totalFromList += list.size();
+            }
+            assertThat(totalFromCounts).isEqualTo(totalFromList);
         }
     }
 
