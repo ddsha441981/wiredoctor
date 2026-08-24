@@ -5,6 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-08-24
+
+Precision pass on report accuracy: four ways WireDoctor reported something the
+user did not do. All found by running against spring-petclinic (Spring Boot
+4.1.0, 470 beans) and then verifying each claim before fixing it — one planned
+fix was dropped when the verification showed the root cause was different from
+the one written down. No API, schema, or configuration changes.
+
+### Fixed
+
+- **Beans collected by type were reported as ghost candidates.** All four ghosts
+  flagged on spring-petclinic were live code: `PetTypeFormatter`, two
+  `WebConfiguration` beans and `CacheConfiguration`. Spring resolves them by
+  type — `ApplicationConversionService` collects `Formatter`, `DispatcherServlet`
+  collects `ViewResolver`, `CacheAutoConfiguration` collects
+  `CacheManagerCustomizer` — and a type lookup registers no dependency edge, so
+  the bean looks like an orphan. `isEntryPoint` now walks the full interface
+  hierarchy and treats an interface declared in a **different artifact**
+  (`CodeSource`) as an entry point: whoever owns the contract can look the bean
+  up. JDK interfaces are excluded, so a `Serializable`-only dead bean is still
+  reported. `CodeSource` rather than a package prefix because petclinic's own
+  classes live under `org.springframework.samples.petclinic`.
+  Still false-positives when a **user-owned** interface is injected via
+  `ObjectProvider<X>`; no such case reported yet.
+- **Baseline diffs flipped on names the developer never chose.** Two sources:
+  Spring Data's positional counters (`jpa.named-queries#0`,
+  `jpa.OwnerRepository.fragments#0`, `data-jpa.repository-aot-processor#0` — the
+  number is a registration counter, so three repositories can swap numbers
+  between runs and every edge on them flips) and framework identity hashes from
+  `ObjectUtils.identityToString` (`...DefaultListableBeanFactory@69391e08`).
+  `WireDoctorBaselineDiff.Snapshot.canonical()` masks both on **both** sides of
+  the comparison, so a baseline written before 1.1.2 diffs cleanly with no
+  regeneration. Names that collapse to one key union their edges instead of
+  overwriting. The counter rule is anchored to Spring Data's shapes rather than a
+  blind `#\d+`, which would also flatten inner-bean and nested-configuration
+  names that are stable and meaningful.
+- **WireDoctor ranked its own beans in its own coupling report.**
+  `wireDoctorAnalyzer` and friends appeared in the user-bean smell rankings.
+  Nobody can refactor them in response to that advice, so they are noise in
+  exactly the way framework beans are. `WireDoctorBeanClassifier.isWireDoctorBean()`
+  matches by bean name, not by type package — the tool's own tests declare their
+  fixtures in `com.wiredoctor`, so a package prefix would classify every fixture
+  as framework. The rule also replaces the inline
+  `startsWith("wiredoctor")` the orphan scan carried separately.
+- **Spring's FactoryBean prefix is spelled out for humans.**
+  `- &entityManagerFactory (1562ms)` reads like a typo; the `&` means "the
+  FactoryBean itself, not the object it produces", which is the thing worth
+  telling the reader. Now rendered `entityManagerFactory (FactoryBean)` in the
+  console (slow beans, slowest steps, ghost candidates, all three smell
+  rankings) and at every bean-name site in the HTML report. The raw name stays
+  in `wiredoctor-report.json` — `schemaVersion: 1` is frozen.
+
+### Documentation
+
+- `KNOWN_ISSUES.md` — the v0.2.0 edge-noise entry is marked fixed, and its claim
+  that the identity hash "changes every application boot" is corrected. It does
+  not: the default identity hashCode comes from a thread-local xorshift
+  generator, so an identical single-threaded startup reproduces it exactly
+  (petclinic returned `@3568f9d2` byte-for-byte across runs). The churn needs an
+  allocation-order change — a new autoconfiguration, a different profile, a JDK
+  or Boot upgrade. Intermittent noise, which is harder to trust than constant
+  noise.
+
+### Tests
+
+- 269 total (258 autoconfigure + 11 actuator), 12 new — including the guards that
+  keep the fixes from going too far: a plain dead `@Component` is still reported,
+  a JDK-marker-only bean is still reported, an inner-bean `#0` name still diffs,
+  and a real bean addition still shows up alongside canonicalised names.
+
 ## [1.1.1] - 2026-08-24
 
 Correctness pass on startup-time reporting, found by running the published 1.1.0
