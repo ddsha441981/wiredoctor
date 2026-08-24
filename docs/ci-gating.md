@@ -37,12 +37,31 @@ app unless you explicitly asked it to via `fail-on`.
 
 ## Step 1 — create and commit the baseline
 
-Run your app once in baseline-write mode (locally or in a one-off CI job):
+**Record the baseline the same way CI will run the app.** The graph WireDoctor sees
+depends on what is on the classpath, so a baseline captured under one launch method
+and gated under another produces a diff full of differences you did not make.
+
+CI runs the packaged jar (Step 3), so build and record from the jar:
 
 ```bash
-./mvnw spring-boot:run \
-  -Dspring-boot.run.arguments="--wiredoctor.baseline=wiredoctor-baseline.json --wiredoctor.baseline-write=true"
+./mvnw -DskipTests package
+java -jar target/*.jar \
+  --wiredoctor.baseline=wiredoctor-baseline.json \
+  --wiredoctor.baseline-write=true
 ```
+
+{: .warning }
+> Do not record the baseline with `./mvnw spring-boot:run` if CI gates on the jar.
+> `spring-boot:run` keeps `spring-boot-devtools` on the classpath while
+> `spring-boot-maven-plugin` excludes it from the repackaged jar. On
+> spring-petclinic that single difference shows up as **12 removed beans**
+> (`classPathFileSystemWatcher`, `LocalDevToolsAutoConfiguration`,
+> `DevToolsDataSourceAutoConfiguration`, …) and a **31% startup-time delta** —
+> enough to trip `startup-time` on a build where nobody changed a line of code.
+>
+> Same rule for anything else that moves the graph: keep the active profiles and
+> `spring.main.web-application-type` identical between the baseline run and the
+> gate run.
 
 Then commit the file:
 
@@ -71,6 +90,26 @@ wiredoctor.fail-on=new-cycle
 The gate trips at `ApplicationReadyEvent`, so any way of fully starting the
 context works. The simplest is to boot the packaged jar and let the exit code
 speak:
+
+{: .warning }
+> **Do not gate through `./mvnw spring-boot:run`.** With devtools on the classpath
+> it launches `main` on its own restart thread; `WireDoctorRegressionException` is
+> logged, that thread dies, and the Maven build still reports `BUILD SUCCESS` and
+> exits **0**. The gate fires and CI goes green anyway:
+>
+> ```
+> [WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on=new-cycle):
+>              2 new cycle(s) introduced vs baseline.
+> ...
+> [INFO] BUILD SUCCESS
+> ```
+>
+> Booting the jar gives the exit code 1 that CI needs. If you must use a Maven
+> goal, gate on the verdict file instead — it is written before the exception:
+>
+> ```bash
+> grep -q '^FAIL' target/wiredoctor-gate.status && exit 1
+> ```
 
 ```yaml
 name: Architecture Gate

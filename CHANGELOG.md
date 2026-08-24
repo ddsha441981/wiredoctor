@@ -5,6 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-08-24
+
+Correctness pass on startup-time reporting, found by running the published 1.1.0
+artifact unmodified against spring-petclinic (Spring Boot 4.1.0, Framework 7.0.8,
+Java 25.0.2, 470 beans). No API, schema, or configuration changes.
+
+### Fixed
+
+- **Startup-time numbers rendered as literal format specifiers.** Three log
+  templates used `{:+d}` / `{:.1f}`. SLF4J interpolates only `{}`, so the
+  specifier was printed verbatim and every following argument shifted by one
+  slot — the summary line read
+  `⏱ Startup Time: 6687ms -> ms ({:+d}ms, {:.1f}% 7178)` instead of
+  `⏱ Startup Time: 6687ms -> 7418ms (+731ms, 10.9% slower)`. Affected the diff
+  summary, its no-regression variant, and the `startup-time` gate's `log.error`
+  — the last being the line a CI reader lands on first. Numbers are now
+  pre-formatted through `signed(long)` / `oneDecimal(double)` and passed as plain
+  `{}` arguments. The `WireDoctorRegressionException` message was already
+  correct and is unchanged.
+- **`wiredoctor-gate.status` percent change is now locale-independent.**
+  `startupTimePercentChange` was written with a default-locale
+  `String.format("%.1f", …)`, so a build machine set to a comma-decimal locale
+  emitted `4,3`. It now goes through `oneDecimal(…)`, which pins `Locale.ROOT` —
+  the file is machine-read, so its decimal separator must not follow the host.
+
+### Documentation
+
+- **`ci-gating.md` no longer prescribes a baseline/gate mismatch.** Step 1 said
+  to record the baseline with `./mvnw spring-boot:run` while Step 3 gates on
+  `java -jar`. `spring-boot-devtools` is on the classpath for the former and
+  excluded from the repackaged jar by `spring-boot-maven-plugin` for the latter;
+  on spring-petclinic that single difference is 12 removed beans and a 31%
+  startup-time delta — enough to trip the `startup-time` gate on a build where
+  nobody changed a line of code. Step 1 now records from the jar, with a callout
+  on keeping active profiles and `spring.main.web-application-type` identical
+  across both runs.
+- **`ci-gating.md` warns that a Maven-goal gate cannot fail a build.** With
+  devtools present, `spring-boot:run` launches `main` on its own restart thread:
+  `WireDoctorRegressionException` is logged, that thread dies, and Maven still
+  prints `BUILD SUCCESS` and exits `0`. Documents booting the jar for a real exit
+  code, and `grep -q '^FAIL' target/wiredoctor-gate.status && exit 1` as the
+  fallback for builds pinned to a Maven goal.
+- **`configuration.md`**: documents `wiredoctor.output-path` for projects whose
+  build lints the source tree — `nohttp` (a Spring build convention) rejects the
+  `http://` license headers vendored inside the self-contained report, failing
+  the *next* build after a WireDoctor run — and notes that
+  `wiredoctor.scan-packages` also keeps WireDoctor's own beans out of the smell
+  rankings.
+- **`_config.yml`** declares the `warning` callout the docs reference; Just the
+  Docs renders `{: .warning }` unstyled unless it is declared.
+
+### Tests
+
+- 257 tests green — 246 autoconfigure + 11 actuator (+4 new: `signed` sign
+  rendering, `oneDecimal` separator stability under a comma-decimal default
+  locale, full startup-time summary rendering asserted through
+  `MessageFormatter.arrayFormat(…)`, and a guard that scans every `log.*`
+  template in the module for a non-`{}` specifier so the whole defect class stays
+  closed).
+
+---
+
 ## [1.1.0] - 2026-08-22
 
 **Longitudinal Visibility**: two focused features extending the existing baseline

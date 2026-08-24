@@ -918,17 +918,17 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // v0.7.0: timing diff summary — only when both sides carried timing data
         if (diff.hasStartupTimeRegression()) {
             WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
-            log.info("⏱ Startup Time: {}ms -> ms ({:+d}ms, {:.1f}% {})",
+            log.info("⏱ Startup Time: {}ms -> {}ms ({}ms, {}% {})",
                     regression.baselineMs(),
                     regression.currentMs(),
-                    regression.deltaMs(),
-                    Math.abs(regression.percentChange() * 100),
+                    signed(regression.deltaMs()),
+                    oneDecimal(Math.abs(regression.percentChange() * 100)),
                     regression.deltaMs() >= 0 ? "slower" : "faster");
         } else if (baseline.timing() != null && totalStartupMs != null) {
             // Both sides have timing, but no regression (faster or within noise)
             long baselineMs = baseline.timing().totalStartupMs();
             long delta = totalStartupMs - baselineMs;
-            log.info("⏱ Startup Time: {}ms -> {}ms ({:+d}ms)", baselineMs, totalStartupMs, delta);
+            log.info("⏱ Startup Time: {}ms -> {}ms ({}ms)", baselineMs, totalStartupMs, signed(delta));
         } else if (baseline.timing() == null && totalStartupMs != null) {
             log.info("⏱ Startup Time: {}ms (baseline predates timing tracking, diff skipped)", totalStartupMs);
         }
@@ -1027,10 +1027,10 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                 && regression.percentChange() >= relativeThreshold;
             if (tripsDual) {
                 log.error("WireDoctor regression gate 'startup-time' tripped: startup time "
-                        + "increased by {}ms ({:.1f}%) vs baseline {} ({}ms -> {}ms). "
+                        + "increased by {}ms ({}%) vs baseline {} ({}ms -> {}ms). "
                         + "Thresholds: >={}ms AND >={}%",
                         regression.deltaMs(),
-                        regression.percentChange() * 100,
+                        oneDecimal(regression.percentChange() * 100),
                         baselineFile.getName(),
                         regression.baselineMs(),
                         regression.currentMs(),
@@ -1152,7 +1152,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             WireDoctorBaselineDiff.StartupTimeRegression regression = diff.startupTimeRegression();
             status.append("startupTimeDeltaMs=").append(regression.deltaMs()).append('\n');
             status.append("startupTimePercentChange=")
-                  .append(String.format("%.1f", regression.percentChange() * 100)).append('\n');
+                  .append(oneDecimal(regression.percentChange() * 100)).append('\n');
         }
         if (diff.hasNewSlowBeans()) {
             status.append("newSlowBeansCount=").append(diff.newSlowBeans().size()).append('\n');
@@ -1170,5 +1170,22 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             log.error(WireDoctorMessages.GATE_STATUS_WRITE_FAILED,
                       gateStatusFile.getAbsolutePath(), e.getMessage());
         }
+    }
+
+    /**
+     * SLF4J templates only understand {}; format specifiers such as {@code %+d} or
+     * {@code {:+d}} are not interpolated, so signed/decimal numbers are pre-formatted
+     * here and passed as ordinary {} arguments.
+     * <p>
+     * {@link Locale#ROOT} is deliberate: this output is grepped from CI logs and read
+     * out of {@code wiredoctor-gate.status}, so the decimal separator must not follow
+     * the machine's default locale.
+     */
+    static String signed(long value) {
+        return String.format(Locale.ROOT, "%+d", value);
+    }
+
+    static String oneDecimal(double value) {
+        return String.format(Locale.ROOT, "%.1f", value);
     }
 }
