@@ -132,6 +132,7 @@ main { flex: 1; overflow-y: auto; min-width: 0; }
 .kpi.danger .k-value { color: var(--danger); }
 .kpi.warn .k-value { color: var(--warn); }
 .kpi.ghost .k-value { color: var(--ghost); }
+.kpi .k-note { font-size: 10.5px; color: var(--text-dim); margin-top: 5px; line-height: 1.35; }
 .two-col { grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
 
@@ -323,6 +324,8 @@ const deps = reportData.dependencies;
 const cycles = deps.cycles || [];
 const cycleBeans = new Set(cycles.flat());
 const proxyBeans = new Set([...(reportData.proxies.cglibBeans||[]), ...(reportData.proxies.jdkBeans||[])]);
+// Counts above are what could be inspected; this is what could not. Never round it away.
+const proxySkipped = reportData.proxies.notInstantiatedSkipped || 0;
 const orphans = new Set(deps.orphanBeans || []);
 const ghosts = new Set((reportData.ghostCandidates && reportData.ghostCandidates.beans) || []);
 const fanIn = (reportData.smells && reportData.smells.fanIn) || {};
@@ -422,7 +425,8 @@ $('#tab-overview').innerHTML = `
     <div class="card kpi"><div class="k-label">Total beans</div><div class="k-value">${fmt(deps.totalBeans)}</div></div>
     <div class="card kpi accent"><div class="k-label">Wiring edges</div><div class="k-value">${fmt(deps.totalEdges)}</div></div>
     <div class="card kpi ${cycles.length?'danger':''}"><div class="k-label">Dependency cycles</div><div class="k-value">${cycles.length}</div></div>
-    <div class="card kpi"><div class="k-label">Proxies (CGLIB/JDK)</div><div class="k-value">${reportData.proxies.cglibCount}<small> / ${reportData.proxies.jdkCount}</small></div></div>
+    <div class="card kpi"><div class="k-label">Proxies (CGLIB/JDK)</div><div class="k-value">${reportData.proxies.cglibCount}<small> / ${reportData.proxies.jdkCount}</small></div>${
+      proxySkipped ? `<div class="k-note">${fmt(proxySkipped)} bean${proxySkipped>1?'s':''} not instantiated at report time — not inspected.</div>` : ''}</div>
     <div class="card kpi ghost"><div class="k-label">Ghost candidates</div><div class="k-value">${gc.count}</div></div>
     <div class="card kpi ${cp.available?'warn':''}"><div class="k-label">Critical path</div><div class="k-value">${cp.available ? fmt(cp.totalMs)+'<small>ms</small>' : '—'}</div></div>
   </div>
