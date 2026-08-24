@@ -132,6 +132,7 @@ main { flex: 1; overflow-y: auto; min-width: 0; }
 .kpi.danger .k-value { color: var(--danger); }
 .kpi.warn .k-value { color: var(--warn); }
 .kpi.ghost .k-value { color: var(--ghost); }
+.kpi .k-note { font-size: 10.5px; color: var(--text-dim); margin-top: 5px; line-height: 1.35; }
 .two-col { grid-template-columns: 1fr 1fr; align-items: start; }
 @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
 
@@ -185,6 +186,22 @@ table.data tr:hover td { background: var(--surface-2); }
 table.data tbody tr td:first-child { box-shadow: inset 2px 0 0 transparent; }
 table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 
+/* v1.1.3 — drill-down. Collapsed by default: the summary keeps the number the
+   cell showed before, the detail is one click away for whoever wants it. */
+.drill > summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.drill > summary::-webkit-details-marker { display: none; }
+.drill > summary::after { content: '▸'; font-size: 9px; color: var(--text-dim); }
+.drill[open] > summary::after { content: '▾'; }
+.drill > summary:hover::after { color: var(--accent); }
+.drill > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.drill-body {
+  margin-top: 7px; padding-left: 10px; border-left: 2px solid var(--border-hi);
+  font-family: var(--mono); font-size: 11.5px; color: var(--text-2); line-height: 1.7;
+  word-break: break-all;
+}
+
 /* ═══════════ Charts (dark-validated: ordinal ramp + categorical slots) ═══════════ */
 .chart { display: block; width: 100%; height: auto; }
 .chart .grid-line { stroke: var(--border); stroke-width: 1; }
@@ -196,6 +213,15 @@ table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accen
 .chart .col { transition: opacity .12s; cursor: default; }
 .chart .col:hover { opacity: 0.75; }
 .chart-note { font-size: 11px; color: var(--text-dim); margin: 10px 0 0; }
+.sc-dot { stroke: var(--surface); stroke-width: 0.6; }
+.sc-dot.user { fill: var(--accent); }
+.sc-dot.fw { fill: var(--text-dim); opacity: 0.4; }
+.sc-dot.one { cursor: pointer; }
+.sc-dot.one:hover { stroke: var(--text); stroke-width: 1.4; }
+.sc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+  color: var(--text-2); cursor: pointer; user-select: none; }
+.sc-toggle input { accent-color: var(--accent); }
+.sc-q { font-size: 9.5px; fill: var(--text-dim); }
 .stack { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; }
 .stack > span { min-width: 3px; }
 .stack-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 12px; }
@@ -279,6 +305,22 @@ table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accen
 }
 .cp-node b { color: var(--warn); font-weight: 600; }
 .cp-arrow { color: var(--text-dim); font-size: 12px; }
+/* v1.1.3 — cycle chain: same chip as the critical path, but clickable and red */
+.cy-node {
+  font-family: var(--mono); font-size: 11.5px; padding: 4px 9px; border-radius: 5px;
+  background: var(--danger-dim); color: var(--danger);
+  border: 1px solid rgba(229,83,75,0.35); cursor: pointer;
+}
+.cy-node:hover  { background: var(--danger); color: #fff; }
+.cy-node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cy-fix {
+  margin-top: 16px; padding: 12px 14px; border-radius: 6px;
+  background: var(--surface-2); border-left: 3px solid var(--ok);
+}
+.cy-fix-h { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ok); margin-bottom: 8px; }
+.cy-fix.blocked { border-left-color: var(--warn); }
+.cy-fix.blocked .cy-fix-h { color: var(--warn); }
+.cy-lazy { color: var(--accent); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 5px; border: 2px solid var(--bg); }
@@ -317,12 +359,28 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 // Bean names only: Spring's & prefix means "the FactoryBean, not its product".
 // Spelled out here; the raw name stays in the JSON.
 const escBean = s => { const t = String(s); return esc(t.startsWith('&') ? t.slice(1) + ' (FactoryBean)' : t); };
+/* v1.1.3 — bean-name lists that used to be counts only (fan-in/out drill-down,
+   orphans, proxies). Capped: a framework bean can have 200 dependents. */
+const NAME_LIST_CAP = 30;
+function nameList(names) {
+  const shown = names.slice(0, NAME_LIST_CAP).map(n => escBean(n)).join(', ');
+  const rest = names.length - NAME_LIST_CAP;
+  return shown + (rest > 0 ? `<br><span class="dim">… and ${fmt(rest)} more — full list in wiredoctor-report.json</span>` : '');
+}
 const fmt = n => n.toLocaleString('en-US');
+/* Package-prefix heuristic, shared by the graph's Framework filter and the
+   coupling quadrant. Only catches beans registered under their FQCN — a
+   camelCase framework bean reads as user-defined. Declared here so both
+   readers see it initialised. */
+const FRAMEWORK_PREFIX = /^(org\.springframework|org\.apache|com\.sun|java\.|javax\.|jakarta\.|io\.netty|com\.fasterxml|io\.micrometer)/;
+const isFw = b => FRAMEWORK_PREFIX.test(b);
 
 const deps = reportData.dependencies;
 const cycles = deps.cycles || [];
 const cycleBeans = new Set(cycles.flat());
 const proxyBeans = new Set([...(reportData.proxies.cglibBeans||[]), ...(reportData.proxies.jdkBeans||[])]);
+// Counts above are what could be inspected; this is what could not. Never round it away.
+const proxySkipped = reportData.proxies.notInstantiatedSkipped || 0;
 const orphans = new Set(deps.orphanBeans || []);
 const ghosts = new Set((reportData.ghostCandidates && reportData.ghostCandidates.beans) || []);
 const fanIn = (reportData.smells && reportData.smells.fanIn) || {};
@@ -370,6 +428,7 @@ if (gatesFailed.length > 0) {
 const TABS = [
   { id:'overview',  icon:'◈', label:'Overview' },
   { id:'graph',     icon:'⬡', label:'Graph', full:true },
+  { id:'cycles',    icon:'⟲', label:'Cycles', count: cycles.length, hot: true },
   { id:'ghosts',    icon:'◍', label:'Ghosts', count: gc.count + (ghostReport ? (ghostReport.untouchedCount||0) : 0) },
   { id:'smells',    icon:'△', label:'Smells' },
   { id:'timing',    icon:'◷', label:'Timing' },
@@ -380,7 +439,7 @@ TABS.forEach((t,i) => {
   const b = document.createElement('button');
   b.className = 'nav-item' + (i===0?' active':'');
   b.innerHTML = `<span class="icon">${t.icon}</span>${t.label}` +
-    (t.count ? `<span class="count${t.id==='ghosts'&&t.count>0?'':''}">${t.count}</span>` : '');
+    (t.count ? `<span class="count${t.hot?' hot':''}">${t.count}</span>` : '');
   b.onclick = () => activate(t.id);
   b.dataset.tab = t.id;
   nav.appendChild(b);
@@ -421,8 +480,9 @@ $('#tab-overview').innerHTML = `
   <div class="grid kpis">
     <div class="card kpi"><div class="k-label">Total beans</div><div class="k-value">${fmt(deps.totalBeans)}</div></div>
     <div class="card kpi accent"><div class="k-label">Wiring edges</div><div class="k-value">${fmt(deps.totalEdges)}</div></div>
-    <div class="card kpi ${cycles.length?'danger':''}"><div class="k-label">Dependency cycles</div><div class="k-value">${cycles.length}</div></div>
-    <div class="card kpi"><div class="k-label">Proxies (CGLIB/JDK)</div><div class="k-value">${reportData.proxies.cglibCount}<small> / ${reportData.proxies.jdkCount}</small></div></div>
+    <div class="card kpi ${cycles.length?'danger':''}" style="cursor:pointer" onclick="activate('cycles')" title="Open the Cycles tab"><div class="k-label">Dependency cycles</div><div class="k-value">${cycles.length}</div></div>
+    <div class="card kpi"><div class="k-label">Proxies (CGLIB/JDK)</div><div class="k-value">${reportData.proxies.cglibCount}<small> / ${reportData.proxies.jdkCount}</small></div>${
+      proxySkipped ? `<div class="k-note">${fmt(proxySkipped)} bean${proxySkipped>1?'s':''} not instantiated at report time — not inspected.</div>` : ''}</div>
     <div class="card kpi ghost"><div class="k-label">Ghost candidates</div><div class="k-value">${gc.count}</div></div>
     <div class="card kpi ${cp.available?'warn':''}"><div class="k-label">Critical path</div><div class="k-value">${cp.available ? fmt(cp.totalMs)+'<small>ms</small>' : '—'}</div></div>
   </div>
@@ -463,6 +523,57 @@ $('#tab-overview').innerHTML = `
       : '<div class="empty" data-icon="👻">No ghost candidates.</div>'}
     </div>
   </div>`;
+
+/* ───────── Cycles tab (v1.1.3) ─────────
+   The cycle members and the @Lazy suggestions were in wiredoctor-report.json and
+   the console from 0.3.0 on, and nowhere in the HTML. This is that data. */
+const lazyFixes = reportData.lazySuggestions || [];
+function cycleCards() {
+  if (!cycles.length) {
+    return '<div class="empty" data-icon="✓">No dependency cycles — Spring resolved every bean without a circular reference.</div>';
+  }
+  return cycles.map((members, i) => {
+    // Repeat the first bean: a list of names does not read as a cycle, a loop does.
+    const chain = members.concat(members[0]);
+    // Lowest downstream impact first — that is the recommendation, fewer beans
+    // move to first-request initialisation.
+    const fixes = lazyFixes
+      .filter(f => (f.breaksCycles || []).includes(i))
+      .sort((a, b) => (a.downstreamImpact || 0) - (b.downstreamImpact || 0));
+    const primary = fixes[0];
+    const alts = fixes.slice(1);
+    return `<div class="card" style="margin-bottom:14px">
+      <div class="section-h">⟲ Cycle ${i + 1} · ${members.length} bean${members.length > 1 ? 's' : ''}</div>
+      <div class="cp-chain">${chain.map(b =>
+        `<span class="cy-node" role="button" tabindex="0" data-bean="${esc(b)}" title="Show in graph">${escBean(b)}</span>`
+      ).join('<span class="cp-arrow">→</span>')}</div>
+      ${primary ? `<div class="cy-fix">
+        <div class="cy-fix-h">Break it</div>
+        <div style="font-size:13px">Make <span class="bean">${escBean(primary.beanName)}</span> <span class="bean cy-lazy">@Lazy</span></div>
+        <div class="dim" style="font-size:11.5px;margin-top:5px">breaks ${primary.breaksCycles.length} cycle${primary.breaksCycles.length > 1 ? 's' : ''} · ${primary.downstreamImpact} downstream bean${primary.downstreamImpact === 1 ? ' initialises' : 's initialise'} lazily</div>
+        ${alts.length ? `<div class="dim" style="font-size:11.5px;margin-top:9px">Also breaks it: ${alts.map(f =>
+          `<span class="bean">${escBean(f.beanName)}</span> (${f.downstreamImpact} downstream)`).join(' · ')}</div>` : ''}
+      </div>` : `<div class="cy-fix blocked">
+        <div class="cy-fix-h">No @Lazy cut suggested</div>
+        <div class="dim" style="font-size:12.5px">No suggestion for this cycle — either the simulator found no safe cut, or this report predates it. Breaking it by design: extract an interface, or invert one of the dependencies.</div>
+      </div>`}
+    </div>`;
+  }).join('');
+}
+$('#tab-cycles').innerHTML = `
+  <h1 class="page-title">Dependency Cycles</h1>
+  <p class="page-sub">Circular references Spring resolved at startup, and the smallest @Lazy cut that breaks each one. @Lazy defers construction — it does not remove the coupling, the cycle stays in the design.</p>
+  ${cycleCards()}`;
+/* Delegated so bean names never have to survive an inline onclick. */
+$('#tab-cycles').addEventListener('click', e => {
+  const el = e.target.closest('[data-bean]');
+  if (el) focusBean(el.dataset.bean);
+});
+$('#tab-cycles').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target.closest('[data-bean]');
+  if (el) { e.preventDefault(); focusBean(el.dataset.bean); }
+});
 
 /* ═══════════ v1.1.0 charts — hand-rolled SVG, no chart library ═══════════
    Palettes validated for the dark surface #12161f: the timing ramp is single-hue
@@ -547,7 +658,7 @@ function timingHistogram() {
       ${grid}${cols}
       <text class="axis-txt" x="${L + pw / 2}" y="${H - 6}" text-anchor="middle">instantiation time (ms)</text>
     </svg>
-    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} over 100ms — the slow-bean threshold. Brighter column = slower bucket.</p>`;
+    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} at 100ms or more · slow-bean threshold ${fmt(reportData.slowBeanThreshold != null ? reportData.slowBeanThreshold : 100)}ms. Brighter column = slower bucket.</p>`;
 }
 
 function compositionDonut() {
@@ -571,10 +682,19 @@ function compositionDonut() {
         <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--surface-3)"></span>Framework</span>
         <span class="bean muted">${fmt(fw)} · ${(fw/total*100).toFixed(0)}%</span>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:4px">
-        <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span>
-      </div>
+      ${countRow('Orphans (heuristic)', [...orphans], 'Nothing declares a dependency on these. Not the same as unused — reflective and programmatic lookups are invisible here.')}
+      ${countRow('Proxied (CGLIB/JDK)', [...proxyBeans], '')}
     </div>
+  </div>`;
+}
+function countRow(label, names, note) {
+  const head = `<span class="muted">${esc(label)}</span>`;
+  const body = names.length
+    ? `<details class="drill" style="max-width:100%"><summary>${head}</summary><div class="drill-body">${nameList(names)}${
+        note ? `<div class="dim" style="font-family:var(--sans);margin-top:6px">${esc(note)}</div>` : ''}</div></details>`
+    : head;
+  return `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:4px">
+    ${body}<span class="bean muted" style="flex-shrink:0">${fmt(names.length)}</span>
   </div>`;
 }
 /* v1.1.0: critical path timeline — horizontal stacked bar */
@@ -589,7 +709,7 @@ function criticalPathTimeline() {
       const bg = isCycle ? 'var(--danger)' : 'var(--accent)';
       const label = n.beanName.length > 28 ? n.beanName.slice(0,25)+'...' : n.beanName;
       return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0">
-        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escBean(n.beanName)}">${escBean(label)}</span>
+        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escBean(n.beanName)}${n.cumulativeMs!=null?' — '+n.cumulativeMs+'ms into the chain':''}">${escBean(label)}</span>
         <div style="flex:1;height:18px;background:var(--surface-3);border-radius:3px;overflow:hidden;position:relative">
           <div class="cp-bar" style="width:${pct}%;height:100%;background:${bg};border-radius:3px"></div>
           <span style="position:absolute;right:6px;top:1px;font-size:10px;color:var(--text-2);font-family:var(--mono)">${n.ownMs!=null?n.ownMs+'ms':''}</span>
@@ -641,16 +761,98 @@ $('#tab-ghosts').innerHTML = `
 
 /* ───────── Smells tab ───────── */
 const sm = reportData.smells || {};
-function smellTable(list, valKey, valLabel) {
+function smellTable(list, valKey, namesKey) {
   if (!list || !list.length) return '<div class="empty" data-icon="🔍">None detected.</div>';
   const max = Math.max(...list.map(e=>e[valKey])) || 1;
-  return `<table class="data"><thead><tr><th>Bean</th><th class="num">${valLabel}</th></tr></thead>${
-    list.map(e=>`<tr><td class="bean">${escBean(e.beanName)}</td>
-    <td class="num" style="width:40%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar warn" style="width:${(e[valKey]/max*80).toFixed(0)}%"></div>${e[valKey]}</div></td></tr>`).join('')}</table>`;
+  return `<table class="data"><thead><tr><th>Bean</th><th class="num">${namesKey}</th></tr></thead>${
+    list.map(e => {
+      const names = e[namesKey] || [];
+      return `<tr><td>${names.length
+        ? `<details class="drill"><summary><span class="bean">${escBean(e.beanName)}</span></summary><div class="drill-body">${nameList(names)}</div></details>`
+        : `<span class="bean">${escBean(e.beanName)}</span>`}</td>
+      <td class="num" style="width:40%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar warn" style="width:${(e[valKey]/max*80).toFixed(0)}%"></div>${e[valKey]}</div></td></tr>`;
+    }).join('')}</table>`;
+}
+/* v1.1.3 — the fan-in / fan-out tables are top-10: they show the extremes and
+   hide the shape. One dot per (fan-out, fan-in) position answers the question
+   the tables cannot: is coupling concentrated in a few god beans or spread flat?
+   Positions are bucketed — 95 petclinic beans share (0,1), and 95 identical
+   overlapping dots would be a lie told with ink. */
+const SC_CAP = 6;                       // names listed in a dot's tooltip
+function scatterSvg(hideFw) {
+  const g = deps.graph || {};
+  const all = [...new Set([...Object.keys(g), ...Object.keys(fanIn)])]
+    .filter(b => !(hideFw && isFw(b)));
+  if (all.length < 5) return '<div class="empty" data-icon="🧭">Not enough beans in the resolved graph to plot.</div>';
+  const xOf = b => (g[b] || []).length, yOf = b => fanIn[b] || 0;
+  const xMax = Math.max(1, ...all.map(xOf)), yMax = Math.max(1, ...all.map(yOf));
+  if (xMax === 1 && yMax === 1) return '<div class="empty" data-icon="🧭">Every bean has at most one dependency in either direction — nothing to rank.</div>';
+  // Buckets keyed by position AND classification, so a shared position can still
+  // show which side of it is framework.
+  const buckets = new Map();
+  all.forEach(b => {
+    const k = xOf(b) + '|' + yOf(b) + '|' + (isFw(b) ? 1 : 0);
+    (buckets.get(k) || buckets.set(k, []).get(k)).push(b);
+  });
+  const maxCount = Math.max(...[...buckets.values()].map(v => v.length));
+  const W = 620, H = 290, L = 46, R = 22, T = 26, B = 44;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  // Square-root axes: petclinic's max fan-in is 25 with a median of 1, and a
+  // linear axis puts every bean in the corner. Every tick prints its real value,
+  // so the scale is visible rather than silently applied.
+  const px = v => L + Math.sqrt(v / xMax) * pw;
+  const py = v => base - Math.sqrt(v / yMax) * ph;
+  const ticks = max => [0, 1, 2, 3, 5, 8, 12, 20, 30, 50, 80, 120, 200].filter(t => t <= max).concat(max);
+  const grid = [...new Set(ticks(yMax))].map(t =>
+      `<line class="grid-line" x1="${L}" y1="${py(t).toFixed(1)}" x2="${W - R}" y2="${py(t).toFixed(1)}"/>`
+    + `<text class="axis-txt" x="${L - 7}" y="${(py(t) + 3.5).toFixed(1)}" text-anchor="end">${t}</text>`).join('')
+    + [...new Set(ticks(xMax))].map(t =>
+      `<text class="axis-txt" x="${px(t).toFixed(1)}" y="${H - 24}" text-anchor="middle">${t}</text>`).join('');
+  // I = Ce/(Ca+Ce) >= 0.8  <=>  fanOut >= 4 * fanIn — the same threshold the
+  // unstable table uses, so the chart and the table cannot disagree.
+  const iPts = [];
+  for (let i = 0; i <= 24; i++) {
+    const x = xMax * i / 24, y = x / 4;
+    if (y > yMax) break;
+    iPts.push(`${px(x).toFixed(1)},${py(y).toFixed(1)}`);
+  }
+  const dots = [...buckets.entries()].map(([k, beans]) => {
+    const [x, y, fw] = k.split('|');
+    const r = 2.5 + 7 * Math.sqrt(beans.length / maxCount);
+    const names = beans.slice(0, SC_CAP).map(b => b.replace(/^&/, '')).join(', ');
+    const more = beans.length > SC_CAP ? ` … +${beans.length - SC_CAP} more` : '';
+    const head = beans.length === 1 ? '' : `${beans.length} beans · `;
+    return { fw: fw === '1', svg: `<circle class="sc-dot ${fw === '1' ? 'fw' : 'user'}${beans.length === 1 ? ' one' : ''}"`
+      + ` cx="${px(+x).toFixed(1)}" cy="${py(+y).toFixed(1)}" r="${r.toFixed(1)}"`
+      + (beans.length === 1 ? ` data-bean="${esc(beans[0])}"` : '')
+      + `><title>${head}fan-out ${x}, fan-in ${y}\n${esc(names)}${esc(more)}</title></circle>` };
+  });
+  const fwCount = all.filter(isFw).length;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Fan-out against fan-in for ${all.length} beans. Highest fan-in ${yMax}, highest fan-out ${xMax}. Dots above the instability line are depended on more than they depend.">
+    ${grid}
+    ${iPts.length > 1 ? `<polyline points="${iPts.join(' ')}" fill="none" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+    <text class="sc-q" x="${W - R - 2}" y="${(py(xMax / 4) - 6).toFixed(1)}" text-anchor="end" fill="var(--warn)">I = 0.8 · below: unstable</text>` : ''}
+    <text class="sc-q" x="${L + 4}" y="${T + 10}">↖ god beans — many depend on them</text>
+    <text class="sc-q" x="${W - R - 2}" y="${(base - 6).toFixed(1)}" text-anchor="end">shotgun surgery risk ↘</text>
+    ${dots.filter(d => d.fw).map(d => d.svg).join('')}
+    ${dots.filter(d => !d.fw).map(d => d.svg).join('')}
+    <text class="axis-txt" x="${(L + pw / 2).toFixed(0)}" y="${H - 8}" text-anchor="middle">fan-out — beans it depends on →</text>
+    <text class="axis-txt" x="12" y="${(T + ph / 2).toFixed(0)}" text-anchor="middle" transform="rotate(-90 12 ${(T + ph / 2).toFixed(0)})">↑ fan-in</text>
+  </svg>
+  <p class="chart-note">${fmt(all.length)} beans, ${fmt(buckets.size)} distinct positions — dot size is how many beans share one.
+  ${hideFw ? '' : `${fmt(fwCount)} dimmed as framework by package prefix (the graph filter's heuristic — a camelCase framework bean reads as user-defined).`}
+  Axes are square-root scaled so the tail stays readable; every tick is a real count. Click a single-bean dot to open it in the graph.</p>`;
 }
 $('#tab-smells').innerHTML = `
   <h1 class="page-title">Architecture Smells</h1>
-  <p class="page-sub">Computed on the live resolved graph — what Spring actually wired. ${sm.frameworkFiltered?'Framework beans filtered out (rankings show beans you can refactor).':''}</p>
+  <p class="page-sub">Computed on the live resolved graph — what Spring actually wired. ${sm.frameworkFiltered?'Framework beans filtered out (rankings show beans you can refactor).':''} Click a bean to see which beans are on the other end.</p>
+  <div class="card" style="margin-bottom:16px">
+    <div class="section-h">🧭 Coupling quadrant
+      <label class="sc-toggle" style="margin-left:auto"><input type="checkbox" id="sc-hide-fw"> Hide framework beans</label>
+    </div>
+    <div id="sc-wrap">${scatterSvg(false)}</div>
+  </div>
   <div class="grid two-col">
     <div class="card"><div class="section-h">🔗 High fan-in · coupling hotspots</div>${smellTable(sm.highFanIn,'inDegree','dependents')}</div>
     <div class="card"><div class="section-h">💥 High fan-out · shotgun surgery risk</div>${smellTable(sm.highFanOut,'outDegree','dependencies')}</div>
@@ -661,9 +863,30 @@ $('#tab-smells').innerHTML = `
       sm.unstable.map(e=>`<tr><td class="bean">${escBean(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="📊">None over threshold.</div>'}
   </div>`;
 
+const scWrap = $('#sc-wrap'), scHide = $('#sc-hide-fw');
+if (scHide) scHide.onchange = () => { scWrap.innerHTML = scatterSvg(scHide.checked); };
+if (scWrap) scWrap.addEventListener('click', e => {
+  const dot = e.target.closest('.sc-dot.one');
+  if (dot) focusBean(dot.dataset.bean);
+});
+
 /* ───────── Timing tab ───────── */
 const steps = reportData.startupSlowestSteps || [];
 const trendHistory = reportData.trendHistory || [];
+const TREND_CFG = (reportData.gates && reportData.gates.config) || {};
+const TREND_ABS = TREND_CFG.startupTimeAbsoluteThresholdMs != null ? TREND_CFG.startupTimeAbsoluteThresholdMs : 500;
+const TREND_PCT = TREND_CFG.startupTimeRelativePercent != null ? TREND_CFG.startupTimeRelativePercent : 20;
+const TREND_BAND = {
+  unexplained: { fill: 'var(--danger)', op: 0.17, txt: 'unexplained by bean count' },
+  grew:        { fill: 'var(--warn)',   op: 0.15, txt: 'slower, and the app grew' },
+  unknown:     { fill: 'var(--warn)',   op: 0.15, txt: 'slower; this run pair has no bean count' },
+  faster:      { fill: 'var(--ok)',     op: 0.15, txt: 'faster' }
+};
+const beanDelta = (a, b) => {
+  const d = b - a;
+  if (d === 0) return 'with no new beans';
+  return d > 0 ? `with ${fmt(d)} new bean${d > 1 ? 's' : ''}` : `with ${fmt(-d)} bean${d < -1 ? 's' : ''} gone`;
+};
 const threadDist = reportData.threadDistribution;
 const slowBeans = reportData.slowBeans || [];
 function timingTable(rows, nameKey, msKey) {
@@ -674,12 +897,83 @@ function timingTable(rows, nameKey, msKey) {
     <td style="width:40%"><div class="bar-wrap"><div class="bar" style="width:${(r[msKey]/max*100).toFixed(0)}%"></div>
     <span class="bean muted">${fmt(r[msKey])}ms</span></div></td></tr>`).join('')}</table>`;
 }
+/* v1.1.3 — startupSlowestSteps carries tags {beanName, beanType, threadName} and
+   the table showed none of it: fifteen rows all reading spring.beans.instantiate.
+   tags is optional — steps that are not bean instantiation render as before. */
+function stepTable(rows) {
+  if (!rows.length) return '<div class="empty" data-icon="📋">No data.</div>';
+  const max = rows[0].durationMs || 1;
+  const anyTagged = rows.some(r => r.tags && r.tags.beanName);
+  return `<table class="data"><thead><tr><th>Step</th>${anyTagged?'<th>Bean</th>':''}<th class="num">Time</th></tr></thead>${
+    rows.slice(0, 12).map(r => {
+      const t = r.tags || {};
+      const offMain = t.threadName && t.threadName !== 'main';
+      const bean = t.beanName
+        ? (t.beanType
+            ? `<details class="drill"><summary><span class="bean">${escBean(t.beanName)}</span></summary><div class="drill-body">${esc(t.beanType)}${t.threadName?`<br>thread: ${esc(t.threadName)}`:''}</div></details>`
+            : `<span class="bean">${escBean(t.beanName)}</span>`)
+        : '<span class="dim">—</span>';
+      return `<tr><td class="bean muted">${esc(r.name)}${offMain?` <span class="pill low">${esc(t.threadName)}</span>`:''}</td>
+      ${anyTagged?`<td>${bean}</td>`:''}
+      <td class="num" style="width:32%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar" style="width:${(r.durationMs/max*80).toFixed(0)}%"></div>${fmt(r.durationMs)}ms</div></td></tr>`;
+    }).join('')}</table>`;
+}
+/* v1.1.3 — Pareto: the histogram says how instantiation times are distributed,
+   this says how few beans you would have to fix. Same data, actionable version. */
+function startupPareto() {
+  const entries = Object.entries(beanTimings)
+    .filter(([, v]) => typeof v === 'number' && v > 0)
+    .sort((a, b) => b[1] - a[1]);
+  if (entries.length < 5) {
+    return '<div class="empty" data-icon="📉">No per-bean timings captured (startup was not buffering).</div>';
+  }
+  const total = entries.reduce((sum, [, v]) => sum + v, 0);
+  const W = 620, H = 250, L = 54, R = 18, T = 18, B = 46;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  const x = i => L + (i + 1) / entries.length * pw;
+  let cum = 0, knee = -1;
+  const pts = entries.map(([, v], i) => {
+    cum += v;
+    const share = cum / total;
+    if (knee < 0 && share >= 0.8) knee = i;
+    return `${x(i).toFixed(1)},${(base - share * ph).toFixed(1)}`;
+  });
+  if (knee < 0) knee = entries.length - 1;   // one bean over 80% on its own
+  const grid = [0, 0.25, 0.5, 0.75, 1].map(f => {
+    const y = base - ph * f;
+    return `<line class="grid-line" x1="${L}" y1="${y.toFixed(1)}" x2="${W - R}" y2="${y.toFixed(1)}"/>`
+         + `<text class="axis-txt" x="${L - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${(f * 100).toFixed(0)}%</text>`;
+  }).join('');
+  const y80 = base - ph * 0.8, kx = x(knee);
+  const kneeLabelRight = kx < W * 0.55;
+  const top = entries.slice(0, 5);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Cumulative share of measured bean-instantiation time: ${knee + 1} of ${entries.length} beans account for 80 percent.">
+    ${grid}
+    <line x1="${L}" y1="${y80.toFixed(1)}" x2="${W - R}" y2="${y80.toFixed(1)}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" opacity="0.75"/>
+    <line x1="${kx.toFixed(1)}" y1="${T}" x2="${kx.toFixed(1)}" y2="${base}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" opacity="0.75"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${kx.toFixed(1)}" cy="${y80.toFixed(1)}" r="4" fill="var(--warn)"/>
+    <text class="val-txt" x="${(kx + (kneeLabelRight ? 9 : -9)).toFixed(1)}" y="${(y80 - 9).toFixed(1)}"
+      text-anchor="${kneeLabelRight ? 'start' : 'end'}" fill="var(--warn)">${fmt(knee + 1)} bean${knee ? 's' : ''} = 80%</text>
+    <text class="axis-txt" x="${L}" y="${H - 24}">1</text>
+    <text class="axis-txt" x="${W - R}" y="${H - 24}" text-anchor="end">${fmt(entries.length)}</text>
+    <text class="axis-txt" x="${(L + pw / 2).toFixed(0)}" y="${H - 8}" text-anchor="middle">beans, slowest first →</text>
+  </svg>
+  <p class="chart-note"><b>${fmt(knee + 1)} of ${fmt(entries.length)} beans account for 80% of measured bean-instantiation time.</b>
+  Slowest: ${top.map(([b, v]) => `${escBean(b)} <span class="muted">${fmt(v)}ms</span>`).join(' · ')}.</p>
+  <p class="chart-note dim">A bean's time includes the beans its constructor triggers, so the ${fmt(total)}ms these shares are taken from counts nested instantiation more than once — it is a ranking, not a wall-clock budget.</p>`;
+}
 $('#tab-timing').innerHTML = `
   <h1 class="page-title">Startup Timing</h1>
   <p class="page-sub">From BufferingApplicationStartup — real measured instantiation, no reflection heuristics.</p>
+  <div class="card">
+    <div class="section-h">📉 How few beans you would have to fix <span class="pill reason">cumulative</span></div>
+    ${startupPareto()}
+  </div>
   ${threadDistributionCard()}
   <div class="grid two-col">
-    <div class="card"><div class="section-h">🐢 Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
+    <div class="card"><div class="section-h">🐢 Slowest startup steps</div>${stepTable(steps)}</div>
     <div class="card"><div class="section-h">⏳ Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
   </div>
   <div class="card" style="margin-top:16px">
@@ -688,57 +982,109 @@ $('#tab-timing').innerHTML = `
   </div>
   ${cp.available && cp.path ? `<div class="card" style="margin-top:16px">
     <div class="section-h">Critical path — the chain your readiness sits on</div>
-    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${escBean(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
+    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${escBean(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b>${
+      n.cumulativeMs!=null?`<span class="dim" style="font-size:10.5px"> · ${fmt(n.cumulativeMs)}ms in</span>`:''}</span>`).join('<span class="cp-arrow">→</span>')}</div>
+    ${cp.path.some(n=>n.cumulativeMs!=null) ? `<p class="chart-note">Bold is the bean's own instantiation time; the dim number is how far into the ${fmt(cp.totalMs)}ms chain it sits.</p>` : ''}
   </div>`:''}
   ${trendSparkline()}`;
 
-/* v1.1.0: trend sparkline */
+/* v1.1.0 trend, rebuilt in v1.1.3.
+   One line said startup got slower and could not say why: an app that added 40
+   beans and an app that added none draw the identical curve, and only the second
+   is a bug. Bean count now shares the plot on its own axis, and each interval
+   between two runs carries a verdict computed with the startup-time gate's own
+   thresholds — so the chart can never call something a regression the gate lets
+   pass. */
+/* Red requires a bean count on BOTH ends — a pre-1.1.3 entry can only ever reach
+   amber, because "nothing was added" is a claim its data cannot support. */
+function trendVerdict(a, b) {
+  const d = b.totalStartupMs - a.totalStartupMs;
+  const pct = a.totalStartupMs > 0 ? d / a.totalStartupMs * 100 : 0;
+  if (-d >= TREND_ABS && -pct >= TREND_PCT) return 'faster';
+  if (!(d >= TREND_ABS && pct >= TREND_PCT)) return 'none';
+  if (a.beanCount == null || b.beanCount == null) return 'unknown';
+  return (b.beanCount - a.beanCount) / Math.max(1, a.beanCount) * 100 >= 1 ? 'grew' : 'unexplained';
+}
 function trendSparkline() {
-  if (trendHistory.length < 2) {
+  // An entry written on a run with no ApplicationReadyEvent timing has no
+  // totalStartupMs; it cannot be plotted and must not be read as zero.
+  const tr = trendHistory.filter(e => typeof e.totalStartupMs === 'number');
+  if (tr.length < 2) {
     return '<div class="empty" data-icon="📈">Need at least 2 baseline writes to show a trend. Run with wiredoctor.baseline-write=true across builds.</div>';
   }
-  const w = 600, h = 120, pad = { top: 10, right: 60, bottom: 30, left: 50 };
-  const values = trendHistory.map(e => e.totalStartupMs);
-  const min = Math.min(...values), max = Math.max(...values);
-  const range = max - min || 1;
-  const pts = trendHistory.map((e, i) => {
-    const x = pad.left + (trendHistory.length === 1 ? w/2 : (i / (trendHistory.length - 1)) * (w - pad.left - pad.right));
-    const y = pad.top + (1 - (e.totalStartupMs - min) / range) * (h - pad.top - pad.bottom);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  const W = 680, H = 240, L = 56, R = 58, T = 18, B = 40;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  const x = i => L + (i / (tr.length - 1)) * pw;
+  const ms = tr.map(e => e.totalStartupMs);
+  const msMin = Math.min(...ms), msMax = Math.max(...ms), msRange = (msMax - msMin) || 1;
+  const y1 = v => T + (1 - (v - msMin) / msRange) * ph;
+  // Counted runs in consecutive stretches: a baseline can hold pre-1.1.3 entries
+  // with no count, and one line drawn across that hole would join run 2 to run 5
+  // as though the runs between them had been measured.
+  const segs = [];
+  tr.forEach((e, i) => {
+    if (typeof e.beanCount !== 'number') { segs.push([]); return; }
+    (segs.length ? segs[segs.length - 1] : segs[segs.push([]) - 1]).push(i);
   });
-  const last = trendHistory[trendHistory.length - 1];
-  const prev = trendHistory.length >= 2 ? trendHistory[trendHistory.length - 2] : last;
+  const beanSegs = segs.filter(seg => seg.length >= 2);
+  const counted = tr.filter(e => typeof e.beanCount === 'number');
+  const showBeans = beanSegs.length > 0;
+  const bc = counted.map(e => e.beanCount);
+  const bcMin = showBeans ? Math.min(...bc) : 0, bcMax = showBeans ? Math.max(...bc) : 1;
+  const bcRange = (bcMax - bcMin) || 1;
+  const y2 = v => T + (1 - (v - bcMin) / bcRange) * ph;
+  const bands = [], legend = new Set();
+  for (let i = 0; i < tr.length - 1; i++) {
+    const v = trendVerdict(tr[i], tr[i + 1]);
+    if (v === 'none') continue;
+    legend.add(v);
+    const b = TREND_BAND[v], d = tr[i + 1].totalStartupMs - tr[i].totalStartupMs;
+    const dBeans = (tr[i].beanCount != null && tr[i + 1].beanCount != null)
+      ? ' ' + beanDelta(tr[i].beanCount, tr[i + 1].beanCount) : '';
+    bands.push(`<rect x="${x(i).toFixed(1)}" y="${T}" width="${(x(i + 1) - x(i)).toFixed(1)}" height="${ph}"
+      fill="${b.fill}" opacity="${b.op}"><title>Run ${i + 1} → ${i + 2}: ${d >= 0 ? '+' : ''}${fmt(d)}ms${dBeans} — ${b.txt}</title></rect>`);
+  }
+  const yTicks = [msMin, msMin + msRange / 2, msMax].map(v => Math.round(v));
+  const grid = yTicks.map(v => `<line class="grid-line" x1="${L}" y1="${y1(v).toFixed(1)}" x2="${W - R}" y2="${y1(v).toFixed(1)}"/>`
+    + `<text class="axis-txt" x="${L - 8}" y="${(y1(v) + 3.5).toFixed(1)}" text-anchor="end">${fmt(v)}ms</text>`).join('');
+  const bcTicks = showBeans ? [bcMin, bcMax].map(v => `<text class="axis-txt" x="${W - R + 8}" y="${(y2(v) + 3.5).toFixed(1)}" fill="var(--text-dim)">${fmt(v)}</text>`).join('') : '';
+  const dates = tr.map(e => new Date(e.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+  const last = tr[tr.length - 1], prev = tr[tr.length - 2];
   const delta = last.totalStartupMs - prev.totalStartupMs;
-  const pct = prev.totalStartupMs > 0 ? ((delta / prev.totalStartupMs) * 100).toFixed(1) : '0.0';
+  const pct = prev.totalStartupMs > 0 ? (delta / prev.totalStartupMs * 100).toFixed(1) : '0.0';
+  const lastV = trendVerdict(prev, last);
   const arrow = delta > 0 ? '↑' : delta < 0 ? '↓' : '→';
-  const color = delta > 0 ? 'var(--danger)' : delta < 0 ? 'var(--ok)' : 'var(--text-2)';
-  const dates = trendHistory.map(e => {
-    const d = new Date(e.timestamp);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  });
-  const yTicks = [min, min + range * 0.5, max].map(v => Math.round(v) + 'ms').reverse();
+  const chip = lastV === 'unexplained' ? 'var(--danger)' : lastV === 'faster' ? 'var(--ok)'
+             : lastV === 'none' ? 'var(--text-2)' : 'var(--warn)';
+  const head = `Run ${tr.length - 1} → ${tr.length}: ${delta >= 0 ? '+' : ''}${fmt(delta)}ms (${pct}%)`;
+  const verdictLine =
+      lastV === 'none'    ? `${head} — inside the gate's ${fmt(TREND_ABS)}ms / ${TREND_PCT}% thresholds.`
+    : lastV === 'unknown' ? `${head} — slower, and neither run recorded a bean count, so nothing here can rule it explained or not.`
+    : `${head} ${beanDelta(prev.beanCount, last.beanCount)} — ${TREND_BAND[lastV].txt}.`;
   return `<div class="card" style="margin-top:16px">
-    <div class="section-h">Startup time trend <span style="color:${color};font-weight:700;margin-left:8px">${arrow} ${delta>0?'+':''}${delta}ms (${pct}%)</span></div>
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${trendHistory.length} baseline entries · cap ${reportData.gates && reportData.gates.trendHistoryCap ? reportData.gates.trendHistoryCap : 'unlimited'}</div>
-    <svg viewBox="0 0 ${w} ${h}" style="width:100%;max-height:140px">
-      <line x1="${pad.left}" y1="${h - pad.bottom}" x2="${w - pad.right}" y2="${h - pad.bottom}" stroke="var(--border)" stroke-width="1"/>
-      <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${h - pad.bottom}" stroke="var(--border)" stroke-width="1"/>
-      ${yTicks.map((t, i) => {
-        const y = pad.top + (i / (yTicks.length - 1)) * (h - pad.top - pad.bottom);
-        return `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${t}</text>
-                <line x1="${pad.left}" y1="${y}" x2="${w - pad.right}" y2="${y}" stroke="var(--border)" stroke-dasharray="3,3" stroke-width="0.5"/>`;
-      }).join('')}
-      <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${trendHistory.map((e, i) => {
-        const x = pad.left + (trendHistory.length === 1 ? w/2 : (i / (trendHistory.length - 1)) * (w - pad.left - pad.right));
-        const y = pad.top + (1 - (e.totalStartupMs - min) / range) * (h - pad.top - pad.bottom);
-        return i === trendHistory.length - 1
-          ? `<circle cx="${x}" cy="${y}" r="4" fill="var(--accent)"/><text x="${x}" y="${y - 10}" text-anchor="middle" fill="var(--accent)" font-size="10" font-family="var(--mono)">${e.totalStartupMs}ms</text>`
-          : `<circle cx="${x}" cy="${y}" r="2.5" fill="var(--text-2)" opacity="0.6"/>`;
-      }).join('')}
-      <text x="${pad.left}" y="${h - 4}" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${dates[0]}</text>
-      ${trendHistory.length > 1 ? `<text x="${w - pad.right}" y="${h - 4}" text-anchor="end" fill="var(--text-dim)" font-size="10" font-family="var(--mono)">${dates[dates.length-1]}</text>` : ''}
+    <div class="section-h">Startup time trend <span style="color:${chip};font-weight:700;margin-left:8px">${arrow} ${delta > 0 ? '+' : ''}${fmt(delta)}ms (${pct}%)</span></div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${fmt(tr.length)} baseline entries · cap ${reportData.gates && reportData.gates.trendHistoryCap ? reportData.gates.trendHistoryCap : 'unlimited'} · bands use the startup-time gate's thresholds (≥${fmt(TREND_ABS)}ms AND ≥${TREND_PCT}%)</div>
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+        aria-label="Startup time across ${tr.length} baseline runs${showBeans ? ', with bean count on a second axis' : ''}. Latest: ${verdictLine}">
+      ${bands.join('')}
+      ${grid}${bcTicks}
+      <line x1="${L}" y1="${base}" x2="${W - R}" y2="${base}" stroke="var(--border)"/>
+      <line x1="${L}" y1="${T}" x2="${L}" y2="${base}" stroke="var(--border)"/>
+      ${beanSegs.map(seg => `<polyline points="${seg.map(i => `${x(i).toFixed(1)},${y2(tr[i].beanCount).toFixed(1)}`).join(' ')}"
+        fill="none" stroke="var(--text-dim)" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.85"/>`).join('')}
+      <polyline points="${tr.map((e, i) => `${x(i).toFixed(1)},${y1(e.totalStartupMs).toFixed(1)}`).join(' ')}"
+        fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+      ${tr.map((e, i) => i === tr.length - 1
+        ? `<circle cx="${x(i).toFixed(1)}" cy="${y1(e.totalStartupMs).toFixed(1)}" r="4" fill="var(--accent)"/>`
+        : `<circle cx="${x(i).toFixed(1)}" cy="${y1(e.totalStartupMs).toFixed(1)}" r="2.5" fill="var(--text-2)" opacity="0.7"/>`).join('')}
+      <text class="axis-txt" x="${L}" y="${H - 8}">${dates[0]} · run 1</text>
+      <text class="axis-txt" x="${W - R}" y="${H - 8}" text-anchor="end">${dates[dates.length - 1]} · run ${tr.length}</text>
+      ${showBeans ? `<text class="axis-txt" x="${W - 4}" y="${T - 6}" text-anchor="end" fill="var(--text-dim)">beans (dashed)</text>` : ''}
+      <text class="axis-txt" x="${L}" y="${T - 6}">startup ms</text>
     </svg>
+    <p class="chart-note"><b>${verdictLine}</b>
+    ${legend.size ? `<br>${[...legend].map(v => `<span style="color:${TREND_BAND[v].fill}">■</span> ${TREND_BAND[v].txt}`).join(' · ')}` : ''}</p>
+    <p class="chart-note dim">Both axes span the observed range, not zero. A flat bean count with rising startup does not prove a code regression — a bigger dataset, a slower runner or a cold cache draw the same line. The band says where to look, not what is wrong.${showBeans ? '' : ' No entry pair carries a bean count yet, so no interval can be ruled unexplained.'}</p>
   </div>`;
 }
 
@@ -866,9 +1212,6 @@ function nodeColor(bean) {
   if (orphans.has(bean))    return { bg:'#e8a33d', glow:false };
   return { bg:'#3d4a63', glow:false };
 }
-const FRAMEWORK_PREFIX = /^(org\.springframework|org\.apache|com\.sun|java\.|javax\.|jakarta\.|io\.netty|com\.fasterxml|io\.micrometer)/;
-const isFw = b => FRAMEWORK_PREFIX.test(b);
-
 function buildGraph() {
   if (typeof vis === 'undefined') {
     // Only reachable via the CDN fallback (bundled resource missing) while offline.
@@ -992,6 +1335,15 @@ function buildGraph() {
     const hit = allNodes.get({ filter: n => n.id.toLowerCase().includes(q) })[0];
     if (hit) { network.focus(hit.id, { scale: 1.2, animation: true }); network.selectNodes([hit.id]); showNode(hit.id); }
   });
+}
+/* Jump from anywhere to this bean in the graph. Degrades silently: no vis
+   library, or the node was dropped by graph truncation. */
+function focusBean(bean) {
+  activate('graph');
+  if (!network || !allNodes || !allNodes.get(bean)) return;
+  network.focus(bean, { scale: 1.3, animation: true });
+  network.selectNodes([bean]);
+  showNode(bean);
 }
 function showNode(bean) {
   const panel = $('#node-panel');

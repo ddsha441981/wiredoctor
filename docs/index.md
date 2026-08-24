@@ -78,7 +78,7 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 | [Upgrade Guard](upgrade-guard.html) | Catching silent autoconfiguration changes across Boot upgrades |
 | [Ghost Detector](ghost-detector.html) | Passive candidates + opt-in first-touch tracking, and their trust postures |
 | [Thread Distribution](thread-distribution.html) | Per-thread bean map with donut chart (v1.1.0) |
-| [Startup Time Trend](startup-time-trend.html) | trendHistory in baseline + sparkline (v1.1.0) |
+| [Startup Time Trend](startup-time-trend.html) | trendHistory in baseline + trend chart with verdict bands (v1.1.3) |
 | [Security posture](security-posture.html) | What the reports expose, offline-only network behavior |
 | [Known Limitations](known-limitations.html) | Honest heuristics and what the tool cannot guarantee |
 

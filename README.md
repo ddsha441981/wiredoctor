@@ -1,6 +1,6 @@
 # 🩺 WireDoctor
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-253%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome Java](https://awesome.re/mentioned-badge.svg)](https://github.com/akullpp/awesome-java#architecture)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-259%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome Java](https://awesome.re/mentioned-badge.svg)](https://github.com/akullpp/awesome-java#architecture)
 
 > *"Your bean graph has a story. WireDoctor reads it."*
 
@@ -80,7 +80,7 @@ Notes:
 | [Upgrade Guard](https://ddsha441981.github.io/wiredoctor/upgrade-guard.html) | Catching silent autoconfiguration changes across Boot upgrades |
 | [Ghost Detector](https://ddsha441981.github.io/wiredoctor/ghost-detector.html) | Passive candidates + opt-in first-touch tracking, and their trust postures |
 | [Thread Distribution](https://ddsha441981.github.io/wiredoctor/thread-distribution.html) | Per-thread bean map with donut chart (v1.1.0) |
-| [Startup Time Trend](https://ddsha441981.github.io/wiredoctor/startup-time-trend.html) | trendHistory in baseline + sparkline (v1.1.0) |
+| [Startup Time Trend](https://ddsha441981.github.io/wiredoctor/startup-time-trend.html) | trendHistory in baseline + trend chart with verdict bands (v1.1.3) |
 | [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.html) | What the reports expose, offline-only network behavior |
 | [Known Limitations](https://ddsha441981.github.io/wiredoctor/known-limitations.html) | Honest heuristics and what the tool cannot guarantee |
 
