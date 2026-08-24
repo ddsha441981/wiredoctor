@@ -1,0 +1,23 @@
+{
+  "addedBeansCount" : 0,
+  "addedBeans" : [ ],
+  "removedBeansCount" : 0,
+  "removedBeans" : [ ],
+  "addedEdgesCount" : 2,
+  "addedEdges" : [ "springSecurityFilterChain -> (inner bean)#394e0104", "springSecurityFilterChain -> (inner bean)#4e41b993" ],
+  "removedEdgesCount" : 2,
+  "removedEdges" : [ "springSecurityFilterChain -> (inner bean)#296ddfc7", "springSecurityFilterChain -> (inner bean)#915c47b" ],
+  "newCyclesCount" : 0,
+  "newCycles" : [ ],
+  "resolvedCyclesCount" : 0,
+  "resolvedCycles" : [ ],
+  "conditionDiff" : {
+    "available" : true,
+    "changedCount" : 0,
+    "changed" : [ ],
+    "addedCount" : 0,
+    "added" : [ ],
+    "removedCount" : 0,
+    "removed" : [ ]
+  }
+}
