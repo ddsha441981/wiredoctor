@@ -790,34 +790,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 // v1.1.0: append trend-history entry before writing the baseline
                 try {
                     int trendCap = properties.resolveTrendHistorySize();
-                    @SuppressWarnings("unchecked")
+                    // Carry forward prior trend entries from the existing baseline
                     java.util.List<java.util.Map<String, Object>> trendHistory =
-                            new java.util.ArrayList<>();
-                    // Read existing baseline to carry forward prior trend entries
-                    if (baselineFile.isFile()) {
-                        try {
-                            JsonNode root = mapper.readTree(baselineFile);
-                            JsonNode trendNode = root.path("trendHistory");
-                            if (trendNode.isArray()) {
-                                for (JsonNode entry : trendNode) {
-                                    java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
-                                    JsonNode ts = entry.get("timestamp");
-                                    JsonNode ms = entry.get("totalStartupMs");
-                                    JsonNode sb = entry.get("slowBeanCount");
-                                    // v1.1.3: absent in pre-1.1.3 entries — carried
-                                    // forward only when present, never invented.
-                                    JsonNode bc = entry.get("beanCount");
-                                    if (ts != null) map.put("timestamp", ts.asLong());
-                                    if (ms != null) map.put("totalStartupMs", ms.asLong());
-                                    if (sb != null) map.put("slowBeanCount", sb.asInt());
-                                    if (bc != null) map.put("beanCount", bc.asInt());
-                                    if (!map.isEmpty()) trendHistory.add(map);
-                                }
-                            }
-                        } catch (Exception ignored) {
-                            // Corrupt baseline trend section — start fresh
-                        }
-                    }
+                            readTrendHistory(mapper, baselineFile);
                     // Append current entry
                     java.util.Map<String, Object> currentEntry = new java.util.LinkedHashMap<>();
                     currentEntry.put("timestamp", System.currentTimeMillis());
@@ -866,6 +841,17 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         try {
             baselineJsonRoot = mapper.readTree(baselineFile);
             baseline = WireDoctorBaselineDiff.Snapshot.fromJson(baselineJsonRoot);
+            // v1.1.4: the trend chart reads reportData.trendHistory, and only a
+            // baseline-write run used to put it there — so the diff run you
+            // actually do day to day rendered an empty chart. The history lives
+            // in the baseline either way; hand it to the report here too. No
+            // current entry is appended: these are baseline entries, and this
+            // run is not one.
+            java.util.List<java.util.Map<String, Object>> baselineTrend =
+                    readTrendHistory(baselineJsonRoot);
+            if (!baselineTrend.isEmpty()) {
+                report.put("trendHistory", baselineTrend);
+            }
         } catch (Exception e) {
             gatesMap.put("mode", "baseline-unreadable"); // v0.7.1
             log.warn(WireDoctorMessages.BASELINE_UNREADABLE,
@@ -1204,5 +1190,61 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
     static String oneDecimal(double value) {
         return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    /**
+     * Reads {@code trendHistory[]} out of a baseline file, tolerating a missing
+     * or unreadable file by returning an empty, mutable list.
+     *
+     * @param mapper       the mapper to parse with
+     * @param baselineFile the baseline to read; may not exist
+     * @return the entries found, oldest first; never {@code null}
+     */
+    private static java.util.List<java.util.Map<String, Object>> readTrendHistory(
+            ObjectMapper mapper, File baselineFile) {
+        if (baselineFile == null || !baselineFile.isFile()) {
+            return new java.util.ArrayList<>();
+        }
+        try {
+            return readTrendHistory(mapper.readTree(baselineFile));
+        } catch (Exception ignored) {
+            // Unreadable baseline — start fresh rather than fail the run
+            return new java.util.ArrayList<>();
+        }
+    }
+
+    /**
+     * Reads {@code trendHistory[]} out of an already-parsed baseline document.
+     * Every field is copied only when present: entries written by older versions
+     * lack {@code beanCount}, and that gap is carried through rather than
+     * invented so the chart can say "unknown" instead of guessing.
+     *
+     * @param baselineRoot the parsed baseline document; may be {@code null}
+     * @return the entries found, oldest first; never {@code null}
+     */
+    private static java.util.List<java.util.Map<String, Object>> readTrendHistory(JsonNode baselineRoot) {
+        java.util.List<java.util.Map<String, Object>> history = new java.util.ArrayList<>();
+        if (baselineRoot == null) {
+            return history;
+        }
+        JsonNode trendNode = baselineRoot.path("trendHistory");
+        if (!trendNode.isArray()) {
+            return history;
+        }
+        for (JsonNode entry : trendNode) {
+            java.util.Map<String, Object> map = new java.util.LinkedHashMap<>();
+            JsonNode ts = entry.get("timestamp");
+            JsonNode ms = entry.get("totalStartupMs");
+            JsonNode sb = entry.get("slowBeanCount");
+            // v1.1.3: absent in pre-1.1.3 entries — carried forward only when
+            // present, never invented.
+            JsonNode bc = entry.get("beanCount");
+            if (ts != null) map.put("timestamp", ts.asLong());
+            if (ms != null) map.put("totalStartupMs", ms.asLong());
+            if (sb != null) map.put("slowBeanCount", sb.asInt());
+            if (bc != null) map.put("beanCount", bc.asInt());
+            if (!map.isEmpty()) history.add(map);
+        }
+        return history;
     }
 }

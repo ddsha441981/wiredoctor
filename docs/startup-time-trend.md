@@ -39,6 +39,8 @@ Example `trendHistory` in `wiredoctor-baseline.json`:
 
 The Timing tab shows a two-axis chart: `totalStartupMs` as a solid line (left axis) and `beanCount` as a dashed line (right axis). Each point is a baseline write, so gradual creep becomes visible — a 200ms drift per week is obvious long before the `startup-time` gate trips on a single bad run.
 
+Since v1.1.4 the chart also renders on ordinary diff runs (`baseline-write=false`) — it plots the baseline's history, which is what you have committed. The current run is not plotted: it is not a baseline entry, and pretending otherwise would put an unrecorded point on a committed trend.
+
 Any interval that crosses the **`startup-time` gate's own thresholds** (both must hold — default `500ms` AND `20%`; see [Performance gates](performance-gates.html)) gets a coloured band, and the caption below states the verdict for the latest interval:
 
 | Band | Meaning |

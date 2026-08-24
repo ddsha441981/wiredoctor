@@ -1,0 +1,9 @@
+PASS
+baseline=wiredoctor-baseline.json
+profiles=default
+newCycles=0
+resolvedCycles=0
+addedBeans=0
+removedBeans=0
+conditionsChanged=0
+gateArmed=false

@@ -1,0 +1,17 @@
+{
+  "disclaimer" : "'untouched' means no proxied method was invoked during THIS run — NOT that the bean is unused. Confidence scales with run duration and traffic realism. Framework beans are out of scope; untrackable beans could not be wrapped (reason given).",
+  "trackedCount" : 17,
+  "touchedCount" : 10,
+  "untouchedCount" : 7,
+  "untouched" : [ "archivedReportExporter", "catalogCacheWarmer", "defaultTemplateResolver", "legacyExportService", "legacyImportService", "securityDialect", "templateEngine" ],
+  "touched" : [ "auditService", "dataSource", "inventoryService", "jacksonJsonMapper", "jsonFactory", "notificationService", "orderController", "orderService", "pricingService", "thymeleafViewResolver" ],
+  "untrackableCount" : 5,
+  "untrackable" : {
+    "asyncMailer" : "already-proxied",
+    "entityManagerFactory" : "final-class",
+    "jpaSharedEM_entityManagerFactory" : "final-class",
+    "jsonMapperBuilder" : "non-singleton",
+    "orderRepository" : "already-proxied"
+  },
+  "frameworkSkipped" : 391
+}

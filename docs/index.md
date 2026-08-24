@@ -32,7 +32,7 @@ Add one dependency — WireDoctor hooks into the real, resolved `ApplicationCont
 <dependency>
   <groupId>io.github.ddsha441981</groupId>
   <artifactId>wiredoctor-autoconfigure</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.4</version>
 </dependency>
 ```
 
