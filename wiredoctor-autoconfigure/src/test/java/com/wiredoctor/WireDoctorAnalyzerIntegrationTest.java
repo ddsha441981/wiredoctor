@@ -301,7 +301,30 @@ class WireDoctorAnalyzerIntegrationTest {
             assertThat(trend.get(0).has("timestamp")).isTrue();
             assertThat(trend.get(0).has("totalStartupMs")).isTrue();
             assertThat(trend.get(0).has("slowBeanCount")).isTrue();
+            // v1.1.3: the trend chart divides startup growth into explained
+            // (more beans) and unexplained — it needs the bean count per run.
+            assertThat(trend.get(0).path("beanCount").asInt())
+                    .isEqualTo(report.path("dependencies").path("totalBeans").asInt())
+                    .isPositive();
         }
+    }
+
+    @Test
+    void trendHistoryPreservesBeanCountAcrossWrites(@TempDir Path tempDir) throws Exception {
+        for (int i = 0; i < 2; i++) {
+            try (ConfigurableApplicationContext ctx = boot(
+                    "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                    "wiredoctor.baseline-write=true")) {
+                assertThat(tempDir.resolve("baseline.json")).exists();
+            }
+        }
+        JsonNode trend = new ObjectMapper()
+                .readTree(tempDir.resolve("baseline.json").toFile())
+                .path("trendHistory");
+        assertThat(trend).hasSize(2);
+        // The carried-forward entry keeps its own count — it is not re-derived
+        // from the current run, which would flatten the growth the chart reads.
+        trend.forEach(e -> assertThat(e.path("beanCount").asInt()).isPositive());
     }
 
     @Test

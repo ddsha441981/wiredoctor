@@ -804,9 +804,13 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                     JsonNode ts = entry.get("timestamp");
                                     JsonNode ms = entry.get("totalStartupMs");
                                     JsonNode sb = entry.get("slowBeanCount");
+                                    // v1.1.3: absent in pre-1.1.3 entries — carried
+                                    // forward only when present, never invented.
+                                    JsonNode bc = entry.get("beanCount");
                                     if (ts != null) map.put("timestamp", ts.asLong());
                                     if (ms != null) map.put("totalStartupMs", ms.asLong());
                                     if (sb != null) map.put("slowBeanCount", sb.asInt());
+                                    if (bc != null) map.put("beanCount", bc.asInt());
                                     if (!map.isEmpty()) trendHistory.add(map);
                                 }
                             }
@@ -821,6 +825,13 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                         currentEntry.put("totalStartupMs", totalStartupMs);
                     }
                     currentEntry.put("slowBeanCount", currentSlowBeans.size());
+                    // v1.1.3: the trend chart cannot tell a real regression from an
+                    // app that simply grew without knowing how many beans each run
+                    // had. Same number the dependencies section reports.
+                    Object beanCount = deps.get("totalBeans");
+                    if (beanCount != null) {
+                        currentEntry.put("beanCount", beanCount);
+                    }
                     trendHistory.add(currentEntry);
                     // Cap at configured size (0 = unlimited)
                     if (trendCap > 0 && trendHistory.size() > trendCap) {
