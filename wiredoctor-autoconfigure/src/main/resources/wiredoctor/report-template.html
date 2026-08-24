@@ -314,6 +314,9 @@ const ghostReport = /* GHOST_INJECTION_POINT */;
 /* ───────── helpers ───────── */
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Bean names only: Spring's & prefix means "the FactoryBean, not its product".
+// Spelled out here; the raw name stays in the JSON.
+const escBean = s => { const t = String(s); return esc(t.startsWith('&') ? t.slice(1) + ' (FactoryBean)' : t); };
 const fmt = n => n.toLocaleString('en-US');
 
 const deps = reportData.dependencies;
@@ -455,7 +458,7 @@ $('#tab-overview').innerHTML = `
     </div>
     <div class="card">
       <div class="section-h">👻 Ghost candidates <span class="pill low">confidence LOW</span></div>
-      ${gc.count ? `<table class="data">${gc.beans.slice(0,8).map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>
+      ${gc.count ? `<table class="data">${gc.beans.slice(0,8).map(b=>`<tr><td class="bean">${escBean(b)}</td></tr>`).join('')}</table>
       <p class="dim" style="font-size:11.5px;margin:10px 0 0">Instantiated, no dependents, no known entry point — not proof of dead code.</p>`
       : '<div class="empty" data-icon="👻">No ghost candidates.</div>'}
     </div>
@@ -586,7 +589,7 @@ function criticalPathTimeline() {
       const bg = isCycle ? 'var(--danger)' : 'var(--accent)';
       const label = n.beanName.length > 28 ? n.beanName.slice(0,25)+'...' : n.beanName;
       return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0">
-        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(n.beanName)}">${esc(label)}</span>
+        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escBean(n.beanName)}">${escBean(label)}</span>
         <div style="flex:1;height:18px;background:var(--surface-3);border-radius:3px;overflow:hidden;position:relative">
           <div class="cp-bar" style="width:${pct}%;height:100%;background:${bg};border-radius:3px"></div>
           <span style="position:absolute;right:6px;top:1px;font-size:10px;color:var(--text-2);font-family:var(--mono)">${n.ownMs!=null?n.ownMs+'ms':''}</span>
@@ -600,7 +603,7 @@ function hotspotRows() {
   if (!list.length) return '<div class="empty" data-icon="🔥">No user-bean hotspots.</div>';
   const max = list[0].inDegree || 1;
   return `<table class="data">${list.slice(0,8).map(e=>`
-    <tr><td class="bean">${esc(e.beanName)}</td>
+    <tr><td class="bean">${escBean(e.beanName)}</td>
     <td style="width:45%"><div class="bar-wrap"><div class="bar" style="width:${(e.inDegree/max*100).toFixed(0)}%"></div>
     <span class="bean muted">${e.inDegree}</span></div></td></tr>`).join('')}</table>`;
 }
@@ -612,7 +615,7 @@ $('#tab-ghosts').innerHTML = `
   <div class="grid two-col">
     <div class="card">
       <div class="section-h">Phase 1 · Passive candidates <span class="pill low">confidence LOW</span></div>
-      ${gc.count ? `<table class="data"><thead><tr><th>Bean</th></tr></thead>${gc.beans.map(b=>`<tr><td class="bean">${esc(b)}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="👻">No candidates.</div>'}
+      ${gc.count ? `<table class="data"><thead><tr><th>Bean</th></tr></thead>${gc.beans.map(b=>`<tr><td class="bean">${escBean(b)}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="👻">No candidates.</div>'}
       <div class="callout" style="margin-top:14px">◍&nbsp; ${esc(gc.disclaimer||'')}</div>
       <div style="display:flex;gap:14px;margin-top:12px;font-size:12px" class="muted">
         <span>Entry points excluded: <b class="bean">${gc.entryPointsExcluded ?? 0}</b></span>
@@ -628,9 +631,9 @@ $('#tab-ghosts').innerHTML = `
           <div class="kpi"><div class="k-label">Untrackable</div><div class="k-value" style="font-size:22px">${ghostReport.untrackableCount}</div></div>
         </div>
         <div class="section-h" style="margin-top:4px">Untouched this run</div>
-        <table class="data">${(ghostReport.untouched||[]).map(b=>`<tr><td class="bean">${esc(b)}</td>${ghosts.has(b)?'<td style="width:1%"><span class="pill ghost">also candidate</span></td>':'<td></td>'}</tr>`).join('')}</table>
+        <table class="data">${(ghostReport.untouched||[]).map(b=>`<tr><td class="bean">${escBean(b)}</td>${ghosts.has(b)?'<td style="width:1%"><span class="pill ghost">also candidate</span></td>':'<td></td>'}</tr>`).join('')}</table>
         <div class="section-h" style="margin-top:18px">Untrackable (reason)</div>
-        <table class="data">${Object.entries(ghostReport.untrackable||{}).map(([b,r])=>`<tr><td class="bean">${esc(b)}</td><td style="width:1%"><span class="pill reason">${esc(r)}</span></td></tr>`).join('')}</table>
+        <table class="data">${Object.entries(ghostReport.untrackable||{}).map(([b,r])=>`<tr><td class="bean">${escBean(b)}</td><td style="width:1%"><span class="pill reason">${esc(r)}</span></td></tr>`).join('')}</table>
         <p class="dim" style="font-size:11.5px;margin:12px 0 0">${esc(ghostReport.disclaimer||'')}</p>`
       : `<div class="empty" data-icon="👻">Not enabled this run, or results pending: ghosts are only knowable at shutdown.<br><br>Enable with <span class="bean">wiredoctor.ghost-tracking.enabled=true</span> (dev/staging only — wraps beans in a thin counting proxy).<br>Results: <span class="bean">wiredoctor-ghost-report.json</span> at shutdown, or live via <span class="bean">/actuator/wiredoctor/ghosts</span>.</div>`}
     </div>
@@ -642,7 +645,7 @@ function smellTable(list, valKey, valLabel) {
   if (!list || !list.length) return '<div class="empty" data-icon="🔍">None detected.</div>';
   const max = Math.max(...list.map(e=>e[valKey])) || 1;
   return `<table class="data"><thead><tr><th>Bean</th><th class="num">${valLabel}</th></tr></thead>${
-    list.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td>
+    list.map(e=>`<tr><td class="bean">${escBean(e.beanName)}</td>
     <td class="num" style="width:40%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar warn" style="width:${(e[valKey]/max*80).toFixed(0)}%"></div>${e[valKey]}</div></td></tr>`).join('')}</table>`;
 }
 $('#tab-smells').innerHTML = `
@@ -655,7 +658,7 @@ $('#tab-smells').innerHTML = `
   <div class="card" style="margin-top:16px">
     <div class="section-h">📈 Unstable beans · I = Ce / (Ca + Ce) ≥ 0.8</div>
     ${(sm.unstable&&sm.unstable.length) ? `<table class="data"><thead><tr><th>Bean</th><th class="num">Instability</th><th class="num">Fan-in</th><th class="num">Fan-out</th></tr></thead>${
-      sm.unstable.map(e=>`<tr><td class="bean">${esc(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="📊">None over threshold.</div>'}
+      sm.unstable.map(e=>`<tr><td class="bean">${escBean(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="📊">None over threshold.</div>'}
   </div>`;
 
 /* ───────── Timing tab ───────── */
@@ -667,7 +670,7 @@ function timingTable(rows, nameKey, msKey) {
   if (!rows.length) return '<div class="empty" data-icon="📋">No data.</div>';
   const max = rows[0][msKey] || 1;
   return `<table class="data">${rows.slice(0,12).map(r=>`
-    <tr><td class="bean">${esc(r[nameKey])}</td>
+    <tr><td class="bean">${escBean(r[nameKey])}</td>
     <td style="width:40%"><div class="bar-wrap"><div class="bar" style="width:${(r[msKey]/max*100).toFixed(0)}%"></div>
     <span class="bean muted">${fmt(r[msKey])}ms</span></div></td></tr>`).join('')}</table>`;
 }
@@ -685,7 +688,7 @@ $('#tab-timing').innerHTML = `
   </div>
   ${cp.available && cp.path ? `<div class="card" style="margin-top:16px">
     <div class="section-h">Critical path — the chain your readiness sits on</div>
-    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${esc(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
+    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${escBean(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
   </div>`:''}
   ${trendSparkline()}`;
 
@@ -790,7 +793,7 @@ function gatesCard() {
   const nsb = gates.newSlowBeans || [];
   const sbActual = diffRan
     ? (nsb.length ? `${nsb.length} new slow bean${nsb.length>1?'s':''}: ` +
-        nsb.slice(0,5).map(b=>`<span class="bean">${esc(b.beanName)} (${fmt(b.instantiationMs)}ms)</span>`).join(', ')
+        nsb.slice(0,5).map(b=>`<span class="bean">${escBean(b.beanName)} (${fmt(b.instantiationMs)}ms)</span>`).join(', ')
       : '<span class="dim">none crossed the threshold</span>')
     : '<span class="dim">—</span>';
   const rows = [
@@ -1003,13 +1006,13 @@ function showNode(bean) {
   const ms = beanTimings[bean];
   panel.innerHTML = `
     <button class="np-close" onclick="this.parentElement.classList.remove('open')">×</button>
-    <h3>${esc(bean)}</h3>
+    <h3>${escBean(bean)}</h3>
     <div style="margin:8px 0 14px;display:flex;gap:6px;flex-wrap:wrap">${tags.join('')||'<span class="pill matched">healthy</span>'}</div>
     ${ms != null ? `<div class="np-row"><span class="l">Instantiation</span><span class="bean">${ms} ms</span></div>` : ''}
     <div class="np-row"><span class="l">Dependents (fan-in)</span><span class="bean">${fi}</span></div>
     <div class="np-row"><span class="l">Dependencies (fan-out)</span><span class="bean">${depsOut.length}</span></div>
     <div class="section-h" style="margin-top:16px">Depends on</div>
-    <ul class="np-list">${depsOut.length ? depsOut.slice(0,30).map(d=>`<li>→ ${esc(d)}</li>`).join('') : '<li class="dim">nothing</li>'}</ul>`;
+    <ul class="np-list">${depsOut.length ? depsOut.slice(0,30).map(d=>`<li>→ ${escBean(d)}</li>`).join('') : '<li class="dim">nothing</li>'}</ul>`;
   panel.classList.add('open');
 }
 </script>

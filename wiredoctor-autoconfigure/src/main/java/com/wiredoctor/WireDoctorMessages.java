@@ -112,4 +112,22 @@ public final class WireDoctorMessages {
     private WireDoctorMessages() {
         // Prevent instantiation
     }
+
+    /**
+     * Renders a bean name for humans. Spring's {@code &} prefix means "the
+     * FactoryBean itself, not the object it produces" — accurate, but
+     * {@code &entityManagerFactory} reads like a typo in a report, and the
+     * distinction is what the reader actually needs to know.
+     * <p>
+     * Display only: the raw name stays in {@code wiredoctor-report.json}, whose
+     * schema is frozen at {@code schemaVersion: 1}.
+     *
+     * @param beanName raw bean name, may be {@code null}
+     * @return the name with a FactoryBean prefix spelled out
+     * @since 1.1.2
+     */
+    public static String displayBean(Object beanName) {
+        String name = String.valueOf(beanName);
+        return name.startsWith("&") ? name.substring(1) + " (FactoryBean)" : name;
+    }
 }

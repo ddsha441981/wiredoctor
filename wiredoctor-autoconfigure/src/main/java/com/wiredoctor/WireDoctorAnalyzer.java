@@ -594,7 +594,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // ── Console summary ───────────────────────────────────────────────────
         log.info(WireDoctorMessages.SLOWEST_STEPS_HEADER);
         slowSteps.stream().limit(5).forEach(s ->
-                log.info(WireDoctorMessages.SLOWEST_STEP_ITEM, s.get("name"), s.get("durationMs")));
+                log.info(WireDoctorMessages.SLOWEST_STEP_ITEM,
+                         WireDoctorMessages.displayBean(s.get("name")), s.get("durationMs")));
 
         log.info(WireDoctorMessages.CYCLES_HEADER, cycles.size());
         for (List<String> cycle : cycles) {
@@ -620,7 +621,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         if (!ghostCandidates.candidates.isEmpty()) {
             log.info(WireDoctorMessages.GHOST_CANDIDATES_HEADER);
             ghostCandidates.candidates.stream().limit(10).forEach(b ->
-                    log.info(WireDoctorMessages.GHOST_CANDIDATE_ITEM, b));
+                    log.info(WireDoctorMessages.GHOST_CANDIDATE_ITEM, WireDoctorMessages.displayBean(b)));
             log.info(WireDoctorMessages.GHOST_CANDIDATES_NOTE);
         }
 
@@ -645,7 +646,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         } else {
             slowBeans.stream().limit(10).forEach(b ->
                     log.info(WireDoctorMessages.SLOW_BEAN_ITEM,
-                             b.get("beanName"), b.get("durationMs")));
+                             WireDoctorMessages.displayBean(b.get("beanName")), b.get("durationMs")));
         }
 
         // Feature (v0.2.0): Critical path console output
@@ -682,12 +683,15 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
         log.info(WireDoctorMessages.SMELLS_HEADER);
         highFanIn.stream().limit(3).forEach(e ->
-                log.info(WireDoctorMessages.SMELL_FAN_IN_ITEM, e.get("beanName"), e.get("inDegree")));
+                log.info(WireDoctorMessages.SMELL_FAN_IN_ITEM,
+                         WireDoctorMessages.displayBean(e.get("beanName")), e.get("inDegree")));
         highFanOut.stream().limit(3).forEach(e ->
-                log.info(WireDoctorMessages.SMELL_FAN_OUT_ITEM, e.get("beanName"), e.get("outDegree")));
+                log.info(WireDoctorMessages.SMELL_FAN_OUT_ITEM,
+                         WireDoctorMessages.displayBean(e.get("beanName")), e.get("outDegree")));
         unstable.stream().limit(3).forEach(e ->
                 log.info(WireDoctorMessages.SMELL_UNSTABLE_ITEM,
-                         e.get("beanName"), e.get("instability"), e.get("fanIn"), e.get("fanOut")));
+                         WireDoctorMessages.displayBean(e.get("beanName")),
+                         e.get("instability"), e.get("fanIn"), e.get("fanOut")));
     }
 
     /**
