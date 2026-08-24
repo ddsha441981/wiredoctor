@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -306,6 +307,56 @@ class WireDoctorAnalyzerIntegrationTest {
             assertThat(trend.get(0).path("beanCount").asInt())
                     .isEqualTo(report.path("dependencies").path("totalBeans").asInt())
                     .isPositive();
+        }
+    }
+
+    // ── v1.1.4: the trend chart is fed on diff runs too ──────────────────────
+
+    @Test
+    void diffRunPutsBaselineTrendHistoryOnTheReport(@TempDir Path tempDir) throws Exception {
+        // Two write runs build a two-entry history in the baseline...
+        for (int i = 0; i < 2; i++) {
+            try (ConfigurableApplicationContext ctx = boot(
+                    "wiredoctor.output-path=" + tempDir,
+                    "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                    "wiredoctor.baseline-write=true")) {
+                assertThat(tempDir.resolve("baseline.json")).exists();
+            }
+        }
+        // ...and the diff run that follows must hand that history to the report,
+        // or the Timing tab's trend chart is empty in the only mode most
+        // projects ever run.
+        try (ConfigurableApplicationContext ctx = boot(
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=false")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            JsonNode trend = report.path("trendHistory");
+            assertThat(trend.isArray()).isTrue();
+            // Exactly the baseline's entries: the current run is not a baseline
+            // entry and must not be appended as one.
+            assertThat(trend).hasSize(2);
+            trend.forEach(e -> {
+                assertThat(e.has("timestamp")).isTrue();
+                assertThat(e.path("totalStartupMs").asLong()).isNotNegative();
+            });
+        }
+    }
+
+    @Test
+    void diffRunWithoutTrendHistoryLeavesTheKeyOff(@TempDir Path tempDir) throws Exception {
+        // A baseline written before v1.1.0 has no trendHistory[] — the diff run
+        // must not invent an empty one.
+        Files.writeString(tempDir.resolve("baseline.json"),
+                "{\"dependencies\":{\"totalBeans\":1,\"graph\":{\"nodes\":[],\"edges\":[]}}}");
+        try (ConfigurableApplicationContext ctx = boot(
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.baseline=" + tempDir.resolve("baseline.json"),
+                "wiredoctor.baseline-write=false")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            assertThat(report.has("trendHistory")).isFalse();
         }
     }
 
