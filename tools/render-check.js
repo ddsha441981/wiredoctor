@@ -44,6 +44,22 @@ for (const pane of doc.querySelectorAll('.tab')) {
   if (len < 200) { empty++; console.error(`FAIL — ${pane.id} rendered ${len} chars`); }
   else console.log(`  ${pane.id}: ${len} chars`);
 }
+// The coupling quadrant's framework toggle re-runs the whole render on click —
+// the only interactive re-render in the template, so exercise it here.
+const scHide = doc.querySelector('#sc-hide-fw'), scWrap = doc.querySelector('#sc-wrap');
+if (scHide && scWrap) {
+  const before = scWrap.innerHTML;
+  scHide.checked = true;
+  scHide.dispatchEvent(new (scWrap.ownerDocument.defaultView.Event)('change'));
+  const after = scWrap.innerHTML;
+  if (errors.length) { console.error('FAIL — errors after framework toggle:\n' + errors.join('\n')); process.exit(1); }
+  // A degenerate graph renders the same empty state either way, so only the
+  // absence of errors and of an emptied container is asserted.
+  if (!after.trim()) { console.error('FAIL — framework toggle emptied the quadrant'); process.exit(1); }
+  console.log(`  quadrant toggle: ${before.length} -> ${after.length} chars`);
+  scHide.checked = false;
+  scHide.dispatchEvent(new (scWrap.ownerDocument.defaultView.Event)('change'));
+}
 for (const sel of (process.env.DUMP || '').split(',').filter(Boolean)) {
   const el = doc.querySelector(sel);
   console.log(`\n--- ${sel} ---\n` + (el ? el.textContent.replace(/\n\s*\n/g, '\n').trim() : 'MISSING'));

@@ -213,6 +213,15 @@ table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accen
 .chart .col { transition: opacity .12s; cursor: default; }
 .chart .col:hover { opacity: 0.75; }
 .chart-note { font-size: 11px; color: var(--text-dim); margin: 10px 0 0; }
+.sc-dot { stroke: var(--surface); stroke-width: 0.6; }
+.sc-dot.user { fill: var(--accent); }
+.sc-dot.fw { fill: var(--text-dim); opacity: 0.4; }
+.sc-dot.one { cursor: pointer; }
+.sc-dot.one:hover { stroke: var(--text); stroke-width: 1.4; }
+.sc-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+  color: var(--text-2); cursor: pointer; user-select: none; }
+.sc-toggle input { accent-color: var(--accent); }
+.sc-q { font-size: 9.5px; fill: var(--text-dim); }
 .stack { display: flex; gap: 2px; height: 22px; border-radius: 4px; overflow: hidden; }
 .stack > span { min-width: 3px; }
 .stack-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 12px; }
@@ -359,6 +368,12 @@ function nameList(names) {
   return shown + (rest > 0 ? `<br><span class="dim">… and ${fmt(rest)} more — full list in wiredoctor-report.json</span>` : '');
 }
 const fmt = n => n.toLocaleString('en-US');
+/* Package-prefix heuristic, shared by the graph's Framework filter and the
+   coupling quadrant. Only catches beans registered under their FQCN — a
+   camelCase framework bean reads as user-defined. Declared here so both
+   readers see it initialised. */
+const FRAMEWORK_PREFIX = /^(org\.springframework|org\.apache|com\.sun|java\.|javax\.|jakarta\.|io\.netty|com\.fasterxml|io\.micrometer)/;
+const isFw = b => FRAMEWORK_PREFIX.test(b);
 
 const deps = reportData.dependencies;
 const cycles = deps.cycles || [];
@@ -758,9 +773,86 @@ function smellTable(list, valKey, namesKey) {
       <td class="num" style="width:40%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar warn" style="width:${(e[valKey]/max*80).toFixed(0)}%"></div>${e[valKey]}</div></td></tr>`;
     }).join('')}</table>`;
 }
+/* v1.1.3 — the fan-in / fan-out tables are top-10: they show the extremes and
+   hide the shape. One dot per (fan-out, fan-in) position answers the question
+   the tables cannot: is coupling concentrated in a few god beans or spread flat?
+   Positions are bucketed — 95 petclinic beans share (0,1), and 95 identical
+   overlapping dots would be a lie told with ink. */
+const SC_CAP = 6;                       // names listed in a dot's tooltip
+function scatterSvg(hideFw) {
+  const g = deps.graph || {};
+  const all = [...new Set([...Object.keys(g), ...Object.keys(fanIn)])]
+    .filter(b => !(hideFw && isFw(b)));
+  if (all.length < 5) return '<div class="empty" data-icon="🧭">Not enough beans in the resolved graph to plot.</div>';
+  const xOf = b => (g[b] || []).length, yOf = b => fanIn[b] || 0;
+  const xMax = Math.max(1, ...all.map(xOf)), yMax = Math.max(1, ...all.map(yOf));
+  if (xMax === 1 && yMax === 1) return '<div class="empty" data-icon="🧭">Every bean has at most one dependency in either direction — nothing to rank.</div>';
+  // Buckets keyed by position AND classification, so a shared position can still
+  // show which side of it is framework.
+  const buckets = new Map();
+  all.forEach(b => {
+    const k = xOf(b) + '|' + yOf(b) + '|' + (isFw(b) ? 1 : 0);
+    (buckets.get(k) || buckets.set(k, []).get(k)).push(b);
+  });
+  const maxCount = Math.max(...[...buckets.values()].map(v => v.length));
+  const W = 620, H = 290, L = 46, R = 22, T = 26, B = 44;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  // Square-root axes: petclinic's max fan-in is 25 with a median of 1, and a
+  // linear axis puts every bean in the corner. Every tick prints its real value,
+  // so the scale is visible rather than silently applied.
+  const px = v => L + Math.sqrt(v / xMax) * pw;
+  const py = v => base - Math.sqrt(v / yMax) * ph;
+  const ticks = max => [0, 1, 2, 3, 5, 8, 12, 20, 30, 50, 80, 120, 200].filter(t => t <= max).concat(max);
+  const grid = [...new Set(ticks(yMax))].map(t =>
+      `<line class="grid-line" x1="${L}" y1="${py(t).toFixed(1)}" x2="${W - R}" y2="${py(t).toFixed(1)}"/>`
+    + `<text class="axis-txt" x="${L - 7}" y="${(py(t) + 3.5).toFixed(1)}" text-anchor="end">${t}</text>`).join('')
+    + [...new Set(ticks(xMax))].map(t =>
+      `<text class="axis-txt" x="${px(t).toFixed(1)}" y="${H - 24}" text-anchor="middle">${t}</text>`).join('');
+  // I = Ce/(Ca+Ce) >= 0.8  <=>  fanOut >= 4 * fanIn — the same threshold the
+  // unstable table uses, so the chart and the table cannot disagree.
+  const iPts = [];
+  for (let i = 0; i <= 24; i++) {
+    const x = xMax * i / 24, y = x / 4;
+    if (y > yMax) break;
+    iPts.push(`${px(x).toFixed(1)},${py(y).toFixed(1)}`);
+  }
+  const dots = [...buckets.entries()].map(([k, beans]) => {
+    const [x, y, fw] = k.split('|');
+    const r = 2.5 + 7 * Math.sqrt(beans.length / maxCount);
+    const names = beans.slice(0, SC_CAP).map(b => b.replace(/^&/, '')).join(', ');
+    const more = beans.length > SC_CAP ? ` … +${beans.length - SC_CAP} more` : '';
+    const head = beans.length === 1 ? '' : `${beans.length} beans · `;
+    return { fw: fw === '1', svg: `<circle class="sc-dot ${fw === '1' ? 'fw' : 'user'}${beans.length === 1 ? ' one' : ''}"`
+      + ` cx="${px(+x).toFixed(1)}" cy="${py(+y).toFixed(1)}" r="${r.toFixed(1)}"`
+      + (beans.length === 1 ? ` data-bean="${esc(beans[0])}"` : '')
+      + `><title>${head}fan-out ${x}, fan-in ${y}\n${esc(names)}${esc(more)}</title></circle>` };
+  });
+  const fwCount = all.filter(isFw).length;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Fan-out against fan-in for ${all.length} beans. Highest fan-in ${yMax}, highest fan-out ${xMax}. Dots above the instability line are depended on more than they depend.">
+    ${grid}
+    ${iPts.length > 1 ? `<polyline points="${iPts.join(' ')}" fill="none" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+    <text class="sc-q" x="${W - R - 2}" y="${(py(xMax / 4) - 6).toFixed(1)}" text-anchor="end" fill="var(--warn)">I = 0.8 · below: unstable</text>` : ''}
+    <text class="sc-q" x="${L + 4}" y="${T + 10}">↖ god beans — many depend on them</text>
+    <text class="sc-q" x="${W - R - 2}" y="${(base - 6).toFixed(1)}" text-anchor="end">shotgun surgery risk ↘</text>
+    ${dots.filter(d => d.fw).map(d => d.svg).join('')}
+    ${dots.filter(d => !d.fw).map(d => d.svg).join('')}
+    <text class="axis-txt" x="${(L + pw / 2).toFixed(0)}" y="${H - 8}" text-anchor="middle">fan-out — beans it depends on →</text>
+    <text class="axis-txt" x="12" y="${(T + ph / 2).toFixed(0)}" text-anchor="middle" transform="rotate(-90 12 ${(T + ph / 2).toFixed(0)})">↑ fan-in</text>
+  </svg>
+  <p class="chart-note">${fmt(all.length)} beans, ${fmt(buckets.size)} distinct positions — dot size is how many beans share one.
+  ${hideFw ? '' : `${fmt(fwCount)} dimmed as framework by package prefix (the graph filter's heuristic — a camelCase framework bean reads as user-defined).`}
+  Axes are square-root scaled so the tail stays readable; every tick is a real count. Click a single-bean dot to open it in the graph.</p>`;
+}
 $('#tab-smells').innerHTML = `
   <h1 class="page-title">Architecture Smells</h1>
   <p class="page-sub">Computed on the live resolved graph — what Spring actually wired. ${sm.frameworkFiltered?'Framework beans filtered out (rankings show beans you can refactor).':''} Click a bean to see which beans are on the other end.</p>
+  <div class="card" style="margin-bottom:16px">
+    <div class="section-h">🧭 Coupling quadrant
+      <label class="sc-toggle" style="margin-left:auto"><input type="checkbox" id="sc-hide-fw"> Hide framework beans</label>
+    </div>
+    <div id="sc-wrap">${scatterSvg(false)}</div>
+  </div>
   <div class="grid two-col">
     <div class="card"><div class="section-h">🔗 High fan-in · coupling hotspots</div>${smellTable(sm.highFanIn,'inDegree','dependents')}</div>
     <div class="card"><div class="section-h">💥 High fan-out · shotgun surgery risk</div>${smellTable(sm.highFanOut,'outDegree','dependencies')}</div>
@@ -770,6 +862,13 @@ $('#tab-smells').innerHTML = `
     ${(sm.unstable&&sm.unstable.length) ? `<table class="data"><thead><tr><th>Bean</th><th class="num">Instability</th><th class="num">Fan-in</th><th class="num">Fan-out</th></tr></thead>${
       sm.unstable.map(e=>`<tr><td class="bean">${escBean(e.beanName)}</td><td class="num">${e.instability}</td><td class="num">${e.fanIn}</td><td class="num">${e.fanOut}</td></tr>`).join('')}</table>` : '<div class="empty" data-icon="📊">None over threshold.</div>'}
   </div>`;
+
+const scWrap = $('#sc-wrap'), scHide = $('#sc-hide-fw');
+if (scHide) scHide.onchange = () => { scWrap.innerHTML = scatterSvg(scHide.checked); };
+if (scWrap) scWrap.addEventListener('click', e => {
+  const dot = e.target.closest('.sc-dot.one');
+  if (dot) focusBean(dot.dataset.bean);
+});
 
 /* ───────── Timing tab ───────── */
 const steps = reportData.startupSlowestSteps || [];
@@ -1049,9 +1148,6 @@ function nodeColor(bean) {
   if (orphans.has(bean))    return { bg:'#e8a33d', glow:false };
   return { bg:'#3d4a63', glow:false };
 }
-const FRAMEWORK_PREFIX = /^(org\.springframework|org\.apache|com\.sun|java\.|javax\.|jakarta\.|io\.netty|com\.fasterxml|io\.micrometer)/;
-const isFw = b => FRAMEWORK_PREFIX.test(b);
-
 function buildGraph() {
   if (typeof vis === 'undefined') {
     // Only reachable via the CDN fallback (bundled resource missing) while offline.
