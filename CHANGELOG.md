@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-08-24
+
+Report readability pass. 1.1.2 fixed what the report *claimed*; this release
+fixes what it *shows*. Two themes: every ranking that named a bean but not its
+counterpart now answers "which one?" without opening the graph, and three charts
+replace the numbers you had to hold in your head. No API, schema, or
+configuration changes.
+
+### Added
+
+- **Coupling quadrant (Smells tab).** A fan-out vs fan-in scatter of every bean,
+  so the shape of the graph is visible instead of two top-10 tables: god beans
+  climb the left edge, shotgun-surgery risks run along the bottom, and the
+  dashed I = 0.8 line marks the instability threshold the tables use. Dot size is
+  how many beans share a position, framework beans are dimmed (with a
+  **Hide framework beans** toggle), and a single-bean dot opens that bean in the
+  graph. Axes are square-root scaled so a 400-bean tail stays readable; every
+  tick is a real count.
+- **Pareto curve (Timing tab).** "How few beans you would have to fix" — the
+  cumulative share of measured bean-instantiation time, with the 80% knee
+  marked. On start.spring.io: 37 of 283 beans. The caption states plainly that a
+  bean's time includes the beans its constructor triggers, so the total counts
+  nested instantiation more than once — it is a ranking, not a wall-clock budget.
+- **Startup-time trend verdicts (Timing tab).** The v1.1.0 sparkline is now a
+  two-axis chart: startup time plus a dashed bean-count line, and a coloured band
+  on every interval that crosses the `startup-time` gate's own thresholds
+  (default 500ms AND 20%) — amber when the app also grew, green when it got
+  faster, red when the slowdown is **unexplained by bean count**. The bean-count
+  line is drawn in segments so it never spans a run that predates the field, and
+  such an interval reads amber ("this run pair has no bean count"), never red.
+  The caption names the thresholds it used and states that a flat bean count with
+  rising startup does not prove a code regression — a bigger dataset, a slower
+  runner or a cold cache draw the same line.
+- **`beanCount` in each `trendHistory[]` entry**, the same number the
+  dependencies section reports. Without it the trend chart cannot tell a
+  regression from an app that simply grew. Older entries stay valid; the chart
+  handles a missing count rather than guessing.
+- **Cycles tab drill-down.** Each cycle now lists its members in order and the
+  `@Lazy` edge that breaks it, so the fix does not require re-reading the graph.
+- **jsdom render check** (`tools/render-check.js`). The report template is one
+  top-down script, so a `const` declared below a tab's render is in temporal dead
+  zone for it — and `node --check` passes such code. The harness renders every
+  tab against a report JSON and fails on the first console error; it caught three
+  of these during this release.
+
+### Changed
+
+- **Fan-in / fan-out rankings answer "who".** Every row expands to the beans on
+  the other end of the coupling, instead of a count you had to trace by hand.
+- **Slow startup steps name their bean.** A `spring.beans.instantiate` step used
+  to show only the step name; the bean it instantiated is now its own column.
+- **Critical path chips show cumulative position.** Each bean carries its own
+  instantiation time in bold and how far into the chain it sits in dim text, so
+  the expensive segment is visible at a glance.
+- **Orphan and proxied bean names are listed**, not just counted — a count with
+  no names cannot be acted on.
+
+### Fixed
+
+- **The proxy card claimed a count it had not verified.** Beans not instantiated
+  at report time cannot be inspected for a proxy; the card now states how many
+  were skipped rather than implying the scan was complete.
+- **The histogram caption called the wrong number "the threshold".** It labelled
+  its fixed 100ms bucket as the slow-bean threshold, which is configurable and
+  was 50ms on the run being described. It now prints the real
+  `slow-bean-threshold-ms` alongside the bucket count.
+
 ## [1.1.2] - 2026-08-24
 
 Precision pass on report accuracy: four ways WireDoctor reported something the
