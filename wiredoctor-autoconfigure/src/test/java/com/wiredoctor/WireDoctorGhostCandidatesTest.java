@@ -12,9 +12,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.context.support.StaticApplicationContext;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 
+import java.io.Serializable;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -71,6 +73,32 @@ class WireDoctorGhostCandidatesTest {
     static class EventListenerBean {
         @EventListener
         void onEvent(Object event) {}
+    }
+
+    /** Own interface, same artifact as the bean — nobody outside can collect it. */
+    interface LocalContract {
+        void handle();
+    }
+
+    static class LocalContractBean implements LocalContract {
+        @Override public void handle() {}
+    }
+
+    /**
+     * The shape that produced every real-world false positive: a bean implementing a
+     * framework-owned interface, consumed by a {@code getBeansOfType} lookup rather
+     * than by a named dependency. {@code Converter} stands in for petclinic's
+     * {@code Formatter} — spring-core is on this module's classpath, spring-context's
+     * format package is the same jar either way.
+     */
+    static class ForeignInterfaceBean implements Converter<String, String> {
+        @Override public String convert(String source) {
+            return source;
+        }
+    }
+
+    /** Marker-only bean: still dead code, must still be reported. */
+    static class SerializableOnlyBean implements Serializable {
     }
 
     static class RunnerBean implements CommandLineRunner {
@@ -260,5 +288,45 @@ class WireDoctorGhostCandidatesTest {
         context.registerSingleton(name, type);
         context.refresh();
         return context;
+    }
+
+    // ── Collected-by-type owner (1.1.2 false-positive fix) ───────────────────
+
+    @Test
+    void beanImplementingAForeignInterfaceIsEntryPoint() {
+        // Formatter/ViewResolver/JCacheManagerCustomizer shape: the framework owns
+        // the interface and resolves implementations by type, leaving no edge.
+        assertThat(WireDoctorGhostCandidates.isEntryPoint(ForeignInterfaceBean.class)).isTrue();
+    }
+
+    @Test
+    void beanImplementingItsOwnInterfaceIsStillReported() {
+        // Same artifact — nothing outside this codebase can look it up by type, so a
+        // dead implementation stays a ghost candidate.
+        assertThat(WireDoctorGhostCandidates.isEntryPoint(LocalContractBean.class)).isFalse();
+    }
+
+    @Test
+    void jdkMarkerInterfacesDoNotSilenceADeadBean() {
+        // Serializable/Comparable come from another artifact but nobody collects them;
+        // treating them as entry points would gut the feature.
+        assertThat(WireDoctorGhostCandidates.isEntryPoint(SerializableOnlyBean.class)).isFalse();
+    }
+
+    @Test
+    void deadBeansAreStillReportedAfterTheForeignInterfaceRule() {
+        // The guard for the whole fix: it must shrink the list only for collectable
+        // beans, never empty it.
+        StaticApplicationContext context = new StaticApplicationContext();
+        context.registerSingleton("dead", PlainBean.class);
+        context.registerSingleton("alsoDead", LocalContractBean.class);
+        context.registerSingleton("collected", ForeignInterfaceBean.class);
+        context.refresh();
+
+        WireDoctorGhostCandidates.Result result = WireDoctorGhostCandidates.detect(
+                context.getBeanFactory(), List.of("dead", "alsoDead", "collected"));
+
+        assertThat(result.candidates).containsExactly("dead", "alsoDead");
+        assertThat(result.entryPointsExcluded).isEqualTo(1);
     }
 }
