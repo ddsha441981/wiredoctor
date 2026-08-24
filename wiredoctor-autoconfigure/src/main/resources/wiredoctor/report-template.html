@@ -186,6 +186,22 @@ table.data tr:hover td { background: var(--surface-2); }
 table.data tbody tr td:first-child { box-shadow: inset 2px 0 0 transparent; }
 table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 
+/* v1.1.3 — drill-down. Collapsed by default: the summary keeps the number the
+   cell showed before, the detail is one click away for whoever wants it. */
+.drill > summary {
+  cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 5px;
+}
+.drill > summary::-webkit-details-marker { display: none; }
+.drill > summary::after { content: '▸'; font-size: 9px; color: var(--text-dim); }
+.drill[open] > summary::after { content: '▾'; }
+.drill > summary:hover::after { color: var(--accent); }
+.drill > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.drill-body {
+  margin-top: 7px; padding-left: 10px; border-left: 2px solid var(--border-hi);
+  font-family: var(--mono); font-size: 11.5px; color: var(--text-2); line-height: 1.7;
+  word-break: break-all;
+}
+
 /* ═══════════ Charts (dark-validated: ordinal ramp + categorical slots) ═══════════ */
 .chart { display: block; width: 100%; height: auto; }
 .chart .grid-line { stroke: var(--border); stroke-width: 1; }
@@ -746,12 +762,33 @@ function timingTable(rows, nameKey, msKey) {
     <td style="width:40%"><div class="bar-wrap"><div class="bar" style="width:${(r[msKey]/max*100).toFixed(0)}%"></div>
     <span class="bean muted">${fmt(r[msKey])}ms</span></div></td></tr>`).join('')}</table>`;
 }
+/* v1.1.3 — startupSlowestSteps carries tags {beanName, beanType, threadName} and
+   the table showed none of it: fifteen rows all reading spring.beans.instantiate.
+   tags is optional — steps that are not bean instantiation render as before. */
+function stepTable(rows) {
+  if (!rows.length) return '<div class="empty" data-icon="📋">No data.</div>';
+  const max = rows[0].durationMs || 1;
+  const anyTagged = rows.some(r => r.tags && r.tags.beanName);
+  return `<table class="data"><thead><tr><th>Step</th>${anyTagged?'<th>Bean</th>':''}<th class="num">Time</th></tr></thead>${
+    rows.slice(0, 12).map(r => {
+      const t = r.tags || {};
+      const offMain = t.threadName && t.threadName !== 'main';
+      const bean = t.beanName
+        ? (t.beanType
+            ? `<details class="drill"><summary><span class="bean">${escBean(t.beanName)}</span></summary><div class="drill-body">${esc(t.beanType)}${t.threadName?`<br>thread: ${esc(t.threadName)}`:''}</div></details>`
+            : `<span class="bean">${escBean(t.beanName)}</span>`)
+        : '<span class="dim">—</span>';
+      return `<tr><td class="bean muted">${esc(r.name)}${offMain?` <span class="pill low">${esc(t.threadName)}</span>`:''}</td>
+      ${anyTagged?`<td>${bean}</td>`:''}
+      <td class="num" style="width:32%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar" style="width:${(r.durationMs/max*80).toFixed(0)}%"></div>${fmt(r.durationMs)}ms</div></td></tr>`;
+    }).join('')}</table>`;
+}
 $('#tab-timing').innerHTML = `
   <h1 class="page-title">Startup Timing</h1>
   <p class="page-sub">From BufferingApplicationStartup — real measured instantiation, no reflection heuristics.</p>
   ${threadDistributionCard()}
   <div class="grid two-col">
-    <div class="card"><div class="section-h">🐢 Slowest startup steps</div>${timingTable(steps,'name','durationMs')}</div>
+    <div class="card"><div class="section-h">🐢 Slowest startup steps</div>${stepTable(steps)}</div>
     <div class="card"><div class="section-h">⏳ Slow bean instantiation</div>${timingTable(slowBeans,'beanName','durationMs')}</div>
   </div>
   <div class="card" style="margin-top:16px">
