@@ -350,6 +350,14 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 // Bean names only: Spring's & prefix means "the FactoryBean, not its product".
 // Spelled out here; the raw name stays in the JSON.
 const escBean = s => { const t = String(s); return esc(t.startsWith('&') ? t.slice(1) + ' (FactoryBean)' : t); };
+/* v1.1.3 — bean-name lists that used to be counts only (fan-in/out drill-down,
+   orphans, proxies). Capped: a framework bean can have 200 dependents. */
+const NAME_LIST_CAP = 30;
+function nameList(names) {
+  const shown = names.slice(0, NAME_LIST_CAP).map(n => escBean(n)).join(', ');
+  const rest = names.length - NAME_LIST_CAP;
+  return shown + (rest > 0 ? `<br><span class="dim">… and ${fmt(rest)} more — full list in wiredoctor-report.json</span>` : '');
+}
 const fmt = n => n.toLocaleString('en-US');
 
 const deps = reportData.dependencies;
@@ -659,10 +667,19 @@ function compositionDonut() {
         <span style="display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:2px;background:var(--surface-3)"></span>Framework</span>
         <span class="bean muted">${fmt(fw)} · ${(fw/total*100).toFixed(0)}%</span>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:4px">
-        <span class="muted">Orphans (heuristic)</span><span class="bean muted">${orphans.size}</span>
-      </div>
+      ${countRow('Orphans (heuristic)', [...orphans], 'Nothing declares a dependency on these. Not the same as unused — reflective and programmatic lookups are invisible here.')}
+      ${countRow('Proxied (CGLIB/JDK)', [...proxyBeans], '')}
     </div>
+  </div>`;
+}
+function countRow(label, names, note) {
+  const head = `<span class="muted">${esc(label)}</span>`;
+  const body = names.length
+    ? `<details class="drill" style="max-width:100%"><summary>${head}</summary><div class="drill-body">${nameList(names)}${
+        note ? `<div class="dim" style="font-family:var(--sans);margin-top:6px">${esc(note)}</div>` : ''}</div></details>`
+    : head;
+  return `<div style="display:flex;justify-content:space-between;gap:12px;padding:4px 0;font-size:12.5px;border-top:1px solid var(--border);margin-top:4px">
+    ${body}<span class="bean muted" style="flex-shrink:0">${fmt(names.length)}</span>
   </div>`;
 }
 /* v1.1.0: critical path timeline — horizontal stacked bar */
@@ -729,15 +746,6 @@ $('#tab-ghosts').innerHTML = `
 
 /* ───────── Smells tab ───────── */
 const sm = reportData.smells || {};
-/* v1.1.3 — namesKey ('dependents' / 'dependencies') was used as a column label
-   while the array of that exact name sat unused in the same object. The table
-   answered "how many" and never "who". Click the bean to find out. */
-const NAME_LIST_CAP = 30;
-function nameList(names) {
-  const shown = names.slice(0, NAME_LIST_CAP).map(n => escBean(n)).join(', ');
-  const rest = names.length - NAME_LIST_CAP;
-  return shown + (rest > 0 ? `<br><span class="dim">… and ${fmt(rest)} more — full list in wiredoctor-report.json</span>` : '');
-}
 function smellTable(list, valKey, namesKey) {
   if (!list || !list.length) return '<div class="empty" data-icon="🔍">None detected.</div>';
   const max = Math.max(...list.map(e=>e[valKey])) || 1;
