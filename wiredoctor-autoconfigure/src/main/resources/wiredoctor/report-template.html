@@ -658,7 +658,7 @@ function timingHistogram() {
       ${grid}${cols}
       <text class="axis-txt" x="${L + pw / 2}" y="${H - 6}" text-anchor="middle">instantiation time (ms)</text>
     </svg>
-    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} over 100ms — the slow-bean threshold. Brighter column = slower bucket.</p>`;
+    <p class="chart-note">${fmt(vals.length)} beans measured · ${fmt(slow)} at 100ms or more · slow-bean threshold ${fmt(reportData.slowBeanThreshold != null ? reportData.slowBeanThreshold : 100)}ms. Brighter column = slower bucket.</p>`;
 }
 
 function compositionDonut() {
