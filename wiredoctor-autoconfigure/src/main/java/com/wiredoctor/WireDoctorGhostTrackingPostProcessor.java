@@ -171,7 +171,8 @@ public class WireDoctorGhostTrackingPostProcessor
 
         // Framework beans are out of scope — hundreds per Boot app, counted only.
         if (WireDoctorBeanClassifier.isFrameworkPackage(packageName)
-                || WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)) {
+                || WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)
+                || WireDoctorBeanClassifier.isWireDoctorBean(beanName)) {
             tracker.countFrameworkSkipped();
             return bean;
         }

@@ -95,4 +95,25 @@ class WireDoctorBeanClassifierTest {
         assertThat(WireDoctorBeanClassifier.isWellKnownFrameworkBean("someObscureName"))
                 .isFalse();
     }
+
+    // ── WireDoctor's own beans (1.1.2) ───────────────────────────────────────
+
+    @Test
+    void wireDoctorOwnBeansAreRecognised() {
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean("wireDoctorAnalyzer")).isTrue();
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean("wireDoctorEndpoint")).isTrue();
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean(
+                "wiredoctor-com.wiredoctor.WireDoctorProperties")).isTrue();
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean(
+                "com.wiredoctor.WireDoctorAutoConfiguration")).isTrue();
+    }
+
+    @Test
+    void userBeansAreNotMistakenForWireDoctorBeans() {
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean("ownerService")).isFalse();
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean("petTypeFormatter")).isFalse();
+        // The tool's own test fixtures live in com.wiredoctor but are named plainly —
+        // matching on the type package instead would classify all of them framework.
+        assertThat(WireDoctorBeanClassifier.isWireDoctorBean("plainBean")).isFalse();
+    }
 }

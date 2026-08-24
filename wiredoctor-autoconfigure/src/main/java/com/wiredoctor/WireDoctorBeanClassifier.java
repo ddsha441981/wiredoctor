@@ -6,6 +6,7 @@
 package com.wiredoctor;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -70,5 +71,25 @@ public final class WireDoctorBeanClassifier {
      */
     public static boolean isWellKnownFrameworkBean(String beanName) {
         return WELL_KNOWN_FRAMEWORK_NAMES.contains(beanName);
+    }
+
+    /**
+     * WireDoctor's own beans ({@code wireDoctorAnalyzer},
+     * {@code wiredoctor-com.wiredoctor.WireDoctorProperties},
+     * {@code com.wiredoctor.WireDoctorAutoConfiguration}, the actuator endpoint).
+     * <p>
+     * They are infrastructure from the user's point of view: nobody can refactor
+     * them in response to a coupling smell, so the tool ranking itself in its own
+     * report is noise. Matched by bean name rather than by type package because
+     * WireDoctor's own tests declare their fixtures in {@code com.wiredoctor} —
+     * a package prefix on the type would classify every fixture as framework.
+     *
+     * @param beanName a bean name as returned by the bean factory
+     * @return {@code true} when the bean was registered by WireDoctor itself
+     * @since 1.1.2
+     */
+    public static boolean isWireDoctorBean(String beanName) {
+        String lower = beanName.toLowerCase(Locale.ROOT);
+        return lower.startsWith("wiredoctor") || lower.startsWith("com.wiredoctor.");
     }
 }

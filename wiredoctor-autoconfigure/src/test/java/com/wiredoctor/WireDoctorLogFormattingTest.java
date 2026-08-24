@@ -93,4 +93,20 @@ class WireDoctorLogFormattingTest {
                         + "literally and shifts every later argument")
                 .isEmpty();
     }
+
+    // ── FactoryBean prefix in human-facing output (1.1.2) ────────────────────
+
+    @Test
+    void factoryBeanPrefixIsSpelledOutForHumans() {
+        assertThat(WireDoctorMessages.displayBean("&entityManagerFactory"))
+                .isEqualTo("entityManagerFactory (FactoryBean)");
+    }
+
+    @Test
+    void ordinaryBeanNamesPassThroughUntouched() {
+        assertThat(WireDoctorMessages.displayBean("entityManagerFactory"))
+                .isEqualTo("entityManagerFactory");
+        assertThat(WireDoctorMessages.displayBean("jpaSharedEM_entityManagerFactory"))
+                .isEqualTo("jpaSharedEM_entityManagerFactory");
+    }
 }

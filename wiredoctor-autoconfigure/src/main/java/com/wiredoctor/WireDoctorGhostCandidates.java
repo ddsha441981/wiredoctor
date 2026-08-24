@@ -14,6 +14,9 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.annotation.Annotation;
+import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,7 +54,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * framework-invoked interfaces ({@code CommandLineRunner},
  * {@code ApplicationRunner}, {@code Lifecycle}, servlet types, ...). Types
  * from optional classpaths (actuator, kafka, web) are matched by simple name
- * so the core keeps zero optional dependencies.
+ * so the core keeps zero optional dependencies. Since 1.1.2 it also covers
+ * <em>any</em> interface declared in a different artifact than the bean —
+ * whoever owns the contract can resolve the bean by type
+ * ({@link #isCollectedByTypeOwner}).
  * <p>
  * The candidate list sits <em>beside</em> the orphan list, not instead of it:
  * the orphan list stays the raw graph fact, this section is the refined
@@ -200,9 +206,12 @@ public final class WireDoctorGhostCandidates {
     static boolean isEntryPoint(Class<?> beanType) {
         Class<?> userClass = ClassUtils.getUserClass(beanType); // unwrap CGLIB enhancement
 
-        // Framework-invoked interfaces anywhere in the hierarchy.
+        // Framework-invoked interfaces anywhere in the hierarchy, plus any
+        // interface owned by another artifact (whoever owns it can look the
+        // bean up by type — see isCollectedByTypeOwner).
         for (Class<?> iface : ClassUtils.getAllInterfacesForClassAsSet(userClass)) {
-            if (ENTRY_POINT_INTERFACES.contains(iface.getSimpleName())) {
+            if (ENTRY_POINT_INTERFACES.contains(iface.getSimpleName())
+                    || isCollectedByTypeOwner(userClass, iface)) {
                 return true;
             }
         }
@@ -240,6 +249,49 @@ public final class WireDoctorGhostCandidates {
             }
         }, ReflectionUtils.USER_DECLARED_METHODS);
         return found.get();
+    }
+
+    /**
+     * Returns whether {@code iface} is declared in a different artifact than the class
+     * implementing it — the signal that somebody else owns the contract and can
+     * therefore find the bean <em>by type</em> instead of depending on it by name.
+     * <p>
+     * This covers the largest class of ghost false positive. A bean consumed through
+     * {@code ObjectProvider<X>} injection or a programmatic {@code getBeansOfType(X)}
+     * lookup never earns an incoming dependency edge and carries no entry-point
+     * annotation, so it satisfies every ghost signal while being fully in use —
+     * {@code Formatter}, {@code ViewResolver}, {@code JCacheManagerCustomizer} and
+     * {@code ITemplateResolver} implementations all reached the candidate list that
+     * way on spring-petclinic. Note that {@code Collection<X>} and
+     * {@code Map<String, X>} injection points do <em>not</em> need this: Spring
+     * registers those dependencies, so such beans are never orphans to begin with.
+     * <p>
+     * Enumerating collectable interfaces by name is unbounded ({@link
+     * #ENTRY_POINT_INTERFACES} is a best-effort list, not a closed set); "the
+     * interface came from another jar" is the general form of the same idea.
+     * <p>
+     * JDK interfaces are excluded deliberately: {@code Serializable},
+     * {@code Comparable} and friends are markers nobody collects, and treating them as
+     * entry points would silence genuinely dead beans — the one thing this feature
+     * exists to report.
+     *
+     * @param implementation the bean's user class (CGLIB already unwrapped)
+     * @param iface          an interface from its hierarchy
+     * @return {@code true} when the interface comes from a different code source
+     */
+    static boolean isCollectedByTypeOwner(Class<?> implementation, Class<?> iface) {
+        if (iface.getPackageName().startsWith("java.")) {
+            return false;
+        }
+        URL owner = codeSourceLocation(iface);
+        // Unknown origin (bootstrap/platform loader, exotic classloader) -> no claim.
+        return owner != null && !owner.equals(codeSourceLocation(implementation));
+    }
+
+    private static URL codeSourceLocation(Class<?> type) {
+        ProtectionDomain domain = type.getProtectionDomain();
+        CodeSource source = (domain == null) ? null : domain.getCodeSource();
+        return (source == null) ? null : source.getLocation();
     }
 
     /**

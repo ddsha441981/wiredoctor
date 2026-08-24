@@ -56,56 +56,50 @@ cycle-free app (graceful), and the v0.4.0 `wiredoctor-gate.status` marker
 
 ---
 
-## v0.2.0 — Edge Reference Noise in Baseline Diff
+## v0.2.0 — Edge Reference Noise in Baseline Diff — FIXED in 1.1.2
 
-**Impact:** Minor / Cosmetic  
-**Affected Feature:** Regression Guard baseline diff (`wiredoctor-diff.json`)  
-**Status:** Tracked for future fix
+**Impact:** Minor / Cosmetic
+**Affected Feature:** Regression Guard baseline diff (`wiredoctor-diff.json`)
+**Status:** Fixed in 1.1.2
 
 ### Description
 
-When comparing against a baseline, the diff report includes spurious edge additions/removals caused by JVM object reference changes in ApplicationContext and BeanFactory instances.
+The diff could report edge additions/removals that nobody caused, from two
+sources of names the developer never chose:
 
-**Example:**
-```json
-"addedEdges": [
-  "restClientSsl -> org.springframework.context.annotation.AnnotationConfigApplicationContext@298f0a0b"
-],
-"removedEdges": [
-  "restClientSsl -> org.springframework.context.annotation.AnnotationConfigApplicationContext@45cec376"
-]
-```
+1. **Framework object identity hashes.** Beans resolved by type enter the graph
+   through `ObjectUtils.identityToString()`, e.g.
+   `restClientSsl -> ...AnnotationConfigApplicationContext@298f0a0b`.
+2. **Spring Data positional counters.** `jpa.named-queries#0`,
+   `jpa.OwnerRepository.fragments#0`, `data-jpa.repository-aot-processor#0` — the
+   number is a registration counter, so the same three repositories can land on
+   different numbers between runs and every edge on them flips.
 
-The object reference (`@298f0a0b` vs `@45cec376`) changes every application boot, causing these edges to appear as "changed" even though the dependency structure is identical.
+### Correction to the original report
 
-### Workaround
+The first version of this entry said the identity hash "changes every
+application boot". That is wrong, and the wrong version is worse than the bug:
+the default identity hashCode comes from a thread-local xorshift generator, so
+an identical single-threaded startup order produces **identical** hashes run
+after run. Re-running the petclinic gate reproduced `@3568f9d2` and `@13c3c1e1`
+byte-for-byte. The churn appears only when allocation order changes — a new
+autoconfiguration, a different profile, a JDK or Boot upgrade. Intermittent
+noise, which is harder to trust than constant noise.
 
-**Core regression signals are unaffected:**
-- ✅ `addedBeansCount` / `removedBeansCount` — accurate
-- ✅ `newCyclesCount` / `resolvedCyclesCount` — accurate
-- ⚠️ `addedEdgesCount` / `removedEdgesCount` — includes noise
+### Fix
 
-**When using the CI gate:**
-- `fail-on: new-cycle` works correctly (ignores edge noise)
-- `fail-on: new-bean` would also work correctly (not implemented yet)
+`WireDoctorBaselineDiff.Snapshot.canonical()` masks both patterns on **both**
+sides of the comparison — live run and parsed baseline — so a baseline written
+before 1.1.2 still diffs cleanly with no regeneration:
 
-**Manual review:**
-Filter out edges containing `@<hex>` patterns when reviewing diff files.
+- `@<8 hex digits>` → `@<id>`
+- `named-queries#N` / `.fragments#N` / `repository-aot-processor#N` → `#<n>`
 
-### Root Cause
-
-Bean names include `toString()` representations for framework singleton beans (ApplicationContext, BeanFactory), which embed JVM object identity hashes. These hashes are non-deterministic across boots.
-
-### Potential Fix (v0.2.1 or later)
-
-Normalize edge labels before diff:
-- Strip `@<hex>` suffixes from bean names in both baseline and current snapshots
-- OR: Use canonical bean names (via `BeanDefinition.getBeanClassName()`) instead of `toString()` for framework beans
+The counter rule is anchored to the shapes Spring Data emits rather than a blind
+`#\d+`, which would also flatten inner-bean and nested-configuration names that
+are stable and meaningful.
 
 ### Discovered
 
 Real-world testing on Spring Initializr (273 beans, Boot 4.0.7) — 2026-07-18
-
-### Priority
-
-**Low.** Does not block CI gating use case; purely a diff-report quality issue. Will prioritize based on user feedback after v0.2.0 adoption.
+Re-verified and corrected on spring-petclinic (Boot 4.x) — 2026-08-24
