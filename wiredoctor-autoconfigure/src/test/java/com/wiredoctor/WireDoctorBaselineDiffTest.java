@@ -453,4 +453,72 @@ class WireDoctorBaselineDiffTest {
                 Set.of(), 100L, slowBeans("edgeBean", 120L), 100L, 20L);
         assertThat(result).isEmpty();
     }
+
+    // ── Generated-name canonicalisation (1.1.2) ──────────────────────────────
+
+    @Test
+    void springDataCounterReshuffleIsNotADiff() {
+        // Same three repositories, different registration order between runs.
+        Map<String, String[]> before = Map.of(
+                "jpa.named-queries#0", new String[]{"ownerRepository"},
+                "jpa.named-queries#1", new String[]{"vetRepository"},
+                "app", new String[]{});
+        Map<String, String[]> after = Map.of(
+                "jpa.named-queries#0", new String[]{"vetRepository"},
+                "jpa.named-queries#1", new String[]{"ownerRepository"},
+                "app", new String[]{});
+
+        WireDoctorBaselineDiff.DiffResult result = WireDoctorBaselineDiff.diff(
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(before, List.of()),
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(after, List.of()));
+
+        assertThat(result.addedBeans()).isEmpty();
+        assertThat(result.removedBeans()).isEmpty();
+        assertThat(result.addedEdges()).isEmpty();
+        assertThat(result.removedEdges()).isEmpty();
+    }
+
+    @Test
+    void identityHashChurnIsNotADiff() {
+        Map<String, String[]> before = Map.of("app",
+                new String[]{"org.springframework.beans.factory.support.DefaultListableBeanFactory@69391e08"});
+        Map<String, String[]> after = Map.of("app",
+                new String[]{"org.springframework.beans.factory.support.DefaultListableBeanFactory@1b2c3d4e"});
+
+        WireDoctorBaselineDiff.DiffResult result = WireDoctorBaselineDiff.diff(
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(before, List.of()),
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(after, List.of()));
+
+        assertThat(result.addedEdges()).isEmpty();
+        assertThat(result.removedEdges()).isEmpty();
+    }
+
+    @Test
+    void realBeanNamesWithCountersAreLeftAlone() {
+        // The guard against a blind #\d+ rule: nested configuration and inner-bean
+        // names carry meaning and must still diff.
+        assertThat(WireDoctorBaselineDiff.Snapshot.canonical("com.example.Config$Inner#0"))
+                .isEqualTo("com.example.Config$Inner#0");
+        assertThat(WireDoctorBaselineDiff.Snapshot.canonical("jpa.OwnerRepository.fragments#0"))
+                .isEqualTo("jpa.OwnerRepository.fragments#<n>");
+        assertThat(WireDoctorBaselineDiff.Snapshot.canonical("data-jpa.repository-aot-processor#0"))
+                .isEqualTo("data-jpa.repository-aot-processor#<n>");
+        assertThat(WireDoctorBaselineDiff.Snapshot.canonical("ownerService"))
+                .isEqualTo("ownerService");
+    }
+
+    @Test
+    void aRealBeanAdditionStillShowsUpAlongsideGeneratedNames() {
+        Map<String, String[]> before = Map.of("jpa.named-queries#0", new String[]{});
+        Map<String, String[]> after = Map.of(
+                "jpa.named-queries#7", new String[]{},
+                "newService", new String[]{});
+
+        WireDoctorBaselineDiff.DiffResult result = WireDoctorBaselineDiff.diff(
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(before, List.of()),
+                WireDoctorBaselineDiff.Snapshot.fromAnalysis(after, List.of()));
+
+        assertThat(result.addedBeans()).containsExactly("newService");
+        assertThat(result.removedBeans()).isEmpty();
+    }
 }

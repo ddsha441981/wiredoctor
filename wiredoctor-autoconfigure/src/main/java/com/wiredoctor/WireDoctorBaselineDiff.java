@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 /**
  * Pure, Spring-free diff engine for the Architectural Regression Guard.
@@ -42,6 +43,42 @@ public final class WireDoctorBaselineDiff {
      * decoupled from how the report was produced (live map vs parsed JSON).
      */
     public static final class Snapshot {
+
+        /**
+         * Bean names Spring generates with a positional suffix. The number is a
+         * registration counter, not anything a developer wrote, so the same code
+         * can produce {@code jpa.named-queries#0} for one repository on Monday
+         * and for a different one on Tuesday — a diff full of add/remove pairs
+         * nobody caused. Anchored to the shapes Spring Data actually emits
+         * rather than a blind {@code #\d+}, which would also flatten inner-bean
+         * and nested-configuration names that <em>are</em> stable and meaningful.
+         */
+        private static final Pattern GENERATED_SUFFIX =
+                Pattern.compile("(named-queries|\\.fragments|repository-aot-processor)#\\d+");
+
+        /**
+         * Default identity hash of a framework object that entered the graph as a
+         * resolvable dependency via {@code ObjectUtils.identityToString} (e.g.
+         * {@code DefaultListableBeanFactory@69391e08}). Stable across runs with an
+         * identical allocation order, so this is noise that only shows up
+         * sometimes — which is worse than noise that always shows up.
+         */
+        private static final Pattern IDENTITY_HASH = Pattern.compile("@[0-9a-f]{4,8}\\b");
+
+        /**
+         * Normalises the parts of a bean name that the JVM or the framework chose
+         * for us, so the diff compares architecture instead of registration order.
+         * Applied on both sides — live run and parsed baseline — so an old
+         * baseline written before 1.1.2 still diffs cleanly.
+         *
+         * @param beanName raw bean name
+         * @return the name with generated counters and identity hashes masked
+         */
+        static String canonical(String beanName) {
+            String masked = GENERATED_SUFFIX.matcher(beanName).replaceAll("$1#<n>");
+            return IDENTITY_HASH.matcher(masked).replaceAll("@<id>");
+        }
+
         private final Set<String> beans;
         private final Map<String, Set<String>> edges;
         private final List<Set<String>> cycles;
@@ -115,11 +152,22 @@ public final class WireDoctorBaselineDiff {
                                             Map<String, WireDoctorConditionSnapshot.Outcome> conditions,
                                             Long totalStartupMs, Long slowBeanThreshold) {
             Map<String, Set<String>> edges = new LinkedHashMap<>();
-            graph.forEach((bean, deps) -> edges.put(bean, new LinkedHashSet<>(List.of(deps))));
+            graph.forEach((bean, deps) -> {
+                // computeIfAbsent, not put: two generated names can canonicalise to
+                // the same key, and their edges must union rather than overwrite.
+                Set<String> targets = edges.computeIfAbsent(canonical(bean), k -> new LinkedHashSet<>());
+                for (String dep : deps) {
+                    targets.add(canonical(dep));
+                }
+            });
             List<Set<String>> cycleSets = new ArrayList<>();
-            cycles.forEach(c -> cycleSets.add(new LinkedHashSet<>(c)));
+            cycles.forEach(c -> {
+                Set<String> members = new LinkedHashSet<>();
+                c.forEach(b -> members.add(canonical(b)));
+                cycleSets.add(members);
+            });
             TimingSnapshot timing = totalStartupMs != null ? new TimingSnapshot(totalStartupMs) : null;
-            return new Snapshot(new LinkedHashSet<>(graph.keySet()), edges, cycleSets, conditions,
+            return new Snapshot(new LinkedHashSet<>(edges.keySet()), edges, cycleSets, conditions,
                                 timing, slowBeanThreshold);
         }
 
@@ -136,14 +184,14 @@ public final class WireDoctorBaselineDiff {
             JsonNode deps = reportRoot.path("dependencies");
             Map<String, Set<String>> edges = new LinkedHashMap<>();
             deps.path("graph").fields().forEachRemaining(entry -> {
-                Set<String> targets = new LinkedHashSet<>();
-                entry.getValue().forEach(t -> targets.add(t.asText()));
-                edges.put(entry.getKey(), targets);
+                Set<String> targets = edges.computeIfAbsent(canonical(entry.getKey()),
+                                                            k -> new LinkedHashSet<>());
+                entry.getValue().forEach(t -> targets.add(canonical(t.asText())));
             });
             List<Set<String>> cycles = new ArrayList<>();
             deps.path("cycles").forEach(cycle -> {
                 Set<String> beansInCycle = new LinkedHashSet<>();
-                cycle.forEach(b -> beansInCycle.add(b.asText()));
+                cycle.forEach(b -> beansInCycle.add(canonical(b.asText())));
                 cycles.add(beansInCycle);
             });
             // Absent section → null (pre-v0.5.0 baseline): condition diff skipped.
