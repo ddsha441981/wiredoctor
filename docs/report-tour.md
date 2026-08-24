@@ -9,6 +9,8 @@ A guided walkthrough of the WireDoctor HTML console, tab by tab. All screenshots
 
 The report is a single self-contained `wiredoctor-report.html` — the graph library is inlined at generation time, so it renders completely offline. Just open it in a browser.
 
+The screenshots below were captured on 0.7.1. Everything they show is still there; the charts added in v1.1.3 (coupling quadrant, Pareto curve, trend verdict bands) are described in the Smells and Timing sections but are not in these images yet.
+
 ---
 
 ## Overview tab
@@ -67,6 +69,15 @@ Architecture smells computed on the **live resolved graph** — what Spring actu
 
 - **High fan-in · coupling hotspots**: beans the most others depend on. A change here ripples widest — here `AzureTokenCredentialAutoConfiguration` (8 dependents) and `initializrMetadataProvider` (6) top the list.
 - **High fan-out · shotgun surgery risk**: beans that depend on the most others — they break when any of their many dependencies change.
+- **Who is on the other end (v1.1.3)**: every row in both tables expands to the actual beans it is coupled to, so "fan-in 6" no longer means tracing six edges in the graph by hand.
+
+Above the tables sits the **coupling quadrant** (v1.1.3) — a fan-out vs fan-in scatter of every bean, so you see the shape the two top-10 lists hide:
+
+- **Up the left edge**: god beans — high fan-in, low fan-out. Many beans depend on them, so a change ripples widest.
+- **Along the bottom**: shotgun-surgery risks — high fan-out, low fan-in.
+- The dashed **I = 0.8** line is the same instability threshold the *Unstable beans* table uses; everything below it is unstable.
+- Dot size is how many beans share that exact position, framework beans are dimmed (with a **Hide framework beans** toggle), and clicking a dot that holds a single bean opens it in the Graph tab.
+- Axes are square-root scaled so a 400-bean tail stays readable — but every tick is a real count, not a bucket.
 
 ---
 
@@ -76,8 +87,11 @@ Architecture smells computed on the **live resolved graph** — what Spring actu
 
 Real measured startup numbers from `BufferingApplicationStartup` — no reflection heuristics:
 
-- **Slowest startup steps**: the Boot lifecycle phases, with `spring.context.refresh` (4,619ms) at the top and individual `spring.beans.instantiate` steps below.
+- **How few beans you would have to fix (v1.1.3)**: a Pareto curve of cumulative bean-instantiation time with the 80% knee marked — on a start.spring.io run, **37 of 283 beans** carry 80% of it. The caption is explicit that a bean's time includes the beans its constructor triggers, so the total counts nested instantiation more than once: it is a ranking of where to look, not a wall-clock budget.
+- **Slowest startup steps**: the Boot lifecycle phases, with `spring.context.refresh` (4,619ms) at the top and individual `spring.beans.instantiate` steps below. Since v1.1.3 the bean each `instantiate` step created is its own column, so a step no longer names a phase without naming what it built.
 - **Slow bean instantiation**: every bean over the `slow-bean-threshold-ms` (default 100ms), ranked. On this run, `bomRangesInfoContributor` (315ms) and `initializrMetadataProvider` (313ms) lead.
+
+The **startup time trend** chart closes the tab: startup time plus a dashed bean-count line, with a coloured band on every interval that crosses the `startup-time` gate's thresholds — red when a slowdown is *unexplained by bean count*, amber when the app also grew, green when it got faster. It only has data from the second `baseline-write=true` run onward; see the [Startup Time Trend guide](startup-time-trend.html) for the verdict rules and the caveats they carry.
 
 Since v0.7.1, this tab also hosts the **Performance Gates card**: each gate (startup-time, slow-bean, new-cycle, condition-changed) with its threshold, actual value, and a PASS/FAIL/NOT RUN verdict chip — plus `not armed` tags and a CI hint when gates aren't configured. This is the UI counterpart of `wiredoctor.fail-on` CI gating (see the [Performance Gates guide](performance-gates.html)).
 

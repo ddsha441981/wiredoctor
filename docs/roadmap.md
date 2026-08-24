@@ -11,6 +11,9 @@ nav_order: 13
 
 | Version | Date | What |
 |---------|------|------|
+| v1.1.3 | 2026-08-24 | **Report readability** — coupling quadrant, Pareto curve, trend verdict bands, drill-downs on every ranking |
+| v1.1.2 | 2026-08-24 | Report accuracy — type-collected beans are not ghosts, baseline diff noise masked |
+| v1.1.1 | 2026-08-08 | Log format fix |
 | v1.1.0 | 2026-08-22 | **Longitudinal Visibility** — startup time trend with sparkline, thread distribution with donut chart, EnvironmentPostProcessor migration, foreign ApplicationStartup respect |
 | v1.0.0 | 2026-08 | **Stability Contract** — frozen JSON schema (`schemaVersion: 1`), frozen config property names, performance budget (< 5s on 1k beans), zero-intrusion guarantee |
 | v0.10.0 | 2026-07-29 | Graph timing heat + critical path chips |
