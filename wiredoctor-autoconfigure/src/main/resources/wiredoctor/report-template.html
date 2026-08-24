@@ -805,9 +805,59 @@ function stepTable(rows) {
       <td class="num" style="width:32%"><div class="bar-wrap" style="justify-content:flex-end"><div class="bar" style="width:${(r.durationMs/max*80).toFixed(0)}%"></div>${fmt(r.durationMs)}ms</div></td></tr>`;
     }).join('')}</table>`;
 }
+/* v1.1.3 — Pareto: the histogram says how instantiation times are distributed,
+   this says how few beans you would have to fix. Same data, actionable version. */
+function startupPareto() {
+  const entries = Object.entries(beanTimings)
+    .filter(([, v]) => typeof v === 'number' && v > 0)
+    .sort((a, b) => b[1] - a[1]);
+  if (entries.length < 5) {
+    return '<div class="empty" data-icon="📉">No per-bean timings captured (startup was not buffering).</div>';
+  }
+  const total = entries.reduce((sum, [, v]) => sum + v, 0);
+  const W = 620, H = 250, L = 54, R = 18, T = 18, B = 46;
+  const pw = W - L - R, ph = H - T - B, base = T + ph;
+  const x = i => L + (i + 1) / entries.length * pw;
+  let cum = 0, knee = -1;
+  const pts = entries.map(([, v], i) => {
+    cum += v;
+    const share = cum / total;
+    if (knee < 0 && share >= 0.8) knee = i;
+    return `${x(i).toFixed(1)},${(base - share * ph).toFixed(1)}`;
+  });
+  if (knee < 0) knee = entries.length - 1;   // one bean over 80% on its own
+  const grid = [0, 0.25, 0.5, 0.75, 1].map(f => {
+    const y = base - ph * f;
+    return `<line class="grid-line" x1="${L}" y1="${y.toFixed(1)}" x2="${W - R}" y2="${y.toFixed(1)}"/>`
+         + `<text class="axis-txt" x="${L - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${(f * 100).toFixed(0)}%</text>`;
+  }).join('');
+  const y80 = base - ph * 0.8, kx = x(knee);
+  const kneeLabelRight = kx < W * 0.55;
+  const top = entries.slice(0, 5);
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Cumulative share of measured bean-instantiation time: ${knee + 1} of ${entries.length} beans account for 80 percent.">
+    ${grid}
+    <line x1="${L}" y1="${y80.toFixed(1)}" x2="${W - R}" y2="${y80.toFixed(1)}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" opacity="0.75"/>
+    <line x1="${kx.toFixed(1)}" y1="${T}" x2="${kx.toFixed(1)}" y2="${base}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3" opacity="0.75"/>
+    <polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${kx.toFixed(1)}" cy="${y80.toFixed(1)}" r="4" fill="var(--warn)"/>
+    <text class="val-txt" x="${(kx + (kneeLabelRight ? 9 : -9)).toFixed(1)}" y="${(y80 - 9).toFixed(1)}"
+      text-anchor="${kneeLabelRight ? 'start' : 'end'}" fill="var(--warn)">${fmt(knee + 1)} bean${knee ? 's' : ''} = 80%</text>
+    <text class="axis-txt" x="${L}" y="${H - 24}">1</text>
+    <text class="axis-txt" x="${W - R}" y="${H - 24}" text-anchor="end">${fmt(entries.length)}</text>
+    <text class="axis-txt" x="${(L + pw / 2).toFixed(0)}" y="${H - 8}" text-anchor="middle">beans, slowest first →</text>
+  </svg>
+  <p class="chart-note"><b>${fmt(knee + 1)} of ${fmt(entries.length)} beans account for 80% of measured bean-instantiation time.</b>
+  Slowest: ${top.map(([b, v]) => `${escBean(b)} <span class="muted">${fmt(v)}ms</span>`).join(' · ')}.</p>
+  <p class="chart-note dim">A bean's time includes the beans its constructor triggers, so the ${fmt(total)}ms these shares are taken from counts nested instantiation more than once — it is a ranking, not a wall-clock budget.</p>`;
+}
 $('#tab-timing').innerHTML = `
   <h1 class="page-title">Startup Timing</h1>
   <p class="page-sub">From BufferingApplicationStartup — real measured instantiation, no reflection heuristics.</p>
+  <div class="card">
+    <div class="section-h">📉 How few beans you would have to fix <span class="pill reason">cumulative</span></div>
+    ${startupPareto()}
+  </div>
   ${threadDistributionCard()}
   <div class="grid two-col">
     <div class="card"><div class="section-h">🐢 Slowest startup steps</div>${stepTable(steps)}</div>
