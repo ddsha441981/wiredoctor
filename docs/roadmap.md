@@ -11,6 +11,7 @@ nav_order: 13
 
 | Version | Date | What |
 |---------|------|------|
+| v1.1.4 | 2026-08-25 | **Honest media** — every screenshot and GIF recaptured from a real 1.1.4 report, trend chart fed on diff runs, report header stamped with the real version |
 | v1.1.3 | 2026-08-24 | **Report readability** — coupling quadrant, Pareto curve, trend verdict bands, drill-downs on every ranking |
 | v1.1.2 | 2026-08-24 | Report accuracy — type-collected beans are not ghosts, baseline diff noise masked |
 | v1.1.1 | 2026-08-08 | Log format fix |

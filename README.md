@@ -1,16 +1,16 @@
 # 🩺 WireDoctor
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-259%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome Java](https://awesome.re/mentioned-badge.svg)](https://github.com/akullpp/awesome-java#architecture)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.ddsha441981/wiredoctor-autoconfigure.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/io.github.ddsha441981/wiredoctor-autoconfigure) [![CI Tests](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml/badge.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![Tests](https://img.shields.io/badge/Tests-261%20passed-success.svg)](https://github.com/ddsha441981/wiredoctor/actions/workflows/compat.yml) [![License](https://img.shields.io/badge/License-MIT%20OR%20Apache--2.0-blue.svg)](LICENSE) [![Awesome Java](https://awesome.re/mentioned-badge.svg)](https://github.com/akullpp/awesome-java#architecture)
 
 > *"Your bean graph has a story. WireDoctor reads it."*
 
 WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Boot. Add one dependency — it hooks into the real, resolved `ApplicationContext` at startup and turns it into an interactive report, honest advice, and CI gates. **Zero-intrusion, zero-dashboard-server, pure insights.**
 
-![WireDoctor report — Overview tab](docs/images/overview.png)
+![WireDoctor report — a tour of every tab](docs/images/report-tour.gif)
 
-*Captured from a real run against start.spring.io (Boot 4.0.x, 390 beans) with performance gates armed — the red `GATE FAIL` chip is a genuinely tripped gate. **[View the full docs →](https://ddsha441981.github.io/wiredoctor/)***
+*A real run against start.spring.io (Boot 4.1.x, 429 beans, 436 edges) on WireDoctor 1.1.4 — the cycle, the ghosts and the timings in the report are all genuinely from that app. **[View the full docs →](https://ddsha441981.github.io/wiredoctor/)***
 
-**[▶ Open this exact report live in your browser](https://ddsha441981.github.io/wiredoctor/sample/test2/wiredoctor-report.html)** — no install needed.
+**[▶ Open this exact report live in your browser](https://ddsha441981.github.io/wiredoctor/sample/v1.1.4/wiredoctor-report.html)** — no install needed.
 
 ---
 
@@ -84,7 +84,7 @@ Notes:
 | [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.html) | What the reports expose, offline-only network behavior |
 | [Known Limitations](https://ddsha441981.github.io/wiredoctor/known-limitations.html) | Honest heuristics and what the tool cannot guarantee |
 
-Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/) — or **[view the start.spring.io report live](https://ddsha441981.github.io/wiredoctor/sample/test2/wiredoctor-report.html)** without cloning anything.
+Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/) — or **[view the start.spring.io report live](https://ddsha441981.github.io/wiredoctor/sample/v1.1.4/wiredoctor-report.html)** without cloning anything.
 
 ---
 

@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2026-08-25
+
+Honest media. The screenshots in the README and the report tour were captured on
+0.7.1 — four releases of UI ago — so the front door showed a product that no
+longer existed. Recapturing them turned up two real bugs, both fixed here. No
+API, schema, or configuration changes.
+
+### Fixed
+
+- **The startup-time trend chart was empty on diff runs.** `trendHistory` was
+  only put on the report inside the `baseline-write=true` branch, so the run you
+  actually do day to day — diff mode, gates armed — rendered "Need at least 2
+  baseline writes" even with a full history committed in the baseline. The
+  history is now handed to the report in diff mode too. The current run is not
+  appended: it is not a baseline entry.
+- **Every generated report was stamped `dev`.** The header chip reads the
+  version from the jar manifest, and the build never wrote an
+  `Implementation-Version` into it. The manifest now carries it, so the chip
+  shows the release that produced the report.
+
+### Changed
+
+- **All report media recaptured from a real 1.1.4 run** — start.spring.io app on
+  Boot 4.1.x, 429 beans, 436 edges, with a genuine dependency cycle, a slow
+  `@PostConstruct` bean, an untouched exporter, first-touch ghost tracking on and
+  three baseline writes behind the trend chart. Seven screenshots plus three
+  GIFs (full tour, graph drill-down, timing charts). The report tour is rewritten
+  against these numbers, and its "captured on 0.7.1" disclaimer is gone.
+- **`sample/v1.1.4/`** holds the complete matching set — report, JSON, baseline,
+  diff, ghost report and gate status — and is what the live "open this report"
+  links point at. The 0.10.0 report stays in `sample/test2/` for comparison.
+
+### Added
+
+- **`tools/capture-media.js`** drives a real generated report in a headless
+  browser and writes exactly the files the docs embed, so the media cannot
+  quietly drift from what the report renders again.
+
 ## [1.1.3] - 2026-08-24
 
 Report readability pass. 1.1.2 fixed what the report *claimed*; this release
