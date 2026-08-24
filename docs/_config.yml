@@ -16,6 +16,14 @@ lang: en-US
 remote_theme: just-the-docs/just-the-docs@v0.12.0
 color_scheme: dark
 
+# Callouts referenced as `{: .warning }` in the docs. Just the Docs renders these
+# unstyled unless they are declared here.
+callouts_level: quiet
+callouts:
+  warning:
+    title: Warning
+    color: red
+
 plugins:
   # Required for remote_theme to resolve. Pages injects it on its own builds,
   # but once an explicit plugins list exists it must be named here or the theme

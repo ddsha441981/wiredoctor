@@ -12,7 +12,7 @@ Every WireDoctor property in one place. All properties are optional — WireDoct
 | Property | Default | Description |
 |----------|---------|-------------|
 | `wiredoctor.enabled` | `true` | Master switch. `false` completely disables the analyzer — no analysis, no reports, no bean-structure exposure. Set this in `application-prod.properties` if the dependency ships to production. |
-| `wiredoctor.output-path` | project root | Directory where `wiredoctor-report.json` and `wiredoctor-report.html` are written. |
+| `wiredoctor.output-path` | project root | Directory where `wiredoctor-report.json` and `wiredoctor-report.html` are written. Set it to `target` (or `build`) if your build lints the source tree — see the note below. |
 | `wiredoctor.scan-packages` | *(auto)* | Comma-separated package prefixes to analyze for orphan beans. By default, framework packages (`org.springframework`, `java.`, `org.apache`, …) are filtered out automatically. |
 | `wiredoctor.slow-bean-threshold-ms` | `100` | Beans taking longer than this to instantiate are flagged as slow (report + console). |
 | `wiredoctor.max-graph-nodes` | `2000` | Above this many beans, the *serialized* graph (JSON + HTML view) is capped to top-N by fan-in (cycle members always kept) so the browser doesn't freeze. Analysis itself — cycles, smells, critical path, baseline diff — always runs on the full graph. `0` = unlimited. |
@@ -20,10 +20,46 @@ Every WireDoctor property in one place. All properties are optional — WireDoct
 
 ```properties
 wiredoctor.scan-packages=com.yourcompany.app,io.yourteam.service
-wiredoctor.output-path=/path/to/your/reports
+wiredoctor.output-path=target
 wiredoctor.slow-bean-threshold-ms=50
 wiredoctor.max-graph-nodes=2000
 ```
+
+### Set `output-path` if your build lints the source tree
+
+By default the report lands in the project root, where source-tree linters will
+find it. The HTML embeds vis.js and egjs, whose license headers contain `http://`
+URLs, so any project using Spring's `nohttp-checkstyle` — that is, every Spring
+project and every build that inherited Spring's parent — fails its **next** build
+on a file nobody wrote:
+
+```
+[ERROR] wiredoctor-report.html:[17,43] (extension) NoHttp: http:// URLs are not
+        allowed but got 'http://almende.com'. Use https:// instead.
+[ERROR] Failed to execute goal maven-checkstyle-plugin:check
+        (nohttp-checkstyle-validation): You have 11 Checkstyle violations.
+```
+
+```properties
+wiredoctor.output-path=target
+```
+
+`target/` is already outside the lint scope and already ignored by git, so this
+also keeps the report out of commits and diffs.
+
+### `scan-packages` also cleans the smell rankings
+
+Naming your own packages does more than filter orphan beans: without it,
+WireDoctor's own beans are ranked in your architecture report
+(`com.wiredoctor.WireDoctorAutoConfiguration` as a coupling hotspot,
+`wireDoctorAnalyzer` as unstable), alongside framework beans you cannot refactor.
+
+```properties
+wiredoctor.scan-packages=com.yourcompany.app
+```
+
+With that set, every ranked bean is one you own. It is the single highest-leverage
+property for first-run signal quality.
 
 ## Regression Guard & Gates (opt-in — CI only)
 
