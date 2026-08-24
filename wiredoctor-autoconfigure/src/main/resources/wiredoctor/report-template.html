@@ -677,7 +677,7 @@ function criticalPathTimeline() {
       const bg = isCycle ? 'var(--danger)' : 'var(--accent)';
       const label = n.beanName.length > 28 ? n.beanName.slice(0,25)+'...' : n.beanName;
       return `<div style="display:flex;align-items:center;gap:8px;margin:3px 0">
-        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escBean(n.beanName)}">${escBean(label)}</span>
+        <span class="bean" style="width:180px;text-align:right;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${escBean(n.beanName)}${n.cumulativeMs!=null?' — '+n.cumulativeMs+'ms into the chain':''}">${escBean(label)}</span>
         <div style="flex:1;height:18px;background:var(--surface-3);border-radius:3px;overflow:hidden;position:relative">
           <div class="cp-bar" style="width:${pct}%;height:100%;background:${bg};border-radius:3px"></div>
           <span style="position:absolute;right:6px;top:1px;font-size:10px;color:var(--text-2);font-family:var(--mono)">${n.ownMs!=null?n.ownMs+'ms':''}</span>
@@ -811,7 +811,9 @@ $('#tab-timing').innerHTML = `
   </div>
   ${cp.available && cp.path ? `<div class="card" style="margin-top:16px">
     <div class="section-h">Critical path — the chain your readiness sits on</div>
-    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${escBean(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b></span>`).join('<span class="cp-arrow">→</span>')}</div>
+    <div class="cp-chain">${cp.path.map(n=>`<span class="cp-node">${escBean(n.beanName)} <b>${n.ownMs!=null?n.ownMs+'ms':''}</b>${
+      n.cumulativeMs!=null?`<span class="dim" style="font-size:10.5px"> · ${fmt(n.cumulativeMs)}ms in</span>`:''}</span>`).join('<span class="cp-arrow">→</span>')}</div>
+    ${cp.path.some(n=>n.cumulativeMs!=null) ? `<p class="chart-note">Bold is the bean's own instantiation time; the dim number is how far into the ${fmt(cp.totalMs)}ms chain it sits.</p>` : ''}
   </div>`:''}
   ${trendSparkline()}`;
 
