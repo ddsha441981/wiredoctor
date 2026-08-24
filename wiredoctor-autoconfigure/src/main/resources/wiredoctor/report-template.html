@@ -280,6 +280,22 @@ table.data tbody tr:hover td:first-child { box-shadow: inset 2px 0 0 var(--accen
 }
 .cp-node b { color: var(--warn); font-weight: 600; }
 .cp-arrow { color: var(--text-dim); font-size: 12px; }
+/* v1.1.3 — cycle chain: same chip as the critical path, but clickable and red */
+.cy-node {
+  font-family: var(--mono); font-size: 11.5px; padding: 4px 9px; border-radius: 5px;
+  background: var(--danger-dim); color: var(--danger);
+  border: 1px solid rgba(229,83,75,0.35); cursor: pointer;
+}
+.cy-node:hover  { background: var(--danger); color: #fff; }
+.cy-node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cy-fix {
+  margin-top: 16px; padding: 12px 14px; border-radius: 6px;
+  background: var(--surface-2); border-left: 3px solid var(--ok);
+}
+.cy-fix-h { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ok); margin-bottom: 8px; }
+.cy-fix.blocked { border-left-color: var(--warn); }
+.cy-fix.blocked .cy-fix-h { color: var(--warn); }
+.cy-lazy { color: var(--accent); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 5px; border: 2px solid var(--bg); }
@@ -373,6 +389,7 @@ if (gatesFailed.length > 0) {
 const TABS = [
   { id:'overview',  icon:'◈', label:'Overview' },
   { id:'graph',     icon:'⬡', label:'Graph', full:true },
+  { id:'cycles',    icon:'⟲', label:'Cycles', count: cycles.length, hot: true },
   { id:'ghosts',    icon:'◍', label:'Ghosts', count: gc.count + (ghostReport ? (ghostReport.untouchedCount||0) : 0) },
   { id:'smells',    icon:'△', label:'Smells' },
   { id:'timing',    icon:'◷', label:'Timing' },
@@ -383,7 +400,7 @@ TABS.forEach((t,i) => {
   const b = document.createElement('button');
   b.className = 'nav-item' + (i===0?' active':'');
   b.innerHTML = `<span class="icon">${t.icon}</span>${t.label}` +
-    (t.count ? `<span class="count${t.id==='ghosts'&&t.count>0?'':''}">${t.count}</span>` : '');
+    (t.count ? `<span class="count${t.hot?' hot':''}">${t.count}</span>` : '');
   b.onclick = () => activate(t.id);
   b.dataset.tab = t.id;
   nav.appendChild(b);
@@ -424,7 +441,7 @@ $('#tab-overview').innerHTML = `
   <div class="grid kpis">
     <div class="card kpi"><div class="k-label">Total beans</div><div class="k-value">${fmt(deps.totalBeans)}</div></div>
     <div class="card kpi accent"><div class="k-label">Wiring edges</div><div class="k-value">${fmt(deps.totalEdges)}</div></div>
-    <div class="card kpi ${cycles.length?'danger':''}"><div class="k-label">Dependency cycles</div><div class="k-value">${cycles.length}</div></div>
+    <div class="card kpi ${cycles.length?'danger':''}" style="cursor:pointer" onclick="activate('cycles')" title="Open the Cycles tab"><div class="k-label">Dependency cycles</div><div class="k-value">${cycles.length}</div></div>
     <div class="card kpi"><div class="k-label">Proxies (CGLIB/JDK)</div><div class="k-value">${reportData.proxies.cglibCount}<small> / ${reportData.proxies.jdkCount}</small></div>${
       proxySkipped ? `<div class="k-note">${fmt(proxySkipped)} bean${proxySkipped>1?'s':''} not instantiated at report time — not inspected.</div>` : ''}</div>
     <div class="card kpi ghost"><div class="k-label">Ghost candidates</div><div class="k-value">${gc.count}</div></div>
@@ -467,6 +484,57 @@ $('#tab-overview').innerHTML = `
       : '<div class="empty" data-icon="👻">No ghost candidates.</div>'}
     </div>
   </div>`;
+
+/* ───────── Cycles tab (v1.1.3) ─────────
+   The cycle members and the @Lazy suggestions were in wiredoctor-report.json and
+   the console from 0.3.0 on, and nowhere in the HTML. This is that data. */
+const lazyFixes = reportData.lazySuggestions || [];
+function cycleCards() {
+  if (!cycles.length) {
+    return '<div class="empty" data-icon="✓">No dependency cycles — Spring resolved every bean without a circular reference.</div>';
+  }
+  return cycles.map((members, i) => {
+    // Repeat the first bean: a list of names does not read as a cycle, a loop does.
+    const chain = members.concat(members[0]);
+    // Lowest downstream impact first — that is the recommendation, fewer beans
+    // move to first-request initialisation.
+    const fixes = lazyFixes
+      .filter(f => (f.breaksCycles || []).includes(i))
+      .sort((a, b) => (a.downstreamImpact || 0) - (b.downstreamImpact || 0));
+    const primary = fixes[0];
+    const alts = fixes.slice(1);
+    return `<div class="card" style="margin-bottom:14px">
+      <div class="section-h">⟲ Cycle ${i + 1} · ${members.length} bean${members.length > 1 ? 's' : ''}</div>
+      <div class="cp-chain">${chain.map(b =>
+        `<span class="cy-node" role="button" tabindex="0" data-bean="${esc(b)}" title="Show in graph">${escBean(b)}</span>`
+      ).join('<span class="cp-arrow">→</span>')}</div>
+      ${primary ? `<div class="cy-fix">
+        <div class="cy-fix-h">Break it</div>
+        <div style="font-size:13px">Make <span class="bean">${escBean(primary.beanName)}</span> <span class="bean cy-lazy">@Lazy</span></div>
+        <div class="dim" style="font-size:11.5px;margin-top:5px">breaks ${primary.breaksCycles.length} cycle${primary.breaksCycles.length > 1 ? 's' : ''} · ${primary.downstreamImpact} downstream bean${primary.downstreamImpact === 1 ? ' initialises' : 's initialise'} lazily</div>
+        ${alts.length ? `<div class="dim" style="font-size:11.5px;margin-top:9px">Also breaks it: ${alts.map(f =>
+          `<span class="bean">${escBean(f.beanName)}</span> (${f.downstreamImpact} downstream)`).join(' · ')}</div>` : ''}
+      </div>` : `<div class="cy-fix blocked">
+        <div class="cy-fix-h">No @Lazy cut suggested</div>
+        <div class="dim" style="font-size:12.5px">No suggestion for this cycle — either the simulator found no safe cut, or this report predates it. Breaking it by design: extract an interface, or invert one of the dependencies.</div>
+      </div>`}
+    </div>`;
+  }).join('');
+}
+$('#tab-cycles').innerHTML = `
+  <h1 class="page-title">Dependency Cycles</h1>
+  <p class="page-sub">Circular references Spring resolved at startup, and the smallest @Lazy cut that breaks each one. @Lazy defers construction — it does not remove the coupling, the cycle stays in the design.</p>
+  ${cycleCards()}`;
+/* Delegated so bean names never have to survive an inline onclick. */
+$('#tab-cycles').addEventListener('click', e => {
+  const el = e.target.closest('[data-bean]');
+  if (el) focusBean(el.dataset.bean);
+});
+$('#tab-cycles').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target.closest('[data-bean]');
+  if (el) { e.preventDefault(); focusBean(el.dataset.bean); }
+});
 
 /* ═══════════ v1.1.0 charts — hand-rolled SVG, no chart library ═══════════
    Palettes validated for the dark surface #12161f: the timing ramp is single-hue
@@ -996,6 +1064,15 @@ function buildGraph() {
     const hit = allNodes.get({ filter: n => n.id.toLowerCase().includes(q) })[0];
     if (hit) { network.focus(hit.id, { scale: 1.2, animation: true }); network.selectNodes([hit.id]); showNode(hit.id); }
   });
+}
+/* Jump from anywhere to this bean in the graph. Degrades silently: no vis
+   library, or the node was dropped by graph truncation. */
+function focusBean(bean) {
+  activate('graph');
+  if (!network || !allNodes || !allNodes.get(bean)) return;
+  network.focus(bean, { scale: 1.3, animation: true });
+  network.selectNodes([bean]);
+  showNode(bean);
 }
 function showNode(bean) {
   const panel = $('#node-panel');
