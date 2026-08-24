@@ -316,7 +316,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 // beanDefinitionNames (e.g. "environment") are not reachable via
                 // getType() in the normal class. Pre-seed them here so the smell
                 // filter does not surface them as user beans.
-                if (WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)) {
+                if (WireDoctorBeanClassifier.isWellKnownFrameworkBean(beanName)
+                        || WireDoctorBeanClassifier.isWireDoctorBean(beanName)) {
                     frameworkOwned++;
                     frameworkBeanNames.add(beanName);
                 } else {
@@ -380,7 +381,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         for (String beanName : beanNames) {
             if (allDependencies.contains(beanName)) continue;
-            if (beanName.toLowerCase().startsWith("wiredoctor")) continue;
+            if (WireDoctorBeanClassifier.isWireDoctorBean(beanName)) continue;
             // The @SpringBootApplication main class legitimately has 0 incoming
             // dependencies — listing it as an "orphan" is correct per the heuristic
             // but pure noise, so skip it.
@@ -475,7 +476,8 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             userBean = name ->
                     !frameworkBeanNames.contains(name)
                             && !WireDoctorBeanClassifier.isFrameworkPackage(name)
-                            && !WireDoctorBeanClassifier.isWellKnownFrameworkBean(name);
+                            && !WireDoctorBeanClassifier.isWellKnownFrameworkBean(name)
+                            && !WireDoctorBeanClassifier.isWireDoctorBean(name);
         }
         Map<String, Object> smells = includeFramework
                 ? WireDoctorSmellDetector.toReportMap(graph)
