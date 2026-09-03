@@ -1,18 +1,38 @@
 version: 2
+
+# open-pull-requests-limit matters here: Dependabot stops scanning an ecosystem
+# once it hits the cap (default 5). Five unmerged maven PRs froze maven scanning
+# from 2026-06-29 to 2026-09-03, which is why Boot 4.0.8 and the whole 4.1 line
+# went unnoticed. The groups below keep the PR count low so that cannot recur.
 updates:
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
       interval: "weekly"
     target-branch: "main"
+    open-pull-requests-limit: 10
     labels:
       - "dependencies"
       - "java"
+    groups:
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.sonatype.central:*"
     ignore:
+      # Boot stays ungrouped and majors stay out: bumping spring-boot.version
+      # requires updating the compat.yml matrix in the same commit, so those
+      # bumps need to arrive as their own reviewable PR.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     target-branch: "main"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"

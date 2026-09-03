@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **The compatibility matrix now covers Boot 4.1 and the current patch of every
+  supported line.** It was pinned to 4.0.1 (December 2025) while 4.0.8 shipped on
+  20 August, and Boot 4.1 — the current line since 10 June — was never tested at
+  all, so the supported-versions table was backed by increasingly old runs. The
+  matrix now verifies 2.7.18, 3.3.13, 3.5.16, 4.0.8 and 4.1.1 against Java 17, 21
+  and 25, and the table gains a 4.1.x row. The default `spring-boot.version` moves
+  3.5.15 to 3.5.16 in the same commit, so the pom and the matrix cannot drift
+  apart again.
+
 ## [1.1.4] - 2026-08-25
 
 Honest media. The screenshots in the README and the report tour were captured on

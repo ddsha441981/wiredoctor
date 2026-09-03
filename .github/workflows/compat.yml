@@ -19,8 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # 15 runners pulling a full Boot dependency tree at once earns a 429 from
+      # Maven Central. Three waves of five cost a few minutes and stay under it.
+      max-parallel: 5
       matrix:
-        boot: [ '2.7.18', '3.3.13', '3.5.15', '4.0.1' ]
+        boot: [ '2.7.18', '3.3.13', '3.5.16', '4.0.8', '4.1.1' ]
         java: [ '17', '21', '25' ]
     name: Boot ${{ matrix.boot }} / Java ${{ matrix.java }}
 
