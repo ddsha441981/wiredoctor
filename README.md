@@ -60,6 +60,7 @@ The full test suite runs against this matrix in CI ([compat.yml](.github/workflo
 | 3.3.x       | ✅      | ✅      | ✅      |
 | 3.5.x       | ✅      | ✅      | ✅      |
 | 4.0.x       | ✅      | ✅      | ✅      |
+| 4.1.x       | ✅      | ✅      | ✅      |
 
 Notes:
 - **Floor is Boot 2.4**: startup timings need `BufferingApplicationStartup`, introduced in Boot 2.4. Lines older than 2.7 are not CI-verified.

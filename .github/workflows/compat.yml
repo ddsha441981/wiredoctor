@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        boot: [ '2.7.18', '3.3.13', '3.5.15', '4.0.1' ]
+        boot: [ '2.7.18', '3.3.13', '3.5.16', '4.0.8', '4.1.1' ]
         java: [ '17', '21', '25' ]
     name: Boot ${{ matrix.boot }} / Java ${{ matrix.java }}
 
