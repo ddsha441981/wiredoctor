@@ -7,6 +7,7 @@ package com.wiredoctor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -129,5 +130,27 @@ public final class WireDoctorBoundaryDetector {
             if (p.matcher(pkg).matches()) return true;
         }
         return false;
+    }
+
+    /**
+     * Serializes violations into the JSON report shape (WD-703, v1.2.0).
+     * Additive — {@code schemaVersion} stays 1; ordered keys mirror the
+     * {@link Violation} record.
+     *
+     * @param violations detected cross-module boundary violations
+     * @return list of ordered maps ready for Jackson serialization; never null
+     */
+    public static List<Map<String, Object>> toReportList(List<Violation> violations) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Violation v : violations) {
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("sourceBean",    v.sourceBean());
+            entry.put("targetBean",    v.targetBean());
+            entry.put("sourceModule",  v.sourceModule());
+            entry.put("targetModule",  v.targetModule());
+            entry.put("targetPackage", v.targetPackage());
+            out.add(entry);
+        }
+        return out;
     }
 }

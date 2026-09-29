@@ -105,4 +105,24 @@ class WireDoctorBoundaryDetectorTest {
         assertThat(WireDoctorBoundaryDetector.moduleOf("com.acme.orders", MODULES)).isEqualTo("orders");
         assertThat(WireDoctorBoundaryDetector.moduleOf("com.acme.orders.sub", MODULES)).isEqualTo("orders");
     }
+
+    @Test
+    void toReportList_serializesOrderedKeys_andEmptyForNoViolations() {
+        // WD-703: JSON report shape. Empty in → empty out.
+        assertThat(WireDoctorBoundaryDetector.toReportList(List.of())).isEmpty();
+
+        var report = WireDoctorBoundaryDetector.toReportList(
+                detect(Map.of("orderService", new String[]{"billingInternal"})));
+        assertThat(report).hasSize(1);
+        Map<String, Object> row = report.get(0);
+        assertThat(row)
+                .containsEntry("sourceBean", "orderService")
+                .containsEntry("targetBean", "billingInternal")
+                .containsEntry("sourceModule", "orders")
+                .containsEntry("targetModule", "billing")
+                .containsEntry("targetPackage", "com.acme.billing.internal");
+        // Ordered keys mirror the Violation record → stable JSON field order.
+        assertThat(row.keySet()).containsExactly(
+                "sourceBean", "targetBean", "sourceModule", "targetModule", "targetPackage");
+    }
 }

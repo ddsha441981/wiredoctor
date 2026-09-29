@@ -78,6 +78,27 @@ class WireDoctorAnalyzerIntegrationTest {
             // v0.10.0: full per-bean timing map for graph timing heat
             assertThat(report.has("beanTimings")).isTrue();
             assertThat(report.path("dependencies").path("totalBeans").asInt()).isPositive();
+            // WD-703: with no modules configured the boundary section is absent —
+            // a feature-off report is the pre-feature shape, schema stays v1.
+            assertThat(report.has("boundaryViolations")).isFalse();
+            assertThat(report.path("schemaVersion").asInt()).isEqualTo(1);
+        }
+    }
+
+    @Test
+    void boundaryViolationsKeyIsEmittedWhenModulesConfigured(@TempDir Path tempDir) throws Exception {
+        // WD-703: feature on (one module prefix declared) → the key is present
+        // and additive; schemaVersion stays 1. Detection correctness itself is
+        // covered by WireDoctorBoundaryDetectorTest — here we only assert the
+        // report wiring. Map key carries dots, so it needs [bracket] binding.
+        try (ConfigurableApplicationContext context = boot(
+                "wiredoctor.output-path=" + tempDir,
+                "wiredoctor.module-boundaries.modules[com.wiredoctor]=core")) {
+            JsonNode report = new ObjectMapper()
+                    .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+            assertThat(report.has("boundaryViolations")).isTrue();
+            assertThat(report.path("boundaryViolations").isArray()).isTrue();
+            assertThat(report.path("schemaVersion").asInt()).isEqualTo(1);
         }
     }
 
