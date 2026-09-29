@@ -503,6 +503,46 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
         report.put("dependencies", dependencyInfo);
 
+        // ── Feature (WD-702, v1.2.0): Multi-module boundary violations ───────
+        // Flags edges that reach from one declared module into another module's
+        // internal (non-API) package — hidden coupling that compiles fine but
+        // erodes modularity. Opt-in: with no wiredoctor.module-boundaries.modules
+        // configured this whole block is skipped (zero overhead). Detection +
+        // console summary only; report JSON/HTML rendering is WD-703.
+        WireDoctorProperties.ModuleBoundaries boundaries = properties.getModuleBoundaries();
+        if (boundaries.isEnabled()) {
+            Map<String, String> beanPackages = new HashMap<>();
+            for (String beanName : beanNames) {
+                if (WireDoctorBeanClassifier.isWireDoctorBean(beanName)) continue;
+                try {
+                    Class<?> t = beanFactory.getType(beanName);
+                    if (t != null && t.getPackage() != null) {
+                        String pkg = t.getPackage().getName();
+                        if (!WireDoctorBeanClassifier.isFrameworkPackage(pkg)) {
+                            beanPackages.put(beanName, pkg);
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // unresolvable bean type: can't attribute it to a module — skip
+                }
+            }
+            List<WireDoctorBoundaryDetector.Violation> boundaryViolations =
+                    WireDoctorBoundaryDetector.detect(graph, beanPackages,
+                            boundaries.getModules(), boundaries.getApiPackages());
+            if (boundaryViolations.isEmpty()) {
+                log.info(WireDoctorMessages.BOUNDARY_NONE);
+            } else {
+                log.info(WireDoctorMessages.BOUNDARY_HEADER, boundaryViolations.size());
+                boundaryViolations.stream().limit(20).forEach(v ->
+                        log.info(WireDoctorMessages.BOUNDARY_ITEM,
+                                 v.sourceModule(), v.targetModule(),
+                                 WireDoctorMessages.displayBean(v.sourceBean()),
+                                 WireDoctorMessages.displayBean(v.targetBean()),
+                                 v.targetPackage()));
+                log.info(WireDoctorMessages.BOUNDARY_NOTE);
+            }
+        }
+
         // ── Feature (v0.3.0): Counterfactual @Lazy Simulator ─────────────────
         // For each detected cycle, rank which beans would break it if marked
         // @Lazy — most cycles broken first, smallest blast radius (fan-in) next.
