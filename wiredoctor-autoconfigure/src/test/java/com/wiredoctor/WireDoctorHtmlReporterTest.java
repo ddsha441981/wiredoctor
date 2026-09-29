@@ -88,6 +88,18 @@ class WireDoctorHtmlReporterTest {
     }
 
     @Test
+    void boundariesTabIsWiredAndGatedOnTheFeatureKey(@TempDir Path tempDir) throws Exception {
+        // WD-703: the Boundaries tab ships in the template and only appears when
+        // reportData.boundaryViolations is present (module-boundaries feature on).
+        WireDoctorHtmlReporter.generateHtmlReport(MINIMAL_REPORT, tempDir.toFile());
+        String content = Files.readString(tempDir.resolve("wiredoctor-report.html"));
+
+        assertThat(content).contains("id:'boundaries'");
+        // Client-side gate: null (key absent) → no tab, no crash.
+        assertThat(content).contains("reportData.boundaryViolations");
+    }
+
+    @Test
     void graphTabHasHeatAndCriticalPathChips(@TempDir Path tempDir) throws Exception {
         // v0.10.0: timing-heat and critical-path toggles ship in the graph toolbar.
         WireDoctorHtmlReporter.generateHtmlReport(MINIMAL_REPORT, tempDir.toFile());

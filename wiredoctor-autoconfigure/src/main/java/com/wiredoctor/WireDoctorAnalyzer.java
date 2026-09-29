@@ -529,6 +529,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             List<WireDoctorBoundaryDetector.Violation> boundaryViolations =
                     WireDoctorBoundaryDetector.detect(graph, beanPackages,
                             boundaries.getModules(), boundaries.getApiPackages());
+            // WD-703: emit into the report JSON (additive — schemaVersion stays
+            // 1) only when the feature is on, so a feature-off report is byte-for-
+            // byte unchanged. The HTML Boundaries tab reads this same array.
+            report.put("boundaryViolations",
+                    WireDoctorBoundaryDetector.toReportList(boundaryViolations));
             if (boundaryViolations.isEmpty()) {
                 log.info(WireDoctorMessages.BOUNDARY_NONE);
             } else {
