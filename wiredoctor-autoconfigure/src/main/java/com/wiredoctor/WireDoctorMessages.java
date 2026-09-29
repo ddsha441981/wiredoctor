@@ -72,6 +72,9 @@ public final class WireDoctorMessages {
     public static final String DIFF_SAVED             = "[WireDoctor] Saved baseline diff to: {}";
     public static final String GATE_TRIPPED           = "[WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on={}): {} new cycle(s) introduced vs baseline. Failing the application as configured.";
 
+    // WD-701 (v1.2.0): one-line DevTools restart feedback, console only.
+    public static final String RESTART_DIFF           = "[WireDoctor] Restart: {}";
+
     public static final String CONDITIONS_UNAVAILABLE         = "[WireDoctor] Condition evaluation report unavailable ({}) — conditions section skipped.";
     public static final String CONDITION_DIFF_SUMMARY         = "  - Conditions: {} changed | {} added | {} removed";
     public static final String CONDITION_DIFF_CHANGED_ITEM    = "  - CONDITION CHANGED: {} ({} -> {})";
