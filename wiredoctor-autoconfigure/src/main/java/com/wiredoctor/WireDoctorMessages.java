@@ -80,6 +80,8 @@ public final class WireDoctorMessages {
     public static final String BOUNDARY_ITEM          = "  - {} -> {}: {} -> {} (internal: {})";
     public static final String BOUNDARY_NONE          = "\n[WireDoctor] Module Boundaries: no violations";
     public static final String BOUNDARY_NOTE          = "  - Cross-module edges into non-API packages. Expose an API package (wiredoctor.module-boundaries.api-packages) or decouple.";
+    // WD-705 (v1.2.0): optional boundary gate. Not a "regression" — a current-state fact — so it reads BOUNDARY, not REGRESSION.
+    public static final String BOUNDARY_GATE_TRIPPED  = "[WireDoctor] BOUNDARY GATE TRIPPED (wiredoctor.fail-on={}): {} cross-module edge(s) into non-API packages. Failing the application as configured.";
 
     public static final String CONDITIONS_UNAVAILABLE         = "[WireDoctor] Condition evaluation report unavailable ({}) — conditions section skipped.";
     public static final String CONDITION_DIFF_SUMMARY         = "  - Conditions: {} changed | {} added | {} removed";

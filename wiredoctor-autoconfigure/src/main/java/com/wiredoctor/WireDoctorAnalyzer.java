@@ -510,6 +510,11 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // configured this whole block is skipped (zero overhead). Detection +
         // console summary only; report JSON/HTML rendering is WD-703.
         WireDoctorProperties.ModuleBoundaries boundaries = properties.getModuleBoundaries();
+        // WD-705: the boundary gate is baseline-INDEPENDENT (a violation is a
+        // current-state fact, not a regression), so it can't live in
+        // runRegressionGuard with the diff gates. It's built here and merged
+        // into analyze()'s single returned gate after the guard runs.
+        WireDoctorRegressionException boundaryGate = null;
         if (boundaries.isEnabled()) {
             Map<String, String> beanPackages = new HashMap<>();
             for (String beanName : beanNames) {
@@ -545,6 +550,24 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                  WireDoctorMessages.displayBean(v.targetBean()),
                                  v.targetPackage()));
                 log.info(WireDoctorMessages.BOUNDARY_NOTE);
+            }
+            // WD-705: boundary-violation gate. Armed via wiredoctor.fail-on and
+            // at least one violation present → build the gate. Logged at error
+            // now so the trip is always visible even if a diff gate wins the
+            // single returned exception below. No baseline required.
+            if (properties.isFailOnBoundaryViolation() && !boundaryViolations.isEmpty()) {
+                log.error(WireDoctorMessages.BOUNDARY_GATE_TRIPPED,
+                          properties.getFailOn(), boundaryViolations.size());
+                boundaryGate = new WireDoctorRegressionException(
+                        "WireDoctor gate 'boundary-violation' tripped: "
+                        + boundaryViolations.size()
+                        + " cross-module edge(s) into non-API packages: "
+                        + boundaryViolations.stream()
+                                .map(v -> v.sourceModule() + " -> " + v.targetModule()
+                                        + " (" + WireDoctorMessages.displayBean(v.sourceBean())
+                                        + " -> " + WireDoctorMessages.displayBean(v.targetBean())
+                                        + ", internal: " + v.targetPackage() + ")")
+                                .collect(Collectors.toList()));
             }
         }
 
@@ -613,6 +636,17 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                 runRegressionGuard(graph, cycles, conditionOutcomes, totalStartupMs,
                                    slowBeanThresholdMs, slowBeans, report, gatesMap,
                                    outputDir, activeProfiles);
+
+        // WD-705: fold in the baseline-independent boundary gate. A diff gate
+        // keeps precedence for the propagated message (both were already logged
+        // at error); either one fails CI identically via the thrown exception.
+        // Note: wiredoctor-gate.status stays a diff-only verdict — a boundary
+        // violation is not a regression, and gate.status is written only when a
+        // baseline is configured. The non-zero JVM exit is the boundary gate's
+        // CI signal. ponytail: gate.status carries the diff verdict, exit code carries this one.
+        if (trippedGate == null) {
+            trippedGate = boundaryGate;
+        }
 
         // Retain the completed report in memory for out-of-core consumers (the
         // optional wiredoctor-actuator endpoint). Set BEFORE the disk write so a
@@ -881,6 +915,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         if (properties.isFailOnConditionChanged()) armed.add("condition-changed");
         if (properties.isFailOnStartupTime())      armed.add("startup-time");
         if (properties.isFailOnSlowBean())         armed.add("slow-bean");
+        if (properties.isFailOnBoundaryViolation()) armed.add("boundary-violation");
         return armed;
     }
 
