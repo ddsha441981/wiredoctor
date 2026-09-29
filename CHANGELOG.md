@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Module boundary detection (opt-in).** Declare your modules by package
+  prefix (`wiredoctor.module-boundaries.modules`) and WireDoctor flags hidden
+  coupling — an edge from one module into another module's *internal* (non-API)
+  package, read from the resolved bean graph. Mark public surfaces with
+  `api-packages` globs (e.g. `*.api`); a bean maps to the longest matching
+  module prefix, so nested modules resolve correctly. Violations appear in the
+  console, in `wiredoctor-report.json` under `boundaryViolations`, and in a new
+  **Boundaries** tab in the HTML report — all absent when no modules are
+  configured. The detector short-circuits with zero overhead when off.
+  `schemaVersion` stays `1` (additive). Gate it in CI with
+  `wiredoctor.fail-on=boundary-violation` — unlike the diff gates it needs no
+  baseline, so a fresh violation fails the build the first time it appears. See the
+  [Module Boundaries guide](https://ddsha441981.github.io/wiredoctor/module-boundaries.html).
+- **DevTools restart diff.** With `spring-boot-devtools` on the classpath,
+  each restart logs a one-line diff versus the previous run — new/resolved
+  cycles, new slow beans, startup-time delta, bean-count change — so you see
+  architectural drift as you code, not at CI time. Console only; no report or
+  schema change.
+
 ### Changed
 
 - **The compatibility matrix now covers Boot 4.1 and the current patch of every

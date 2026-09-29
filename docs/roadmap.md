@@ -1,6 +1,6 @@
 ---
 title: Roadmap
-nav_order: 13
+nav_order: 15
 ---
 
 # Roadmap
@@ -37,7 +37,7 @@ Full changelog: [CHANGELOG.md](https://github.com/ddsha441981/wiredoctor/blob/ma
 
 ## v1.2.0 — Architectural Boundaries & Dev Feedback
 
-- **Module boundary violation detection** — `wiredoctor.module-boundaries` config to declare your multi-module architecture; WireDoctor flags cross-boundary dependencies that violate your declared layers.
+- **Module boundary violation detection** — declare your multi-module architecture with `wiredoctor.module-boundaries` (package-prefix → module, plus `api-packages` for public surfaces); WireDoctor flags cross-module edges that reach into another module's internal (non-API) package. Surfaced in the console, in `wiredoctor-report.json` (`boundaryViolations`), and in a new **Boundaries** tab in the HTML report. Opt-in, zero overhead when off, `schemaVersion` unchanged. See the [Module Boundaries guide](module-boundaries.html).
 - **DevTools restart integration** — instant per-restart smell/cycle/slow-bean diff, so you see architectural drift as you develop, not at CI time.
 
 ---

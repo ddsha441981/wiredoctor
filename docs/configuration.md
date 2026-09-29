@@ -67,7 +67,7 @@ property for first-run signal quality.
 |----------|---------|-------------|
 | `wiredoctor.baseline` | *(unset)* | Path to the committed architecture baseline. Setting it enables the diff. |
 | `wiredoctor.baseline-write` | `false` | `true` writes/refreshes the baseline (never diffs or gates on that run). |
-| `wiredoctor.fail-on` | `""` | Comma-separated gates that fail startup after the diff: `new-cycle`, `condition-changed`, `startup-time`, `slow-bean`. Empty = report-only. |
+| `wiredoctor.fail-on` | `""` | Comma-separated gates that fail startup. Four are diff gates and need a baseline: `new-cycle`, `condition-changed`, `startup-time`, `slow-bean`. A fifth, `boundary-violation` (v1.2.0), needs no baseline — it trips on any current [module-boundary](module-boundaries.html) violation. Empty = report-only. |
 | `wiredoctor.startup-time-absolute-threshold` | `500` | ms. Startup must regress by more than this **AND** the relative threshold to trip `startup-time`. |
 | `wiredoctor.startup-time-relative-threshold` | `0.20` | Fraction (0.20 = 20%). The other half of the dual-threshold AND condition. |
 | `wiredoctor.slow-bean-margin-ms` | `20` | Jitter margin for the `slow-bean` gate: a *new* slow bean must exceed `threshold + margin` to trip. Beans inside the margin band are reported but never fail CI. `0` = exact pre-v0.8.0 behavior. |
@@ -86,6 +86,8 @@ wiredoctor.fail-on=new-cycle,startup-time,slow-bean
 
 Gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json` for CI inspection. Full walkthroughs: [Performance Gates](performance-gates.html) · [CI gating](ci-gating.html) · [Upgrade Guard](upgrade-guard.html).
 
+The one gate that sits outside all of this is `boundary-violation`: it has no diff and no baseline, so it doesn't touch `gate.status` or `wiredoctor-diff.json` — a current violation simply fails the JVM with a non-zero exit, which is all CI needs. Set it up in [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).
+
 ## Ghost Tracking (opt-in — dev/staging only)
 
 | Property | Default | Description |
@@ -99,6 +101,48 @@ wiredoctor.ghost-tracking.exclude=legacySoapClient,nativeBridge
 ```
 
 Results land in `wiredoctor-ghost-report.json` at shutdown, or live via `/actuator/wiredoctor/ghosts`. Details: [Ghost Detector guide](ghost-detector.html).
+
+## Module Boundaries (opt-in — multi-module architectures)
+
+Declare your modules by package prefix and WireDoctor flags **hidden coupling**: an edge from one module into another module's *internal* (non-API) package. It compiles and runs fine today — which is exactly why it goes unnoticed until the modules can no longer be pulled apart.
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `wiredoctor.module-boundaries.modules` | *(empty)* | Map of package-prefix → module name. Empty = feature off (zero overhead — the detector short-circuits). A bean is assigned to the module whose configured prefix is the **longest** match for its package, so nested modules (`com.acme` vs `com.acme.orders`) resolve correctly. |
+| `wiredoctor.module-boundaries.api-packages` | *(empty)* | Glob patterns for each module's **public** surface, e.g. `*.api`. A cross-module edge whose target package matches one of these is allowed; any other cross-module edge is a violation. `*` matches any characters; a matched package's sub-packages count as public too. |
+
+```yaml
+wiredoctor:
+  module-boundaries:
+    modules:
+      "[com.acme.orders]": orders
+      "[com.acme.billing]": billing
+    api-packages:
+      - "*.api"
+```
+
+Violations show up in the console at startup, in `wiredoctor-report.json` under `boundaryViolations`, and in the **Boundaries** tab of the HTML report. All three are absent entirely when no modules are configured — the section is additive and `schemaVersion` stays `1`. Details: [Module Boundaries guide](module-boundaries.html).
+
+### Gotcha: map keys with dots need brackets
+
+`modules` is a `Map` whose keys **are package names, and package names contain dots**. Spring's relaxed binding reads a dot as a nesting separator, so an unquoted `com.acme.orders:` key binds as nested objects (`com` → `acme` → `orders`), not the single string key you meant — and the module silently never matches anything. Wrap the whole key in `[...]`:
+
+```yaml
+# ✅ correct — the dotted key is taken literally
+wiredoctor.module-boundaries.modules:
+  "[com.acme.orders]": orders
+
+# ❌ wrong — binds as com/acme/orders nesting; the module never resolves
+wiredoctor.module-boundaries.modules:
+  com.acme.orders: orders
+```
+
+In a `.properties` file (or in `--args`/`SpringApplicationBuilder` properties) the same key uses index-style brackets, no surrounding quotes:
+
+```properties
+wiredoctor.module-boundaries.modules[com.acme.orders]=orders
+wiredoctor.module-boundaries.api-packages[0]=*.api
+```
 
 ## Production Safety
 
