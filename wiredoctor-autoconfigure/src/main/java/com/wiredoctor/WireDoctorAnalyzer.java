@@ -574,6 +574,15 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // failed write never leaves the endpoint without a report to serve.
         this.lastReport = report;
 
+        // ── Feature (WD-701, v1.2.0): DevTools restart feedback ───────────────
+        // With Spring DevTools active, each source change restarts the context
+        // in the same JVM. Capture the previous run's report NOW — before the
+        // write below overwrites it — so we can diff against it and print one
+        // compact line telling the dev what their last change did. Null (no
+        // devtools / no prior report) → silent no-op, zero overhead.
+        JsonNode previousReportRoot =
+                readPreviousReportForRestart(outputDir, beanFactory.getBeanClassLoader());
+
         // ── Write JSON ────────────────────────────────────────────────────────
         try {
             ObjectMapper mapper = new ObjectMapper();
@@ -589,6 +598,12 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         } catch (Exception e) {
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
+        }
+
+        // WD-701: now the report is persisted, emit the restart diff (if any).
+        if (previousReportRoot != null) {
+            logRestartDiff(previousReportRoot, graph, cycles, conditionOutcomes,
+                           totalStartupMs, slowBeanThresholdMs, slowBeans);
         }
 
         // ── Console summary ───────────────────────────────────────────────────
@@ -665,6 +680,121 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         log.info(WireDoctorMessages.BANNER_END);
         return trippedGate;
+    }
+
+    /** WD-701: fully-qualified name of the DevTools restart classloader. */
+    private static final String RESTART_CLASSLOADER =
+            "org.springframework.boot.devtools.restart.classloader.RestartClassLoader";
+
+    /**
+     * WD-701: read the previous run's {@code wiredoctor-report.json} so the
+     * restart diff can compare against it — but only when Spring DevTools is on
+     * the classpath. Returns {@code null} (a silent no-op) when devtools is
+     * absent, no prior report exists, or the file can't be parsed. Called
+     * before the current report overwrites the file. Never throws.
+     */
+    // Package-private for direct unit testing of the devtools gate + no-op path.
+    JsonNode readPreviousReportForRestart(File outputDir, ClassLoader classLoader) {
+        if (!ClassUtils.isPresent(RESTART_CLASSLOADER, classLoader)) {
+            return null; // no devtools → feature off, zero overhead on normal runs
+        }
+        File reportFile = new File(outputDir, "wiredoctor-report.json");
+        if (!reportFile.isFile()) {
+            return null; // first run in this workspace — nothing to diff against yet
+        }
+        try {
+            return new ObjectMapper().readTree(reportFile);
+        } catch (Exception e) {
+            log.debug("[WireDoctor] Restart diff: previous report unreadable ({})", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * WD-701: log one compact line describing what changed since the previous
+     * DevTools restart. Reuses {@link WireDoctorBaselineDiff} — no new diff
+     * engine. Console-only; the report JSON/HTML and schema are untouched.
+     */
+    private void logRestartDiff(JsonNode previousReportRoot,
+                                Map<String, String[]> graph,
+                                List<List<String>> cycles,
+                                Map<String, WireDoctorConditionSnapshot.Outcome> conditionOutcomes,
+                                Long totalStartupMs,
+                                long slowBeanThresholdMs,
+                                List<Map<String, Object>> currentSlowBeans) {
+        try {
+            WireDoctorBaselineDiff.Snapshot previous =
+                    WireDoctorBaselineDiff.Snapshot.fromJson(previousReportRoot);
+            WireDoctorBaselineDiff.Snapshot current =
+                    WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles, conditionOutcomes,
+                                                                 totalStartupMs, slowBeanThresholdMs);
+            WireDoctorBaselineDiff.DiffResult diff = WireDoctorBaselineDiff.diff(previous, current);
+
+            // Slow-bean deltas aren't part of diff() — compute them the same way
+            // the regression guard does (reuse), so the restart line can flag a
+            // newly-slow bean: the thing a dev most wants to catch on a restart.
+            List<WireDoctorBaselineDiff.NewSlowBean> newSlowBeans = List.of();
+            if (previous.slowBeanThreshold() != null && !currentSlowBeans.isEmpty()) {
+                Set<String> prevSlowNames = new HashSet<>();
+                JsonNode prevSlow = previousReportRoot.path("slowBeans");
+                if (prevSlow.isArray()) {
+                    prevSlow.forEach(b -> {
+                        JsonNode n = b.path("beanName");
+                        if (!n.isMissingNode()) prevSlowNames.add(n.asText());
+                    });
+                }
+                newSlowBeans = WireDoctorBaselineDiff.computeNewSlowBeans(
+                        prevSlowNames, previous.slowBeanThreshold(),
+                        currentSlowBeans, slowBeanThresholdMs,
+                        properties.getSlowBeanMarginMs());
+            }
+
+            log.info(WireDoctorMessages.RESTART_DIFF, buildRestartSummary(diff, newSlowBeans));
+        } catch (Exception e) {
+            log.debug("[WireDoctor] Restart diff skipped ({})", e.getMessage());
+        }
+    }
+
+    /**
+     * WD-701: compact one-liner for the restart diff, e.g.
+     * {@code +1 slow bean (myService 340ms), cycles unchanged}. Reports only
+     * what changed; cycles are always stated (unchanged/added/resolved) since
+     * a new cycle is the headline regression a restart can introduce.
+     */
+    // Package-private for direct unit testing of the one-line summary format.
+    static String buildRestartSummary(WireDoctorBaselineDiff.DiffResult diff,
+                                              List<WireDoctorBaselineDiff.NewSlowBean> newSlowBeans) {
+        List<String> parts = new ArrayList<>();
+
+        if (!newSlowBeans.isEmpty()) {
+            WireDoctorBaselineDiff.NewSlowBean first = newSlowBeans.get(0);
+            String detail = WireDoctorMessages.displayBean(first.beanName()) + " " + first.instantiationMs() + "ms";
+            if (newSlowBeans.size() > 1) detail += ", +" + (newSlowBeans.size() - 1) + " more";
+            parts.add("+" + newSlowBeans.size() + " slow bean" + plural(newSlowBeans.size()) + " (" + detail + ")");
+        }
+
+        if (diff.hasNewCycles()) {
+            parts.add("+" + diff.newCycles().size() + " cycle" + plural(diff.newCycles().size()));
+        } else if (!diff.resolvedCycles().isEmpty()) {
+            parts.add("-" + diff.resolvedCycles().size() + " cycle" + plural(diff.resolvedCycles().size()) + " resolved");
+        } else {
+            parts.add("cycles unchanged");
+        }
+
+        if (diff.hasStartupTimeRegression()) {
+            parts.add("startup +" + diff.startupTimeRegression().deltaMs() + "ms");
+        }
+
+        int beanDelta = diff.addedBeans().size() - diff.removedBeans().size();
+        if (beanDelta != 0) {
+            parts.add((beanDelta > 0 ? "+" : "") + beanDelta + " bean" + plural(Math.abs(beanDelta)));
+        }
+
+        return String.join(", ", parts);
+    }
+
+    private static String plural(int n) {
+        return n == 1 ? "" : "s";
     }
 
     /**
