@@ -102,6 +102,43 @@ wiredoctor.module-boundaries.api-packages[0]=*.api
 
 ---
 
+## Gate it in CI
+
+Reporting a violation is one thing; stopping the next one from landing is
+another. Add `boundary-violation` to `fail-on` and a violating build fails
+outright:
+
+```properties
+wiredoctor.fail-on=boundary-violation
+```
+
+Unlike the regression gates (`new-cycle`, `startup-time`, and the rest), this
+one needs no baseline. There's nothing to diff against — an edge into another
+module's internals is wrong on its own, the first time it shows up, not only
+when it's new. So skip the baseline dance entirely: declare your modules, arm
+the gate, done.
+
+When it trips, WireDoctor lists the offending edges and exits non-zero:
+
+```
+[WireDoctor] BOUNDARY GATE TRIPPED (wiredoctor.fail-on=boundary-violation): 3 cross-module edge(s) into non-API packages. Failing the application as configured.
+```
+
+The report is written before the app fails, so `wiredoctor-report.json` and the
+Boundaries tab still hold the full list for your build logs. And because there's
+no diff, this gate never touches `wiredoctor-gate.status` or
+`wiredoctor-diff.json` — the non-zero exit is the whole signal, which is all a
+CI step actually checks.
+
+Want both boundaries and regressions gated? Put them in the same list:
+
+```properties
+wiredoctor.baseline=wiredoctor-baseline.json
+wiredoctor.fail-on=new-cycle,boundary-violation
+```
+
+---
+
 ## Fixing a violation
 
 Two honest options, no third:

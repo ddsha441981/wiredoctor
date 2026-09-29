@@ -104,7 +104,7 @@ This default was chosen from real-world validation: running against start.spring
 
 | Property | Default | Description |
 |----------|---------|-------------|
-| `wiredoctor.fail-on` | `""` | Comma-separated gate names. Add `startup-time` and/or `slow-bean`. Combinable with `new-cycle`, `condition-changed`. |
+| `wiredoctor.fail-on` | `""` | Comma-separated gate names. Add `startup-time` and/or `slow-bean`. Combinable with `new-cycle`, `condition-changed`, and the baseline-free `boundary-violation`. |
 | `wiredoctor.startup-time-absolute-threshold` | `500` | Milliseconds. Startup must regress by **more than this** to trip (AND condition). |
 | `wiredoctor.startup-time-relative-threshold` | `0.20` | Fraction (0.20 = 20%). Startup must regress by **more than this percentage** to trip (AND condition). |
 | `wiredoctor.slow-bean-threshold-ms` | `100` | Milliseconds. Beans taking longer than this are logged and included in baseline. The `slow-bean` gate trips on **new entries** crossing this threshold. |
@@ -261,5 +261,6 @@ wiredoctor.slow-bean-threshold-ms=100
 
 ## See Also
 
-- [CI Gating Guide](ci-gating.html) — Overview of all gates (`new-cycle`, `condition-changed`, `startup-time`, `slow-bean`)
+- [CI Gating Guide](ci-gating.html) — Overview of all gates (`new-cycle`, `condition-changed`, `startup-time`, `slow-bean`, `boundary-violation`)
+- [Module Boundaries](module-boundaries.html) — the one gate that needs no baseline: `boundary-violation`
 - [Upgrade Guard](upgrade-guard.html) — Gate on condition evaluation changes

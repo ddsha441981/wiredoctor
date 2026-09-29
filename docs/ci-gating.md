@@ -245,6 +245,7 @@ Or as a soft gate in GitHub Actions — warn on the PR without failing it:
 | `condition-changed`  | an autoconfiguration condition outcome flips vs the baseline (e.g. `matched → notMatched`) — the Upgrade Guard, see [upgrade-guard.md](upgrade-guard.html) | 0.5.0 |
 | `startup-time`       | startup time regresses beyond **both** absolute + relative thresholds vs baseline — see [performance-gates.md](performance-gates.html) | 0.7.0 |
 | `slow-bean`          | a bean crosses `slow-bean-threshold-ms` that was **not** slow in the baseline — see [performance-gates.md](performance-gates.html) | 0.7.0 |
+| `boundary-violation` | a bean in one module injects another module's internal (non-API) bean — **no baseline needed**, it trips on the current graph; see [module-boundaries.md](module-boundaries.html#gate-it-in-ci) | 1.2.0 |
 
 Gates combine via a comma-separated list — `wiredoctor.fail-on=new-cycle,condition-changed,startup-time,slow-bean`
 arms all four, and the `FAIL:` line lists every gate that fired (e.g.
@@ -253,3 +254,9 @@ pre-0.5.0 baseline that has no condition data — the marker shows `conditionDif
 and the verdict stays `PASS`. Similarly, `startup-time` and `slow-bean` gates gracefully skip
 when the baseline has no timing data (e.g., Boot < 2.6 where `ApplicationReadyEvent.getTimeTaken()`
 is unavailable). The property stays forward-compatible as new gates are added.
+
+`boundary-violation` is the one gate that isn't a diff. It needs no baseline and
+compares nothing — a current cross-module violation fails the build on its own.
+For that reason it stays out of `wiredoctor-gate.status` and the `FAIL:` verdict
+line (both of which describe the baseline diff); it signals purely through the
+non-zero exit. Full setup: [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).

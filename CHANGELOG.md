@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   console, in `wiredoctor-report.json` under `boundaryViolations`, and in a new
   **Boundaries** tab in the HTML report — all absent when no modules are
   configured. The detector short-circuits with zero overhead when off.
-  `schemaVersion` stays `1` (additive). See the
+  `schemaVersion` stays `1` (additive). Gate it in CI with
+  `wiredoctor.fail-on=boundary-violation` — unlike the diff gates it needs no
+  baseline, so a fresh violation fails the build the first time it appears. See the
   [Module Boundaries guide](https://ddsha441981.github.io/wiredoctor/module-boundaries.html).
 - **DevTools restart diff.** With `spring-boot-devtools` on the classpath,
   each restart logs a one-line diff versus the previous run — new/resolved

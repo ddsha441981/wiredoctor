@@ -67,7 +67,7 @@ property for first-run signal quality.
 |----------|---------|-------------|
 | `wiredoctor.baseline` | *(unset)* | Path to the committed architecture baseline. Setting it enables the diff. |
 | `wiredoctor.baseline-write` | `false` | `true` writes/refreshes the baseline (never diffs or gates on that run). |
-| `wiredoctor.fail-on` | `""` | Comma-separated gates that fail startup after the diff: `new-cycle`, `condition-changed`, `startup-time`, `slow-bean`. Empty = report-only. |
+| `wiredoctor.fail-on` | `""` | Comma-separated gates that fail startup. Four are diff gates and need a baseline: `new-cycle`, `condition-changed`, `startup-time`, `slow-bean`. A fifth, `boundary-violation` (v1.2.0), needs no baseline — it trips on any current [module-boundary](module-boundaries.html) violation. Empty = report-only. |
 | `wiredoctor.startup-time-absolute-threshold` | `500` | ms. Startup must regress by more than this **AND** the relative threshold to trip `startup-time`. |
 | `wiredoctor.startup-time-relative-threshold` | `0.20` | Fraction (0.20 = 20%). The other half of the dual-threshold AND condition. |
 | `wiredoctor.slow-bean-margin-ms` | `20` | Jitter margin for the `slow-bean` gate: a *new* slow bean must exceed `threshold + margin` to trip. Beans inside the margin band are reported but never fail CI. `0` = exact pre-v0.8.0 behavior. |
@@ -85,6 +85,8 @@ wiredoctor.fail-on=new-cycle,startup-time,slow-bean
 ```
 
 Gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json` for CI inspection. Full walkthroughs: [Performance Gates](performance-gates.html) · [CI gating](ci-gating.html) · [Upgrade Guard](upgrade-guard.html).
+
+The one gate that sits outside all of this is `boundary-violation`: it has no diff and no baseline, so it doesn't touch `gate.status` or `wiredoctor-diff.json` — a current violation simply fails the JVM with a non-zero exit, which is all CI needs. Set it up in [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).
 
 ## Ghost Tracking (opt-in — dev/staging only)
 
