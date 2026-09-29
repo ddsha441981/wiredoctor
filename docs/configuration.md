@@ -100,6 +100,48 @@ wiredoctor.ghost-tracking.exclude=legacySoapClient,nativeBridge
 
 Results land in `wiredoctor-ghost-report.json` at shutdown, or live via `/actuator/wiredoctor/ghosts`. Details: [Ghost Detector guide](ghost-detector.html).
 
+## Module Boundaries (opt-in — multi-module architectures)
+
+Declare your modules by package prefix and WireDoctor flags **hidden coupling**: an edge from one module into another module's *internal* (non-API) package. It compiles and runs fine today — which is exactly why it goes unnoticed until the modules can no longer be pulled apart.
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `wiredoctor.module-boundaries.modules` | *(empty)* | Map of package-prefix → module name. Empty = feature off (zero overhead — the detector short-circuits). A bean is assigned to the module whose configured prefix is the **longest** match for its package, so nested modules (`com.acme` vs `com.acme.orders`) resolve correctly. |
+| `wiredoctor.module-boundaries.api-packages` | *(empty)* | Glob patterns for each module's **public** surface, e.g. `*.api`. A cross-module edge whose target package matches one of these is allowed; any other cross-module edge is a violation. `*` matches any characters; a matched package's sub-packages count as public too. |
+
+```yaml
+wiredoctor:
+  module-boundaries:
+    modules:
+      "[com.acme.orders]": orders
+      "[com.acme.billing]": billing
+    api-packages:
+      - "*.api"
+```
+
+Violations show up in the console at startup, in `wiredoctor-report.json` under `boundaryViolations`, and in the **Boundaries** tab of the HTML report. All three are absent entirely when no modules are configured — the section is additive and `schemaVersion` stays `1`. Details: [Module Boundaries guide](module-boundaries.html).
+
+### Gotcha: map keys with dots need brackets
+
+`modules` is a `Map` whose keys **are package names, and package names contain dots**. Spring's relaxed binding reads a dot as a nesting separator, so an unquoted `com.acme.orders:` key binds as nested objects (`com` → `acme` → `orders`), not the single string key you meant — and the module silently never matches anything. Wrap the whole key in `[...]`:
+
+```yaml
+# ✅ correct — the dotted key is taken literally
+wiredoctor.module-boundaries.modules:
+  "[com.acme.orders]": orders
+
+# ❌ wrong — binds as com/acme/orders nesting; the module never resolves
+wiredoctor.module-boundaries.modules:
+  com.acme.orders: orders
+```
+
+In a `.properties` file (or in `--args`/`SpringApplicationBuilder` properties) the same key uses index-style brackets, no surrounding quotes:
+
+```properties
+wiredoctor.module-boundaries.modules[com.acme.orders]=orders
+wiredoctor.module-boundaries.api-packages[0]=*.api
+```
+
 ## Production Safety
 
 WireDoctor is enabled by default. If the dependency accidentally ships to production:
