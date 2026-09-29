@@ -385,6 +385,16 @@ public class WireDoctorProperties {
         return hasGate("slow-bean");
     }
 
+    /**
+     * @return {@code true} when the {@code boundary-violation} gate is enabled
+     *         via {@link #failOn} (WD-705, v1.2.0). Unlike the diff gates this
+     *         one is baseline-independent: it trips on any current module
+     *         boundary violation, so no baseline need be configured.
+     */
+    public boolean isFailOnBoundaryViolation() {
+        return hasGate("boundary-violation");
+    }
+
     private boolean hasGate(String gate) {
         if (failOn == null || failOn.isBlank()) return false;
         for (String candidate : failOn.split(",")) {
