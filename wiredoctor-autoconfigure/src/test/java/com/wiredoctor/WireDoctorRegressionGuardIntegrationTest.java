@@ -7,6 +7,8 @@ package com.wiredoctor;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wiredoctor.boundaryfixture.billing.BillingRepo;
+import com.wiredoctor.boundaryfixture.orders.OrderService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
@@ -752,5 +755,74 @@ class WireDoctorRegressionGuardIntegrationTest {
         JsonNode report = new ObjectMapper()
                 .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
         assertThat(report.path("gates").path("mode").asText()).isEqualTo("write");
+    }
+
+    // ── WD-705: boundary-violation gate (baseline-independent) ────────────────
+
+    /**
+     * App with a real cross-module boundary violation: {@code orders} reaches
+     * into {@code billing}'s internal (non-API) package. The bean TYPES live in
+     * distinct packages so the detector attributes them to different modules.
+     */
+    @SpringBootConfiguration
+    @EnableAutoConfiguration
+    static class BoundaryApp {
+        @Bean
+        OrderService orderService(BillingRepo billingRepo) {
+            return new OrderService(billingRepo);
+        }
+
+        @Bean
+        BillingRepo billingRepo() {
+            return new BillingRepo();
+        }
+    }
+
+    /** Module map declared with [bracket] binding — the keys carry dots. */
+    private static final String ORDERS_MODULE =
+            "wiredoctor.module-boundaries.modules[com.wiredoctor.boundaryfixture.orders]=orders";
+    private static final String BILLING_MODULE =
+            "wiredoctor.module-boundaries.modules[com.wiredoctor.boundaryfixture.billing]=billing";
+
+    @Test
+    void boundaryViolationWithGateArmedFailsTheApplication(@TempDir Path tempDir) {
+        // No baseline: the boundary gate is a current-state fact, not a diff.
+        assertThatThrownBy(() -> boot(BoundaryApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                ORDERS_MODULE, BILLING_MODULE,
+                "wiredoctor.fail-on=boundary-violation"))
+                .isInstanceOf(WireDoctorRegressionException.class)
+                .hasMessageContaining("boundary-violation")
+                .hasMessageContaining("orders -> billing");
+    }
+
+    @Test
+    void boundaryViolationWithoutGateOnlyReports(@TempDir Path tempDir) throws Exception {
+        // Same violation, gate NOT armed → app boots, violation is only reported.
+        try (var context = boot(BoundaryApp.class,
+                "wiredoctor.output-path=" + tempDir,
+                ORDERS_MODULE, BILLING_MODULE)) {
+            assertThat(context.isActive()).isTrue();
+        }
+        JsonNode report = new ObjectMapper()
+                .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
+        assertThat(report.path("boundaryViolations").isArray()).isTrue();
+        assertThat(report.path("boundaryViolations")).isNotEmpty();
+    }
+
+    @Test
+    void armedBoundaryGateDoesNotTripWhenApiPackageAllowsTheEdge(@TempDir Path tempDir) {
+        // billing exposed as an API surface → the orders->billing edge is legal
+        // → zero violations → the armed gate must NOT trip (guards the
+        // !isEmpty() half of the gate condition).
+        assertThatCode(() -> {
+            try (var context = boot(BoundaryApp.class,
+                    "wiredoctor.output-path=" + tempDir,
+                    ORDERS_MODULE, BILLING_MODULE,
+                    "wiredoctor.module-boundaries.api-packages=*.billing",
+                    "wiredoctor.fail-on=boundary-violation")) {
+                assertThat(context.isActive()).isTrue();
+            }
+        }).doesNotThrowAnyException();
     }
 }

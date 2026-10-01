@@ -405,6 +405,9 @@ const cpSet = new Set(); cpGroups.forEach(g => g.forEach(b => cpSet.add(b)));
 const gc = reportData.ghostCandidates || { count: 0, beans: [] };
 const gates = reportData.gates || { mode: 'off', armed: [], config: {} };
 const gatesFailed = gates.failed || [];
+/* WD-703: null when module-boundaries feature is off (key absent) — the tab
+   only appears when the feature ran, even if it found zero violations. */
+const boundaries = reportData.boundaryViolations || null;
 
 /* header */
 $('#h-profile').textContent = 'profile: ' + ((reportData.activeProfiles||[]).join(', ') || 'default');
@@ -433,6 +436,7 @@ const TABS = [
   { id:'smells',    icon:'△', label:'Smells' },
   { id:'timing',    icon:'◷', label:'Timing' },
   { id:'conditions',icon:'⚙', label:'Conditions', count: condEntries.length },
+  ...(boundaries ? [{ id:'boundaries', icon:'⧉', label:'Boundaries', count: boundaries.length, hot: boundaries.length > 0 }] : []),
 ];
 const nav = $('#nav'), main = $('#main');
 TABS.forEach((t,i) => {
@@ -1185,6 +1189,36 @@ $('#cond-search').addEventListener('input', e => {
   document.querySelectorAll('#cond-table tbody tr').forEach(tr =>
     tr.style.display = tr.dataset.k.includes(q) ? '' : 'none');
 });
+
+/* ───────── Boundaries tab (WD-703) — only when the feature ran ───────── */
+if (boundaries) {
+  const bpane = $('#tab-boundaries');
+  bpane.innerHTML = `
+    <h1 class="page-title">Module Boundaries</h1>
+    <p class="page-sub">Cross-module edges reaching into another module's internal (non-API) package — hidden coupling that compiles and runs fine but erodes modularity. Expose an API package (<span class="bean">wiredoctor.module-boundaries.api-packages</span>) or decouple.</p>
+    ${boundaries.length === 0
+      ? `<div class="card"><div class="empty" data-icon="✅">No boundary violations — every cross-module edge lands on a declared API package.</div></div>`
+      : `<div class="card" style="padding:0;overflow:hidden">
+          <div style="max-height:calc(100vh - 260px);overflow-y:auto">
+          <table class="data"><thead><tr><th>Coupling (source → target bean)</th><th>Crosses</th><th>Internal package</th></tr></thead>
+          <tbody>${boundaries.map(v=>`<tr>
+            <td class="bean"><span data-bean="${esc(v.sourceBean)}" role="button" tabindex="0">${escBean(v.sourceBean)}</span> → <span data-bean="${esc(v.targetBean)}" role="button" tabindex="0">${escBean(v.targetBean)}</span></td>
+            <td><span class="pill reason">${esc(v.sourceModule)}</span> → <span class="pill excluded">${esc(v.targetModule)}</span></td>
+            <td class="bean muted">${esc(v.targetPackage)}</td>
+          </tr>`).join('')}</tbody>
+          </table></div>
+        </div>`}`;
+  /* Delegated click/keyboard → focus the bean in the graph, as other tabs do. */
+  bpane.addEventListener('click', e => {
+    const el = e.target.closest('[data-bean]');
+    if (el) focusBean(el.dataset.bean);
+  });
+  bpane.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target.closest('[data-bean]');
+    if (el) { e.preventDefault(); focusBean(el.dataset.bean); }
+  });
+}
 
 /* ───────── Graph tab ───────── */
 $('#tab-graph').innerHTML = `

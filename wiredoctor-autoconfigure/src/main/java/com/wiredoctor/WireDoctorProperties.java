@@ -121,6 +121,9 @@ public class WireDoctorProperties {
      */
     private final GhostTracking ghostTracking = new GhostTracking();
 
+    /** Nested {@code wiredoctor.module-boundaries.*} properties (WD-702, v1.2.0). */
+    private final ModuleBoundaries moduleBoundaries = new ModuleBoundaries();
+
     /**
      * Relative threshold for startup-time regression gate (v0.7.0 Cost Guardian).
      * The gate trips when the startup time increase exceeds BOTH this percentage
@@ -212,6 +215,54 @@ public class WireDoctorProperties {
                 if (!trimmed.isEmpty()) names.add(trimmed);
             }
             return names;
+        }
+    }
+
+    /**
+     * Nested {@code wiredoctor.module-boundaries.*} properties (WD-702, v1.2.0).
+     * <p>
+     * Declares logical modules by package prefix so WireDoctor can flag hidden
+     * coupling: an edge from one module into another module's <em>internal</em>
+     * (non-API) package. Entirely opt-in — with no {@link #modules} configured
+     * the detector short-circuits and does zero work.
+     */
+    public static class ModuleBoundaries {
+
+        /**
+         * Package-prefix → module name. E.g. {@code com.acme.orders → orders}.
+         * A bean is assigned to the module whose configured prefix is the
+         * longest match for the bean's package. Empty (default) = feature off.
+         */
+        private java.util.Map<String, String> modules = new java.util.LinkedHashMap<>();
+
+        /**
+         * Glob patterns for target packages that are a module's <em>public</em>
+         * surface, e.g. {@code *.api}, {@code *.public}. A cross-module edge
+         * whose target package matches one of these is allowed; any other
+         * cross-module edge is a violation. {@code *} matches any characters;
+         * a matching package's sub-packages are also treated as public.
+         */
+        private java.util.List<String> apiPackages = new java.util.ArrayList<>();
+
+        public java.util.Map<String, String> getModules() {
+            return modules;
+        }
+
+        public void setModules(java.util.Map<String, String> modules) {
+            this.modules = modules;
+        }
+
+        public java.util.List<String> getApiPackages() {
+            return apiPackages;
+        }
+
+        public void setApiPackages(java.util.List<String> apiPackages) {
+            this.apiPackages = apiPackages;
+        }
+
+        /** @return true when at least one module prefix is configured. */
+        public boolean isEnabled() {
+            return modules != null && !modules.isEmpty();
         }
     }
 
@@ -334,6 +385,16 @@ public class WireDoctorProperties {
         return hasGate("slow-bean");
     }
 
+    /**
+     * @return {@code true} when the {@code boundary-violation} gate is enabled
+     *         via {@link #failOn} (WD-705, v1.2.0). Unlike the diff gates this
+     *         one is baseline-independent: it trips on any current module
+     *         boundary violation, so no baseline need be configured.
+     */
+    public boolean isFailOnBoundaryViolation() {
+        return hasGate("boundary-violation");
+    }
+
     private boolean hasGate(String gate) {
         if (failOn == null || failOn.isBlank()) return false;
         for (String candidate : failOn.split(",")) {
@@ -360,6 +421,10 @@ public class WireDoctorProperties {
 
     public GhostTracking getGhostTracking() {
         return ghostTracking;
+    }
+
+    public ModuleBoundaries getModuleBoundaries() {
+        return moduleBoundaries;
     }
 
     public double getStartupTimeRelativeThreshold() {

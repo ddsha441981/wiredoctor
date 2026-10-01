@@ -23,13 +23,13 @@ Add the dependency — that's it. WireDoctor runs at startup, writes `wiredoctor
 <dependency>
     <groupId>io.github.ddsha441981</groupId>
     <artifactId>wiredoctor-autoconfigure</artifactId>
-    <version>1.1.4</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
 **Gradle:**
 ```groovy
-implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:1.1.4'
+implementation 'io.github.ddsha441981:wiredoctor-autoconfigure:1.2.0'
 ```
 
 Want CI gates? Capture a baseline once, commit it, arm the gates:
@@ -80,6 +80,8 @@ Notes:
 | [Performance gates](https://ddsha441981.github.io/wiredoctor/performance-gates.html) | Startup-time and slow-bean gates, thresholds, noise tolerance |
 | [Upgrade Guard](https://ddsha441981.github.io/wiredoctor/upgrade-guard.html) | Catching silent autoconfiguration changes across Boot upgrades |
 | [Ghost Detector](https://ddsha441981.github.io/wiredoctor/ghost-detector.html) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Module Boundaries](https://ddsha441981.github.io/wiredoctor/module-boundaries.html) | Declare modules by package; flag hidden cross-module coupling (v1.2.0) |
+| [DevTools restart diff](https://ddsha441981.github.io/wiredoctor/devtools.html) | A one-line architectural diff on every DevTools restart — drift feedback in the inner loop (v1.2.0) |
 | [Thread Distribution](https://ddsha441981.github.io/wiredoctor/thread-distribution.html) | Per-thread bean map with donut chart (v1.1.0) |
 | [Startup Time Trend](https://ddsha441981.github.io/wiredoctor/startup-time-trend.html) | trendHistory in baseline + trend chart with verdict bands (v1.1.3) |
 | [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.html) | What the reports expose, offline-only network behavior |

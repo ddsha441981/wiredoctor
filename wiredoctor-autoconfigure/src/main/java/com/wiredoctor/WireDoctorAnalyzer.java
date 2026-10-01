@@ -503,6 +503,74 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         }
         report.put("dependencies", dependencyInfo);
 
+        // ── Feature (WD-702, v1.2.0): Multi-module boundary violations ───────
+        // Flags edges that reach from one declared module into another module's
+        // internal (non-API) package — hidden coupling that compiles fine but
+        // erodes modularity. Opt-in: with no wiredoctor.module-boundaries.modules
+        // configured this whole block is skipped (zero overhead). Detection +
+        // console summary only; report JSON/HTML rendering is WD-703.
+        WireDoctorProperties.ModuleBoundaries boundaries = properties.getModuleBoundaries();
+        // WD-705: the boundary gate is baseline-INDEPENDENT (a violation is a
+        // current-state fact, not a regression), so it can't live in
+        // runRegressionGuard with the diff gates. It's built here and merged
+        // into analyze()'s single returned gate after the guard runs.
+        WireDoctorRegressionException boundaryGate = null;
+        if (boundaries.isEnabled()) {
+            Map<String, String> beanPackages = new HashMap<>();
+            for (String beanName : beanNames) {
+                if (WireDoctorBeanClassifier.isWireDoctorBean(beanName)) continue;
+                try {
+                    Class<?> t = beanFactory.getType(beanName);
+                    if (t != null && t.getPackage() != null) {
+                        String pkg = t.getPackage().getName();
+                        if (!WireDoctorBeanClassifier.isFrameworkPackage(pkg)) {
+                            beanPackages.put(beanName, pkg);
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // unresolvable bean type: can't attribute it to a module — skip
+                }
+            }
+            List<WireDoctorBoundaryDetector.Violation> boundaryViolations =
+                    WireDoctorBoundaryDetector.detect(graph, beanPackages,
+                            boundaries.getModules(), boundaries.getApiPackages());
+            // WD-703: emit into the report JSON (additive — schemaVersion stays
+            // 1) only when the feature is on, so a feature-off report is byte-for-
+            // byte unchanged. The HTML Boundaries tab reads this same array.
+            report.put("boundaryViolations",
+                    WireDoctorBoundaryDetector.toReportList(boundaryViolations));
+            if (boundaryViolations.isEmpty()) {
+                log.info(WireDoctorMessages.BOUNDARY_NONE);
+            } else {
+                log.info(WireDoctorMessages.BOUNDARY_HEADER, boundaryViolations.size());
+                boundaryViolations.stream().limit(20).forEach(v ->
+                        log.info(WireDoctorMessages.BOUNDARY_ITEM,
+                                 v.sourceModule(), v.targetModule(),
+                                 WireDoctorMessages.displayBean(v.sourceBean()),
+                                 WireDoctorMessages.displayBean(v.targetBean()),
+                                 v.targetPackage()));
+                log.info(WireDoctorMessages.BOUNDARY_NOTE);
+            }
+            // WD-705: boundary-violation gate. Armed via wiredoctor.fail-on and
+            // at least one violation present → build the gate. Logged at error
+            // now so the trip is always visible even if a diff gate wins the
+            // single returned exception below. No baseline required.
+            if (properties.isFailOnBoundaryViolation() && !boundaryViolations.isEmpty()) {
+                log.error(WireDoctorMessages.BOUNDARY_GATE_TRIPPED,
+                          properties.getFailOn(), boundaryViolations.size());
+                boundaryGate = new WireDoctorRegressionException(
+                        "WireDoctor gate 'boundary-violation' tripped: "
+                        + boundaryViolations.size()
+                        + " cross-module edge(s) into non-API packages: "
+                        + boundaryViolations.stream()
+                                .map(v -> v.sourceModule() + " -> " + v.targetModule()
+                                        + " (" + WireDoctorMessages.displayBean(v.sourceBean())
+                                        + " -> " + WireDoctorMessages.displayBean(v.targetBean())
+                                        + ", internal: " + v.targetPackage() + ")")
+                                .collect(Collectors.toList()));
+            }
+        }
+
         // ── Feature (v0.3.0): Counterfactual @Lazy Simulator ─────────────────
         // For each detected cycle, rank which beans would break it if marked
         // @Lazy — most cycles broken first, smallest blast radius (fan-in) next.
@@ -569,10 +637,30 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                                    slowBeanThresholdMs, slowBeans, report, gatesMap,
                                    outputDir, activeProfiles);
 
+        // WD-705: fold in the baseline-independent boundary gate. A diff gate
+        // keeps precedence for the propagated message (both were already logged
+        // at error); either one fails CI identically via the thrown exception.
+        // Note: wiredoctor-gate.status stays a diff-only verdict — a boundary
+        // violation is not a regression, and gate.status is written only when a
+        // baseline is configured. The non-zero JVM exit is the boundary gate's
+        // CI signal. ponytail: gate.status carries the diff verdict, exit code carries this one.
+        if (trippedGate == null) {
+            trippedGate = boundaryGate;
+        }
+
         // Retain the completed report in memory for out-of-core consumers (the
         // optional wiredoctor-actuator endpoint). Set BEFORE the disk write so a
         // failed write never leaves the endpoint without a report to serve.
         this.lastReport = report;
+
+        // ── Feature (WD-701, v1.2.0): DevTools restart feedback ───────────────
+        // With Spring DevTools active, each source change restarts the context
+        // in the same JVM. Capture the previous run's report NOW — before the
+        // write below overwrites it — so we can diff against it and print one
+        // compact line telling the dev what their last change did. Null (no
+        // devtools / no prior report) → silent no-op, zero overhead.
+        JsonNode previousReportRoot =
+                readPreviousReportForRestart(outputDir, beanFactory.getBeanClassLoader());
 
         // ── Write JSON ────────────────────────────────────────────────────────
         try {
@@ -589,6 +677,12 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
 
         } catch (Exception e) {
             log.error(WireDoctorMessages.FAILED_WRITE_JSON, e.getMessage());
+        }
+
+        // WD-701: now the report is persisted, emit the restart diff (if any).
+        if (previousReportRoot != null) {
+            logRestartDiff(previousReportRoot, graph, cycles, conditionOutcomes,
+                           totalStartupMs, slowBeanThresholdMs, slowBeans);
         }
 
         // ── Console summary ───────────────────────────────────────────────────
@@ -667,6 +761,121 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         return trippedGate;
     }
 
+    /** WD-701: fully-qualified name of the DevTools restart classloader. */
+    private static final String RESTART_CLASSLOADER =
+            "org.springframework.boot.devtools.restart.classloader.RestartClassLoader";
+
+    /**
+     * WD-701: read the previous run's {@code wiredoctor-report.json} so the
+     * restart diff can compare against it — but only when Spring DevTools is on
+     * the classpath. Returns {@code null} (a silent no-op) when devtools is
+     * absent, no prior report exists, or the file can't be parsed. Called
+     * before the current report overwrites the file. Never throws.
+     */
+    // Package-private for direct unit testing of the devtools gate + no-op path.
+    JsonNode readPreviousReportForRestart(File outputDir, ClassLoader classLoader) {
+        if (!ClassUtils.isPresent(RESTART_CLASSLOADER, classLoader)) {
+            return null; // no devtools → feature off, zero overhead on normal runs
+        }
+        File reportFile = new File(outputDir, "wiredoctor-report.json");
+        if (!reportFile.isFile()) {
+            return null; // first run in this workspace — nothing to diff against yet
+        }
+        try {
+            return new ObjectMapper().readTree(reportFile);
+        } catch (Exception e) {
+            log.debug("[WireDoctor] Restart diff: previous report unreadable ({})", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * WD-701: log one compact line describing what changed since the previous
+     * DevTools restart. Reuses {@link WireDoctorBaselineDiff} — no new diff
+     * engine. Console-only; the report JSON/HTML and schema are untouched.
+     */
+    private void logRestartDiff(JsonNode previousReportRoot,
+                                Map<String, String[]> graph,
+                                List<List<String>> cycles,
+                                Map<String, WireDoctorConditionSnapshot.Outcome> conditionOutcomes,
+                                Long totalStartupMs,
+                                long slowBeanThresholdMs,
+                                List<Map<String, Object>> currentSlowBeans) {
+        try {
+            WireDoctorBaselineDiff.Snapshot previous =
+                    WireDoctorBaselineDiff.Snapshot.fromJson(previousReportRoot);
+            WireDoctorBaselineDiff.Snapshot current =
+                    WireDoctorBaselineDiff.Snapshot.fromAnalysis(graph, cycles, conditionOutcomes,
+                                                                 totalStartupMs, slowBeanThresholdMs);
+            WireDoctorBaselineDiff.DiffResult diff = WireDoctorBaselineDiff.diff(previous, current);
+
+            // Slow-bean deltas aren't part of diff() — compute them the same way
+            // the regression guard does (reuse), so the restart line can flag a
+            // newly-slow bean: the thing a dev most wants to catch on a restart.
+            List<WireDoctorBaselineDiff.NewSlowBean> newSlowBeans = List.of();
+            if (previous.slowBeanThreshold() != null && !currentSlowBeans.isEmpty()) {
+                Set<String> prevSlowNames = new HashSet<>();
+                JsonNode prevSlow = previousReportRoot.path("slowBeans");
+                if (prevSlow.isArray()) {
+                    prevSlow.forEach(b -> {
+                        JsonNode n = b.path("beanName");
+                        if (!n.isMissingNode()) prevSlowNames.add(n.asText());
+                    });
+                }
+                newSlowBeans = WireDoctorBaselineDiff.computeNewSlowBeans(
+                        prevSlowNames, previous.slowBeanThreshold(),
+                        currentSlowBeans, slowBeanThresholdMs,
+                        properties.getSlowBeanMarginMs());
+            }
+
+            log.info(WireDoctorMessages.RESTART_DIFF, buildRestartSummary(diff, newSlowBeans));
+        } catch (Exception e) {
+            log.debug("[WireDoctor] Restart diff skipped ({})", e.getMessage());
+        }
+    }
+
+    /**
+     * WD-701: compact one-liner for the restart diff, e.g.
+     * {@code +1 slow bean (myService 340ms), cycles unchanged}. Reports only
+     * what changed; cycles are always stated (unchanged/added/resolved) since
+     * a new cycle is the headline regression a restart can introduce.
+     */
+    // Package-private for direct unit testing of the one-line summary format.
+    static String buildRestartSummary(WireDoctorBaselineDiff.DiffResult diff,
+                                              List<WireDoctorBaselineDiff.NewSlowBean> newSlowBeans) {
+        List<String> parts = new ArrayList<>();
+
+        if (!newSlowBeans.isEmpty()) {
+            WireDoctorBaselineDiff.NewSlowBean first = newSlowBeans.get(0);
+            String detail = WireDoctorMessages.displayBean(first.beanName()) + " " + first.instantiationMs() + "ms";
+            if (newSlowBeans.size() > 1) detail += ", +" + (newSlowBeans.size() - 1) + " more";
+            parts.add("+" + newSlowBeans.size() + " slow bean" + plural(newSlowBeans.size()) + " (" + detail + ")");
+        }
+
+        if (diff.hasNewCycles()) {
+            parts.add("+" + diff.newCycles().size() + " cycle" + plural(diff.newCycles().size()));
+        } else if (!diff.resolvedCycles().isEmpty()) {
+            parts.add("-" + diff.resolvedCycles().size() + " cycle" + plural(diff.resolvedCycles().size()) + " resolved");
+        } else {
+            parts.add("cycles unchanged");
+        }
+
+        if (diff.hasStartupTimeRegression()) {
+            parts.add("startup +" + diff.startupTimeRegression().deltaMs() + "ms");
+        }
+
+        int beanDelta = diff.addedBeans().size() - diff.removedBeans().size();
+        if (beanDelta != 0) {
+            parts.add((beanDelta > 0 ? "+" : "") + beanDelta + " bean" + plural(Math.abs(beanDelta)));
+        }
+
+        return String.join(", ", parts);
+    }
+
+    private static String plural(int n) {
+        return n == 1 ? "" : "s";
+    }
+
     /**
      * Console summary for the {@code smells} report section (v0.3.0):
      * top 3 fan-in hotspots, top 3 fan-out hotspots, and any beans over the
@@ -706,6 +915,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         if (properties.isFailOnConditionChanged()) armed.add("condition-changed");
         if (properties.isFailOnStartupTime())      armed.add("startup-time");
         if (properties.isFailOnSlowBean())         armed.add("slow-bean");
+        if (properties.isFailOnBoundaryViolation()) armed.add("boundary-violation");
         return armed;
     }
 

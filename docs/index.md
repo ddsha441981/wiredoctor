@@ -22,6 +22,7 @@ Add one dependency — WireDoctor hooks into the real, resolved `ApplicationCont
 | "We have a bean cycle in CI — which PR introduced it?" | **Regression Guard** fails the PR the moment a new cycle appears |
 | "Startup took 40 s in staging — which bean is the culprit?" | **Critical path** + **timing heat** in the Graph tab |
 | "We suspect dead beans eating memory — how do we find them?" | **Ghost Detector** — passive candidates + opt-in first-touch tracking |
+| "Our modular monolith keeps leaking — is `orders` reaching into `billing`'s internals?" | **Module Boundaries** flags cross-module edges into non-API packages |
 | "Our K8s pods are expensive because of slow cold-start — what do we cut?" | **Cost Guardian** gates on startup-time and slow-bean regressions |
 
 ---
@@ -55,6 +56,8 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 - **Cycle detection with fix advice** — Tarjan SCC finds silently-resolved cycles; `lazySuggestions` ranks which `@Lazy` breaks the most cycles with the smallest blast radius.
 - **Startup critical path** — the instantiation-weighted dependency chain your readiness time actually sits on.
 - **Architecture smells** — fan-in coupling hotspots, fan-out shotgun-surgery risk, and instability metrics on the live graph; framework beans filtered so every ranked bean is refactorable.
+- **Module boundaries** *(opt-in)* — declare your modules by package prefix; WireDoctor flags edges that reach into another module's internal (non-API) package — hidden coupling that compiles fine but blocks extraction later.
+- **DevTools restart diff** — with `spring-boot-devtools` on the classpath, every restart logs a one-line diff versus the last run (new cycles, newly-slow beans, startup delta) so you catch drift while coding, not at CI time.
 - **Ghost beans** — passive candidates (always on, labeled `confidence: LOW`) plus opt-in first-touch tracking for dev/staging.
 - **Proxy overhead** — CGLIB/JDK proxy count exposing hidden indirection layers.
 
@@ -63,6 +66,7 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 - **Architectural regression guard** — commit `wiredoctor-baseline.json`, fail the PR that adds a new cycle (`fail-on=new-cycle`).
 - **Upgrade Guard** — condition diff across Boot upgrades; gate on `condition-changed`.
 - **Performance gates** — fail on startup-time regressions (dual-threshold, noise-tolerant) and new slow beans (jitter-margin protected).
+- **Module boundary gate** — fail the build on any cross-module edge into a non-API package (`fail-on=boundary-violation`); no baseline needed, it trips on the first violation.
 - **CI-friendly output** — gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json`; the report is written even when a gate fails the build.
 
 ---
@@ -77,6 +81,8 @@ Run your app once — `wiredoctor-report.json` and `wiredoctor-report.html` appe
 | [Performance gates](performance-gates.html) | Startup-time and slow-bean gates, thresholds, noise tolerance |
 | [Upgrade Guard](upgrade-guard.html) | Catching silent autoconfiguration changes across Boot upgrades |
 | [Ghost Detector](ghost-detector.html) | Passive candidates + opt-in first-touch tracking, and their trust postures |
+| [Module Boundaries](module-boundaries.html) | Declare modules by package; flag hidden cross-module coupling (v1.2.0) |
+| [DevTools restart diff](devtools.html) | A one-line architectural diff on every DevTools restart — drift feedback in the inner loop (v1.2.0) |
 | [Thread Distribution](thread-distribution.html) | Per-thread bean map with donut chart (v1.1.0) |
 | [Startup Time Trend](startup-time-trend.html) | trendHistory in baseline + trend chart with verdict bands (v1.1.3) |
 | [Security posture](security-posture.html) | What the reports expose, offline-only network behavior |
