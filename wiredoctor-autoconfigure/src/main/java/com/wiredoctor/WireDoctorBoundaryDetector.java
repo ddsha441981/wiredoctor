@@ -7,6 +7,7 @@ package com.wiredoctor;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,13 @@ public final class WireDoctorBoundaryDetector {
                                              sourceModule, targetModule, targetPkg));
             }
         }
+        // Deterministic order: the graph is a HashMap, so without this the report
+        // JSON and console would reshuffle run to run (and across JDKs). Mirrors
+        // how slowBeans/slowSteps are already sorted for stable, diffable output.
+        violations.sort(Comparator.comparing(Violation::sourceModule)
+                .thenComparing(Violation::targetModule)
+                .thenComparing(Violation::sourceBean)
+                .thenComparing(Violation::targetBean));
         return violations;
     }
 

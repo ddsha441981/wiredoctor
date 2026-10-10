@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deterministic `boundaryViolations` ordering.** The report JSON and console
+  summary now list boundary violations in a stable order (by module, then bean)
+  instead of the bean graph's `HashMap` iteration order, so committed sample
+  reports and build logs don't reshuffle between runs.
+
 ## [1.2.0] - 2026-09-29
 
 ### Added
