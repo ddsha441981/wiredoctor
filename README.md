@@ -8,9 +8,9 @@ WireDoctor is a runtime diagnostic and architectural analysis tool for Spring Bo
 
 ![WireDoctor report — a tour of every tab](docs/images/report-tour.gif)
 
-*A real run against start.spring.io (Boot 4.1.x, 429 beans, 436 edges) on WireDoctor 1.1.4 — the cycle, the ghosts and the timings in the report are all genuinely from that app. **[View the full docs →](https://ddsha441981.github.io/wiredoctor/)***
+*A real, unmodified run against start.spring.io (Boot 4.1.x, 394 beans, 435 edges) on WireDoctor 1.2.0 — zero cycles, but **3 hidden module-boundary violations**, plus the ghosts and timings, all genuinely from that app. **[View the full docs →](https://ddsha441981.github.io/wiredoctor/)***
 
-**[▶ Open this exact report live in your browser](https://ddsha441981.github.io/wiredoctor/sample/v1.1.4/wiredoctor-report.html)** — no install needed.
+**[▶ Open this exact report live in your browser](https://ddsha441981.github.io/wiredoctor/sample/v1.2.0/wiredoctor-report.html)** — no install needed.
 
 ---
 
@@ -87,7 +87,7 @@ Notes:
 | [Security posture](https://ddsha441981.github.io/wiredoctor/security-posture.html) | What the reports expose, offline-only network behavior |
 | [Known Limitations](https://ddsha441981.github.io/wiredoctor/known-limitations.html) | Honest heuristics and what the tool cannot guarantee |
 
-Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/) — or **[view the start.spring.io report live](https://ddsha441981.github.io/wiredoctor/sample/v1.1.4/wiredoctor-report.html)** without cloning anything.
+Pre-generated sample reports (from real apps, including start.spring.io) are in [`sample/`](sample/) — or **[view the start.spring.io report live](https://ddsha441981.github.io/wiredoctor/sample/v1.2.0/wiredoctor-report.html)** without cloning anything.
 
 ---
 
