@@ -111,6 +111,29 @@ Why snapshot something Boot already keeps? Because a snapshot can be **diffed**.
 
 ---
 
+## Module Boundaries tab (v1.2.0)
+
+![Module Boundaries tab](images/boundaries.png)
+
+New in 1.2.0. Declare your modules by package prefix and WireDoctor flags every
+edge that reaches from one module into another module's **internal (non-API)**
+package — hidden coupling that compiles and runs fine but quietly erodes
+modularity. It reads the **resolved** bean graph, so it catches what Spring
+actually wired, not what the imports suggest.
+
+The shot above is a vanilla **start.spring.io** run (394 beans) with
+`io.spring.start.site.extension` and `io.spring.start.site.project` declared as
+modules: three `…ProjectDescriptionCustomizer` beans in **extension** reach into
+**project**'s internal package. Each row names the crossing edge, the modules it
+spans, and the internal package. The same list lands in `wiredoctor-report.json`
+under `boundaryViolations`, and `wiredoctor-gate.status` records a
+`FAIL:boundary-violation` verdict for CI (even with no baseline). See the
+[Module Boundaries guide](module-boundaries.html).
+
+[Open this boundaries report live](https://ddsha441981.github.io/wiredoctor/sample/v1.2.0/wiredoctor-report.html).
+
+---
+
 ## Try it yourself
 
 Open [this exact report live](https://ddsha441981.github.io/wiredoctor/sample/v1.1.4/wiredoctor-report.html), grab the whole set from [`sample/v1.1.4/`](https://github.com/ddsha441981/wiredoctor/tree/main/sample/v1.1.4), or add the dependency to your own app — the report appears in your working directory on next startup. See [Quick start](https://github.com/ddsha441981/wiredoctor#-quick-start).
