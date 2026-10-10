@@ -125,4 +125,23 @@ class WireDoctorBoundaryDetectorTest {
         assertThat(row.keySet()).containsExactly(
                 "sourceBean", "targetBean", "sourceModule", "targetModule", "targetPackage");
     }
+
+    @Test
+    void violationsAreReturnedInDeterministicOrder() {
+        // Two violations whose sorted order (by source module, then target) is the
+        // reverse of the graph's insertion order — detect() must sort them so the
+        // report doesn't reshuffle run to run regardless of HashMap iteration.
+        var modules = Map.of("com.acme.orders", "orders", "com.acme.billing", "billing");
+        var pkgs = Map.of(
+                "orderService", "com.acme.orders",
+                "billingInternal", "com.acme.billing.internal",
+                "billingWorker", "com.acme.billing",
+                "orderRepo", "com.acme.orders.internal");
+        var graph = new java.util.LinkedHashMap<String, String[]>();
+        graph.put("orderService", new String[]{"billingInternal"}); // orders -> billing
+        graph.put("billingWorker", new String[]{"orderRepo"});      // billing -> orders
+        var v = WireDoctorBoundaryDetector.detect(graph, pkgs, modules, List.of());
+        assertThat(v).extracting(WireDoctorBoundaryDetector.Violation::sourceModule)
+                .containsExactly("billing", "orders"); // billing -> orders sorts first
+    }
 }

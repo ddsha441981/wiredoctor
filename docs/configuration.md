@@ -86,7 +86,7 @@ wiredoctor.fail-on=new-cycle,startup-time,slow-bean
 
 Gates write `wiredoctor-gate.status` (`PASS`/`FAIL`) and `wiredoctor-diff.json` for CI inspection. Full walkthroughs: [Performance Gates](performance-gates.html) · [CI gating](ci-gating.html) · [Upgrade Guard](upgrade-guard.html).
 
-The one gate that sits outside all of this is `boundary-violation`: it has no diff and no baseline, so it doesn't touch `gate.status` or `wiredoctor-diff.json` — a current violation simply fails the JVM with a non-zero exit, which is all CI needs. Set it up in [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).
+The one gate that sits outside all of this is `boundary-violation`: it has no diff and no baseline, so it produces no `wiredoctor-diff.json` — but it still records its verdict in `wiredoctor-gate.status` (`FAIL:boundary-violation` on line 1, written even with no baseline). So a current violation fails the JVM with a non-zero exit *and* stays grep-able for CI that can't trust the exit code. Set it up in [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).
 
 ## Ghost Tracking (opt-in — dev/staging only)
 

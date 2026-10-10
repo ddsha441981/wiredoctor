@@ -182,7 +182,8 @@ Some build setups can't (or don't want to) rely on the JVM exit code — e.g. th
 app is booted by a wrapper script, runs as a `@SpringBootTest`, or the team
 wants a *soft* gate that reports without failing the build. For these,
 WireDoctor writes a machine-readable verdict file next to the reports on
-**every completed diff**, whether or not `fail-on` is configured:
+**every completed diff** — and on every run with module boundaries enabled —
+whether or not `fail-on` is configured:
 
 ```
 FAIL:new-cycle
@@ -194,6 +195,15 @@ removedBeans=0
 gateArmed=false
 ```
 
+The baseline-free `boundary-violation` gate writes the same file with just its
+own verdict (no diff fields):
+
+```
+FAIL:boundary-violation
+boundaryViolations=3
+boundaryGateArmed=true
+```
+
 **The contract is line 1 only:** `PASS`, or `FAIL:<gate>` (comma-separated if
 multiple gates ever trip). The remaining `key=value` lines are informational
 and may grow in future versions — don't parse positionally.
@@ -201,8 +211,9 @@ and may grow in future versions — don't parse positionally.
 Semantics worth relying on:
 
 - **Absence means "no verdict."** The file is deleted at the start of every
-  guarded run and only written after a diff completes — a stale verdict from a
-  previous run can never leak into a run that crashed or skipped the diff
+  guarded run and written after a diff completes (or, for the baseline-free
+  `boundary-violation` gate, after boundary detection runs) — a stale verdict
+  from a previous run can never leak into a run that crashed or skipped the diff
   (missing/corrupt baseline, `baseline-write` mode).
 - **Written before the hard gate throws**, so CI can read it even after the
   JVM died red.
@@ -257,6 +268,9 @@ is unavailable). The property stays forward-compatible as new gates are added.
 
 `boundary-violation` is the one gate that isn't a diff. It needs no baseline and
 compares nothing — a current cross-module violation fails the build on its own.
-For that reason it stays out of `wiredoctor-gate.status` and the `FAIL:` verdict
-line (both of which describe the baseline diff); it signals purely through the
-non-zero exit. Full setup: [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).
+Its primary signal is the non-zero exit, but it is **also** reflected in
+`wiredoctor-gate.status`: a violation adds `boundary-violation` to the line-1
+`FAIL:` list (plus a `boundaryViolations=<n>` info line), written even when no
+baseline is configured. So a build that can't rely on the exit code — e.g.
+`spring-boot:run`, which drops it on the devtools restart thread — can still gate
+with `grep -q '^PASS'`. Full setup: [Module Boundaries → gate it in CI](module-boundaries.html#gate-it-in-ci).
