@@ -7,20 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- **Deterministic `boundaryViolations` ordering.** The report JSON and console
-  summary now list boundary violations in a stable order (by module, then bean)
-  instead of the bean graph's `HashMap` iteration order, so committed sample
-  reports and build logs don't reshuffle between runs.
-- **`boundary-violation` gate now writes `wiredoctor-gate.status`.** The gate
-  previously signalled only through the JVM exit code, which `spring-boot:run`
-  swallows (the exception dies on the devtools restart thread, so Maven still
-  exits 0). It now also records `FAIL:boundary-violation` on line 1 of
-  `wiredoctor-gate.status` — written even with no baseline — so a
-  `grep -q '^PASS'` gate works where the exit code can't be trusted. The exit
-  code remains the primary signal.
-
 ## [1.2.0] - 2026-09-29
 
 ### Added
@@ -54,6 +40,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and 25, and the table gains a 4.1.x row. The default `spring-boot.version` moves
   3.5.15 to 3.5.16 in the same commit, so the pom and the matrix cannot drift
   apart again.
+
+### Fixed
+
+- **Deterministic `boundaryViolations` ordering.** The report JSON and console
+  summary list boundary violations in a stable order (by module, then bean)
+  instead of the bean graph's `HashMap` iteration order, so committed sample
+  reports and build logs don't reshuffle between runs.
+- **`boundary-violation` gate records its verdict in `wiredoctor-gate.status`.**
+  The gate otherwise signals only through the JVM exit code, which
+  `spring-boot:run` swallows (the exception dies on the devtools restart thread,
+  so Maven still exits 0). It now also writes `FAIL:boundary-violation` on line 1
+  of `wiredoctor-gate.status` — even with no baseline — so a `grep -q '^PASS'`
+  gate works where the exit code can't be trusted. The exit code stays the
+  primary signal.
 
 ## [1.1.4] - 2026-08-25
 
