@@ -182,7 +182,8 @@ Some build setups can't (or don't want to) rely on the JVM exit code — e.g. th
 app is booted by a wrapper script, runs as a `@SpringBootTest`, or the team
 wants a *soft* gate that reports without failing the build. For these,
 WireDoctor writes a machine-readable verdict file next to the reports on
-**every completed diff**, whether or not `fail-on` is configured:
+**every completed diff** — and on every run with module boundaries enabled —
+whether or not `fail-on` is configured:
 
 ```
 FAIL:new-cycle
@@ -192,6 +193,15 @@ resolvedCycles=0
 addedBeans=3
 removedBeans=0
 gateArmed=false
+```
+
+The baseline-free `boundary-violation` gate writes the same file with just its
+own verdict (no diff fields):
+
+```
+FAIL:boundary-violation
+boundaryViolations=3
+boundaryGateArmed=true
 ```
 
 **The contract is line 1 only:** `PASS`, or `FAIL:<gate>` (comma-separated if
