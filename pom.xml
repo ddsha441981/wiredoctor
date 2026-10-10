@@ -12,6 +12,11 @@
     <description>Zero-intrusion runtime architecture analyzer for Spring Boot — detects cyclic dependencies, ghost beans, proxy overhead, and startup bottlenecks, with CI regression gates.</description>
     <url>https://github.com/ddsha441981/wiredoctor</url>
 
+    <organization>
+        <name>ddsha441981</name>
+        <url>https://github.com/ddsha441981</url>
+    </organization>
+
     <scm>
         <url>https://github.com/ddsha441981/wiredoctor</url>
         <connection>scm:git:git://github.com/ddsha441981/wiredoctor.git</connection>
