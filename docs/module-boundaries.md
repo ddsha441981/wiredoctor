@@ -125,10 +125,11 @@ When it trips, WireDoctor lists the offending edges and exits non-zero:
 ```
 
 The report is written before the app fails, so `wiredoctor-report.json` and the
-Boundaries tab still hold the full list for your build logs. And because there's
-no diff, this gate never touches `wiredoctor-gate.status` or
-`wiredoctor-diff.json` — the non-zero exit is the whole signal, which is all a
-CI step actually checks.
+Boundaries tab still hold the full list for your build logs. There's no diff, so
+this gate never touches `wiredoctor-diff.json`; it does, however, record its
+verdict in `wiredoctor-gate.status` — `FAIL:boundary-violation` on line 1,
+written even without a baseline — so a `grep -q '^PASS'` gate still works where
+the JVM exit code can't be trusted. The non-zero exit stays the primary signal.
 
 Want both boundaries and regressions gated? Put them in the same list:
 

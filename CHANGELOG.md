@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   summary now list boundary violations in a stable order (by module, then bean)
   instead of the bean graph's `HashMap` iteration order, so committed sample
   reports and build logs don't reshuffle between runs.
+- **`boundary-violation` gate now writes `wiredoctor-gate.status`.** The gate
+  previously signalled only through the JVM exit code, which `spring-boot:run`
+  swallows (the exception dies on the devtools restart thread, so Maven still
+  exits 0). It now also records `FAIL:boundary-violation` on line 1 of
+  `wiredoctor-gate.status` — written even with no baseline — so a
+  `grep -q '^PASS'` gate works where the exit code can't be trusted. The exit
+  code remains the primary signal.
 
 ## [1.2.0] - 2026-09-29
 

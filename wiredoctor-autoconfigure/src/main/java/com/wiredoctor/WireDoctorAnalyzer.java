@@ -515,6 +515,9 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // runRegressionGuard with the diff gates. It's built here and merged
         // into analyze()'s single returned gate after the guard runs.
         WireDoctorRegressionException boundaryGate = null;
+        // Hoisted so the WD-707 gate.status verdict (after the guard, below) sees
+        // the count whether or not this block ran.
+        List<WireDoctorBoundaryDetector.Violation> boundaryViolations = List.of();
         if (boundaries.isEnabled()) {
             Map<String, String> beanPackages = new HashMap<>();
             for (String beanName : beanNames) {
@@ -531,7 +534,7 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
                     // unresolvable bean type: can't attribute it to a module — skip
                 }
             }
-            List<WireDoctorBoundaryDetector.Violation> boundaryViolations =
+            boundaryViolations =
                     WireDoctorBoundaryDetector.detect(graph, beanPackages,
                             boundaries.getModules(), boundaries.getApiPackages());
             // WD-703: emit into the report JSON (additive — schemaVersion stays
@@ -640,12 +643,18 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
         // WD-705: fold in the baseline-independent boundary gate. A diff gate
         // keeps precedence for the propagated message (both were already logged
         // at error); either one fails CI identically via the thrown exception.
-        // Note: wiredoctor-gate.status stays a diff-only verdict — a boundary
-        // violation is not a regression, and gate.status is written only when a
-        // baseline is configured. The non-zero JVM exit is the boundary gate's
-        // CI signal. ponytail: gate.status carries the diff verdict, exit code carries this one.
         if (trippedGate == null) {
             trippedGate = boundaryGate;
+        }
+
+        // WD-707: also record the boundary verdict in wiredoctor-gate.status, so
+        // CI that can't trust the JVM exit code (spring-boot:run drops it on the
+        // devtools restart thread, exiting 0) can still gate with grep. The exit
+        // code stays the primary signal; this restores the fallback the diff gates
+        // have. Baseline-independent: writes/patches the status whether a diff ran.
+        if (boundaries.isEnabled()) {
+            applyBoundaryVerdictToGateStatus(outputDir, boundaryViolations.size(),
+                                             properties.isFailOnBoundaryViolation());
         }
 
         // Retain the completed report in memory for out-of-core consumers (the
@@ -1383,6 +1392,49 @@ public class WireDoctorAnalyzer implements ApplicationListener<ApplicationReadyE
             log.error(WireDoctorMessages.GATE_STATUS_WRITE_FAILED,
                       gateStatusFile.getAbsolutePath(), e.getMessage());
         }
+    }
+
+    /**
+     * WD-707: fold the boundary verdict into {@code wiredoctor-gate.status} so CI
+     * that can't trust the JVM exit code (spring-boot:run drops it on the devtools
+     * restart thread) can still gate with grep. Merges into the diff's verdict when
+     * a baseline owns the file (stale copies already cleared); otherwise writes a
+     * fresh boundary-only verdict. Logged-and-swallowed on failure.
+     */
+    private void applyBoundaryVerdictToGateStatus(File outputDir, int violationCount, boolean armed) {
+        File gateStatusFile = new File(outputDir, "wiredoctor-gate.status");
+        boolean violated = violationCount > 0;
+        String baseline = properties.getBaseline();
+        boolean baselineOwnsFile = baseline != null && !baseline.isBlank() && gateStatusFile.isFile();
+        try {
+            List<String> lines = baselineOwnsFile
+                    ? new ArrayList<>(Files.readAllLines(gateStatusFile.toPath()))
+                    : new ArrayList<>();
+            if (lines.isEmpty()) lines.add(violated ? "FAIL:boundary-violation" : "PASS");
+            else lines.set(0, mergeBoundaryIntoVerdict(lines.get(0), violated));
+            lines.add("boundaryViolations=" + violationCount);
+            lines.add("boundaryGateArmed=" + armed);
+            Files.writeString(gateStatusFile.toPath(), String.join("\n", lines) + "\n");
+            log.info(WireDoctorMessages.GATE_STATUS_WRITTEN, gateStatusFile.getAbsolutePath());
+        } catch (Exception e) {
+            log.error(WireDoctorMessages.GATE_STATUS_WRITE_FAILED,
+                      gateStatusFile.getAbsolutePath(), e.getMessage());
+        }
+    }
+
+    /**
+     * WD-707: adds {@code boundary-violation} to a line-1 verdict ({@code PASS} or
+     * {@code FAIL:<gate>[,...]}), idempotently. A no-violation call is a no-op.
+     */
+    static String mergeBoundaryIntoVerdict(String verdict, boolean violated) {
+        if (!violated) return verdict;
+        if (verdict.startsWith("FAIL:")) {
+            for (String g : verdict.substring(5).split(",")) {
+                if (g.equals("boundary-violation")) return verdict;
+            }
+            return verdict + ",boundary-violation";
+        }
+        return "FAIL:boundary-violation";
     }
 
     /**

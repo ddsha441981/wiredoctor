@@ -808,6 +808,11 @@ class WireDoctorRegressionGuardIntegrationTest {
                 .readTree(tempDir.resolve("wiredoctor-report.json").toFile());
         assertThat(report.path("boundaryViolations").isArray()).isTrue();
         assertThat(report.path("boundaryViolations")).isNotEmpty();
+        // WD-707: the baseline-free boundary gate still records a grep-able verdict
+        // — FAIL on line 1 even though fail-on wasn't armed (soft-gating fallback).
+        var gateStatus = java.nio.file.Files.readAllLines(tempDir.resolve("wiredoctor-gate.status"));
+        assertThat(gateStatus.get(0)).isEqualTo("FAIL:boundary-violation");
+        assertThat(gateStatus).contains("boundaryGateArmed=false");
     }
 
     @Test
