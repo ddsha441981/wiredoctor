@@ -25,6 +25,12 @@ updates:
       # bumps need to arrive as their own reviewable PR.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # maven-gpg-plugin 3.2.8 drops the raw .pom from the central-staging
+      # bundle (only .pom.asc survives), which Central rejects with
+      # "Bundle has content that does NOT have a .pom file" — see 5dc4c60 and
+      # closed PR #75. Un-ignore once a release > 3.2.2 is verified against
+      # the Publish workflow end to end.
+      - dependency-name: "org.apache.maven.plugins:maven-gpg-plugin"
 
   - package-ecosystem: "github-actions"
     directory: "/"
