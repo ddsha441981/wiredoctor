@@ -14,19 +14,28 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          server-id: central
-          server-username: OSSRH_USERNAME
-          server-password: OSSRH_PASSWORD
 
       # Maven 3.10 writes Resolver bookkeeping files (_remote.repositories,
       # maven-metadata-local.xml, .locks/) into the central-staging dir
       # (apache/maven#13388), which Central rejects as
       # "Bundle has content that does NOT have a .pom file" (Sonatype #128515).
-      # Pin 3.9.x until central-publishing-maven-plugin handles this.
+      # Pin 3.9.x until central-publishing-maven-plugin handles it.
+      #
+      # s4u/setup-maven-action overwrites the settings.xml that setup-java
+      # generated, so the `central` server credentials are injected here
+      # instead (run 38510301751 failed with "server is null" without this).
       - name: Setup Maven 3.9
         uses: s4u/setup-maven-action@v1.21.0
         with:
           maven-version: 3.9.12
+          settings-servers: |
+            [
+              {
+                "id": "central",
+                "username": "${{ secrets.OSSRH_USERNAME }}",
+                "password": "${{ secrets.OSSRH_PASSWORD }}"
+              }
+            ]
 
       - name: Import GPG Key
         run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import || true
@@ -37,6 +46,3 @@ jobs:
         run: |
           mvn -B clean deploy -P release \
             -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }}
-        env:
-          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
