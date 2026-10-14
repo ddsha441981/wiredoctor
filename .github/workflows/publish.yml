@@ -18,6 +18,16 @@ jobs:
           server-username: OSSRH_USERNAME
           server-password: OSSRH_PASSWORD
 
+      # Maven 3.10 writes Resolver bookkeeping files (_remote.repositories,
+      # maven-metadata-local.xml, .locks/) into the central-staging dir
+      # (apache/maven#13388), which Central rejects as
+      # "Bundle has content that does NOT have a .pom file" (Sonatype #128515).
+      # Pin 3.9.x until central-publishing-maven-plugin handles this.
+      - name: Setup Maven 3.9
+        uses: s4u/maven-setup-action@v2.1.0
+        with:
+          maven-version: 3.9.12
+
       - name: Import GPG Key
         run: echo "$GPG_PRIVATE_KEY" | gpg --batch --import || true
         env:
