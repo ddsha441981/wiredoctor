@@ -24,7 +24,7 @@ jobs:
       # "Bundle has content that does NOT have a .pom file" (Sonatype #128515).
       # Pin 3.9.x until central-publishing-maven-plugin handles this.
       - name: Setup Maven 3.9
-        uses: s4u/maven-setup-action@v2.1.0
+        uses: s4u/setup-maven-action@v1.21.0
         with:
           maven-version: 3.9.12
 
