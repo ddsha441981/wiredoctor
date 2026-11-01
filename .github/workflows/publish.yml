@@ -25,7 +25,7 @@ jobs:
       # generated, so the `central` server credentials are injected here
       # instead (run 38510301751 failed with "server is null" without this).
       - name: Setup Maven 3.9
-        uses: s4u/setup-maven-action@v1.21.0
+        uses: s4u/setup-maven-action@v1.22.0
         with:
           maven-version: 3.9.12
           settings-servers: |
