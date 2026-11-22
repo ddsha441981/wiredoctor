@@ -51,7 +51,7 @@ also keeps the report out of commits and diffs.
 
 Naming your own packages does more than filter orphan beans: without it,
 WireDoctor's own beans are ranked in your architecture report
-(`com.wiredoctor.WireDoctorAutoConfiguration` as a coupling hotspot,
+(`com.wiredoctor.bootstrap.WireDoctorAutoConfiguration` as a coupling hotspot,
 `wireDoctorAnalyzer` as unstable), alongside framework beans you cannot refactor.
 
 ```properties

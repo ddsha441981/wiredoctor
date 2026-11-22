@@ -5,8 +5,8 @@
  */
 package com.wiredoctor.actuator;
 
-import com.wiredoctor.WireDoctorAnalyzer;
-import com.wiredoctor.WireDoctorGhostTracker;
+import com.wiredoctor.diagnostics.WireDoctorAnalyzer;
+import com.wiredoctor.ghost.WireDoctorGhostTracker;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

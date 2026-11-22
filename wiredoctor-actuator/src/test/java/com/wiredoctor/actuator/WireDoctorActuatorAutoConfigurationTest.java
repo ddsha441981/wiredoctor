@@ -5,8 +5,8 @@
  */
 package com.wiredoctor.actuator;
 
-import com.wiredoctor.WireDoctorAnalyzer;
-import com.wiredoctor.WireDoctorAutoConfiguration;
+import com.wiredoctor.diagnostics.WireDoctorAnalyzer;
+import com.wiredoctor.bootstrap.WireDoctorAutoConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration;
@@ -63,7 +63,7 @@ class WireDoctorActuatorAutoConfigurationTest {
                 .run(context -> {
                     assertThat(context).hasSingleBean(WireDoctorEndpoint.class);
                     assertThat(context)
-                            .hasSingleBean(com.wiredoctor.WireDoctorGhostTracker.class);
+                            .hasSingleBean(com.wiredoctor.ghost.WireDoctorGhostTracker.class);
                     // Live view served, not the DISABLED placeholder.
                     WireDoctorEndpoint endpoint = context.getBean(WireDoctorEndpoint.class);
                     assertThat(endpoint.section("ghosts")).containsKey("trackedCount");
@@ -75,7 +75,7 @@ class WireDoctorActuatorAutoConfigurationTest {
         runner.withPropertyValues("management.endpoints.web.exposure.include=wiredoctor")
                 .run(context -> {
                     assertThat(context)
-                            .doesNotHaveBean(com.wiredoctor.WireDoctorGhostTracker.class);
+                            .doesNotHaveBean(com.wiredoctor.ghost.WireDoctorGhostTracker.class);
                     WireDoctorEndpoint endpoint = context.getBean(WireDoctorEndpoint.class);
                     assertThat(endpoint.section("ghosts"))
                             .containsEntry("status", "DISABLED");

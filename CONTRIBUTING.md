@@ -20,6 +20,25 @@ WireDoctor is a Maven multi-module build:
 | `wiredoctor-actuator` | Optional module exposing the report over `/actuator/wiredoctor`. Kept separate so the core stays actuator-free. |
 | `wiredoctor-test` | A demo Spring Boot app used to exercise WireDoctor end-to-end. Not published (`-P dev` profile only). |
 
+### Java packages
+
+The 22 implementation classes in `wiredoctor-autoconfigure` are grouped under
+`com.wiredoctor` by responsibility:
+
+| Package | Responsibility |
+|---------|----------------|
+| `bootstrap` | Spring registration, configuration properties, and startup setup |
+| `diagnostics` | Analyzer, bean classification, smells, and boundaries |
+| `graph` | Cycles, lazy simulation, critical paths, and graph truncation |
+| `regression` | Baselines, condition snapshots, and gate exceptions |
+| `ghost` | Ghost candidates, tracking, post-processing, and shutdown output |
+| `reporting` | HTML reports and console messages |
+
+Tests follow the same packages; boundary fixtures keep their dedicated fixture
+packages. Classes live in one place, with no root compatibility wrappers. Java
+class paths have changed, while property names, report schema, and Maven module
+layout remain unchanged.
+
 A design principle worth knowing up front: **WireDoctor must never affect the
 host application.** Analysis is defensively wrapped so no failure inside the
 tool can crash startup, and the core artifact stays dependency-light (no
