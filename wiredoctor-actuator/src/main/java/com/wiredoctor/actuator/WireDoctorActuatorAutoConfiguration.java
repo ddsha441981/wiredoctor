@@ -5,8 +5,9 @@
  */
 package com.wiredoctor.actuator;
 
-import com.wiredoctor.WireDoctorAnalyzer;
-import com.wiredoctor.WireDoctorGhostTracker;
+import com.wiredoctor.bootstrap.WireDoctorAutoConfiguration;
+import com.wiredoctor.diagnostics.WireDoctorAnalyzer;
+import com.wiredoctor.ghost.WireDoctorGhostTracker;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.actuate.autoconfigure.endpoint.condition.ConditionalOnAvailableEndpoint;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
@@ -33,7 +34,7 @@ import org.springframework.context.annotation.Bean;
  * @author Deendayal Kumawat
  * @since 0.4.0
  */
-@AutoConfiguration
+@AutoConfiguration(after = WireDoctorAutoConfiguration.class)
 @ConditionalOnClass(Endpoint.class)
 public class WireDoctorActuatorAutoConfiguration {
 

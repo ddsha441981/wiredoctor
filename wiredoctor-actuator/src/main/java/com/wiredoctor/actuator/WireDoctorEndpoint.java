@@ -5,8 +5,8 @@
  */
 package com.wiredoctor.actuator;
 
-import com.wiredoctor.WireDoctorAnalyzer;
-import com.wiredoctor.WireDoctorGhostTracker;
+import com.wiredoctor.diagnostics.WireDoctorAnalyzer;
+import com.wiredoctor.ghost.WireDoctorGhostTracker;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.endpoint.annotation.Selector;

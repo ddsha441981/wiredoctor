@@ -1,2 +1,2 @@
 
-org.springframework.boot.env.EnvironmentPostProcessor=com.wiredoctor.WireDoctorEnvironmentPostProcessor
+org.springframework.boot.env.EnvironmentPostProcessor=com.wiredoctor.bootstrap.WireDoctorEnvironmentPostProcessor

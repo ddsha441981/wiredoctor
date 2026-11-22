@@ -161,7 +161,7 @@ guard still runs. If your app needs a web context to boot, run the gate from a
 [WireDoctor] Saved baseline diff to: /workspace/wiredoctor-diff.json
 [WireDoctor] REGRESSION GATE TRIPPED (wiredoctor.fail-on=new-cycle): 1 new cycle(s) introduced vs baseline. Failing the application as configured.
 ...
-com.wiredoctor.WireDoctorRegressionException
+com.wiredoctor.regression.WireDoctorRegressionException
 ```
 
 The uploaded `wiredoctor-diff.json` artifact shows exactly which beans and

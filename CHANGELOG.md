@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Organize core Java classes into `bootstrap`, `diagnostics`, `graph`,
+  `regression`, `ghost`, and `reporting` packages, with matching test packages.
+  Java fully qualified class names change without compatibility wrappers;
+  configuration properties, report schema, and Maven module names are unchanged.
+
 ## [1.2.0] - 2026-10-10
 
 ### Added
